@@ -1,0 +1,81 @@
+@import "@fontsource-variable/space-grotesk";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+	--font-display: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+	--color-navy: #0a0a24;
+	--color-navy-2: #12122e;
+	--color-navy-3: #1a1a3a;
+	--color-accent: #2323e6;
+	--color-accent-bright: #5858ff;
+	--color-paper: #f4f4f1;
+	--color-paper-2: #ebebe7;
+	--color-line: #d9d9d3;
+	--color-ink: #16162b;
+	--color-ink-2: #55556b;
+
+	--radius-xs: 3px;
+	--radius-sm: 5px;
+	--radius-md: 7px;
+	--radius-lg: 10px;
+}
+
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	font-family: var(--font-display);
+	background: var(--color-paper);
+	color: var(--color-ink);
+	-webkit-font-smoothing: antialiased;
+}
+
+.font-mono,
+code,
+pre {
+	font-family: var(--font-mono);
+}
+
+/* halftone texture cho sidebar — pixel/retro như Nous nhưng tự vẽ */
+.halftone {
+	background-image:
+		radial-gradient(circle at 20% 15%, rgba(88, 88, 255, 0.14) 0, transparent 42%),
+		radial-gradient(circle, rgba(255, 255, 255, 0.055) 1px, transparent 1.6px);
+	background-size:
+		100% 100%,
+		9px 9px;
+}
+
+.label-mono {
+	font-family: var(--font-mono);
+	font-size: 10.5px;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+}
+
+.stat-number {
+	font-family: var(--font-display);
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+}
+
+::selection {
+	background: var(--color-accent);
+	color: #fff;
+}
+
+/* thin scrollbars */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #b9b9b2 transparent;
+}
