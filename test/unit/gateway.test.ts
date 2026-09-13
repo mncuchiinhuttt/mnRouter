@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseOpenAiChat, OpenAiChatFormatter } from "../../src/server/gateway/ingress/openai-chat.js";
 import { parseAnthropic, AnthropicFormatter } from "../../src/server/gateway/ingress/anthropic.js";
 import { parseOpenAiResponses, OpenAiResponsesFormatter } from "../../src/server/gateway/ingress/openai-responses.js";

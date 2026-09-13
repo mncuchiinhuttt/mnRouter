@@ -10,7 +10,7 @@ import { setTimeout as sleep } from "node:timers/promises";
 import fs from "node:fs";
 
 const PG_DIR = "/tmp/mnrouter-e2e-pg";
-const PG_PORT = 54329;
+const PG_PORT = 54330;
 const APP_PORT = 8788;
 const DATABASE_URL = `postgres://postgres@127.0.0.1:${PG_PORT}/mnrouter_e2e`;
 const BASE = `http://127.0.0.1:${APP_PORT}`;
@@ -122,9 +122,10 @@ function mockKiro(): Promise<Server> {
 
 // ---------------- postgres ----------------
 async function startPostgres(): Promise<ChildProcess> {
-	if (!fs.existsSync(`${PG_DIR}/PG_VERSION`)) {
-		await exec(`initdb -D ${PG_DIR} -U postgres --auth=trust`, "initdb");
-	}
+	// luôn start sạch: stop cluster cũ (nếu còn chạy) rồi initdb lại từ đầu
+	await exec(`pg_ctl -D ${PG_DIR} stop -m fast`, "stop-old-cluster", true);
+	if (fs.existsSync(PG_DIR)) fs.rmSync(PG_DIR, { recursive: true, force: true });
+	await exec(`initdb -D ${PG_DIR} -U postgres --auth=trust`, "initdb");
 	fs.appendFileSync(`${PG_DIR}/postgresql.conf`, `\nport=${PG_PORT}\n`);
 	const proc = spawn("pg_ctl", ["-D", PG_DIR, `-o`, `-p ${PG_PORT}`, "-l", `${PG_DIR}/log.txt`, "start"], { stdio: "ignore" });
 	await exec(`pg_isready -h 127.0.0.1 -p ${PG_PORT}`, "pg_isready", true);
@@ -149,7 +150,7 @@ async function exec(cmd: string, label: string, ignoreFail = false): Promise<str
 
 // ---------------- helpers ----------------
 async function startApp(): Promise<ChildProcess> {
-	const child = spawn("npx", ["tsx", "src/server/index.ts"], {
+	const child = spawn(process.execPath, ["src/server/index.ts"], {
 		env: { ...process.env, DATABASE_URL, PORT: String(APP_PORT), APP_URL: BASE, SESSION_SECRET: "e2e-secret", NODE_ENV: "test" },
 		stdio: ["ignore", "pipe", "pipe"],
 	});
@@ -334,8 +335,9 @@ try {
 	ok(newKeyRes.status === 200, "key mới hoạt động");
 
 	console.log("\n== 9. usage tracking ==");
+	await sleep(2000); // recordUsage là fire-and-forget — chờ inserts kịp ghi
 	const usageRows = await db.query(`SELECT provider, model, status, prompt_tokens, completion_tokens FROM usage_requests ORDER BY id DESC LIMIT 12`);
-	ok(usageRows.length >= 6, `usage_requests ghi ${usageRows.length} rows`);
+	ok(usageRows.length >= 6, `usage_requests ghi ${usageRows.length} rows: ${JSON.stringify(usageRows.map((r: any) => `${r.provider}/${r.status}`))}`);
 	ok(usageRows.some((r: any) => r.provider === "claude" && r.status === "ok" && Number(r.prompt_tokens) === 25), "claude usage tokens đúng");
 	ok(usageRows.some((r: any) => r.provider === "codex" && Number(r.prompt_tokens) === 40), "codex usage đúng");
 	ok(usageRows.some((r: any) => r.provider === "kiro" && Number(r.prompt_tokens) === 33), "kiro usage đúng");

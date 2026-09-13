@@ -1,6 +1,5 @@
-import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -16,7 +15,7 @@ const app = new Hono();
 
 app.use("*", sessionMiddleware());
 
-app.get("/healthz", (c) => c.json({ ok: true, uptime: process.uptime() }));
+app.get("/healthz", (c) => c.json({ ok: true, uptime: process.uptime(), runtime: "bun" }));
 
 app.route("/", authRoutes());
 app.route("/", userRoutes());
@@ -24,7 +23,7 @@ app.route("/", adminRoutes());
 app.route("/", gatewayRoutes());
 
 // static web (built SPA)
-const webDist = path.resolve(process.cwd(), isProd ? "web-dist" : "web-dist");
+const webDist = path.resolve(process.cwd(), "web-dist");
 if (existsSync(webDist)) {
 	app.use("*", serveStatic({ root: path.relative(process.cwd(), webDist) }));
 	app.get("*", async (c) => {
@@ -32,14 +31,19 @@ if (existsSync(webDist)) {
 			const html = await readFile(path.join(webDist, "index.html"), "utf8");
 			return c.html(html);
 		} catch {
-			return c.text("web build not found — run `pnpm build`", 404);
+			return c.text("web build not found — run `bun run build`", 404);
 		}
 	});
 }
 
-const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-	console.log(`[mnrouter] listening on http://127.0.0.1:${info.port} (prod=${isProd})`);
+const server = Bun.serve({
+	fetch: app.fetch,
+	port: env.PORT,
+	// LLM streams có thể nghỉ lâu giữa các chunk — tắt idle timeout
+	idleTimeout: 0,
 });
+
+console.log(`[mnrouter] listening on http://127.0.0.1:${server.port} (runtime=bun, prod=${isProd})`);
 
 void (async () => {
 	try {
@@ -54,7 +58,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 	process.on(sig, () => {
 		console.log(`[mnrouter] ${sig} — shutting down`);
 		stopRefresher();
-		server.close(() => process.exit(0));
-		setTimeout(() => process.exit(0), 3000).unref();
+		server.stop(true);
+		process.exit(0);
 	});
 }

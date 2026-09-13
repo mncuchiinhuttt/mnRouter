@@ -208,13 +208,23 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 			async start(controller) {
 				let hadError = false;
 				let completionChars = 0;
+				let estimated = false;
 				try {
-					for await (const ev of translateUpstreamStream(upstream.attempt.res.body!, upstream.attempt.parser, resolved.provider)) {
-						if (ev.type === "start") ttftTracker.value ??= Date.now() - startedAt;
-						if (ev.type === "done") usageBox.usage = ev.usage;
-						if (ev.type === "text_delta") completionChars += ev.delta.length;
-						if (ev.type === "error") hadError = true;
-						for (const chunk of formatter.format(ev)) controller.enqueue(encoder.encode(chunk));
+					for await (const rawEv of translateUpstreamStream(upstream.attempt.res.body!, upstream.attempt.parser, resolved.provider)) {
+						let outgoing = rawEv;
+						if (rawEv.type === "start") ttftTracker.value ??= Date.now() - startedAt;
+						if (rawEv.type === "done") {
+							let doneUsage = rawEv.usage;
+							if (usageIsEmpty(doneUsage) && !hadError) {
+								doneUsage = estimateUsage(canonical, completionChars);
+								estimated = true;
+							}
+							usageBox.usage = doneUsage;
+							outgoing = { ...rawEv, usage: doneUsage };
+						}
+						if (rawEv.type === "text_delta") completionChars += rawEv.delta.length;
+						if (rawEv.type === "error") hadError = true;
+						for (const chunk of formatter.format(outgoing)) controller.enqueue(encoder.encode(chunk));
 					}
 				} catch (err) {
 					hadError = true;
@@ -223,7 +233,8 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 					}
 				}
 				controller.close();
-				const finalUsage = usageIsEmpty(usageBox.usage) && !hadError ? estimateUsage(canonical, completionChars) : usageBox.usage;
+				const finalUsage = estimated ? estimateUsage(canonical, completionChars) : usageBox.usage;
+				if (estimated) usageBox.usage = finalUsage;
 				recordUsage({
 					userId: auth.user.id,
 					apiKeyId: auth.key.id,
@@ -236,7 +247,7 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 					latencyMs: Date.now() - startedAt,
 					ttftMs: ttftTracker.value,
 					errorCode: hadError ? "stream_error" : undefined,
-					meta: { connection: upstream.connectionLabel, streaming: true, estimated: finalUsage !== usageBox.usage },
+					meta: { connection: upstream.connectionLabel, streaming: true, estimated },
 				});
 			},
 		});
@@ -263,6 +274,7 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 		const { result, error } = aggregateEvents(events);
 		if (!result) throw new UpstreamError(error?.message ?? "upstream error", 502, error?.code ?? "upstream_error", false);
 		const finalUsage = usageIsEmpty(result.usage) ? estimateUsage(canonical, completionChars) : result.usage;
+		result.usage = finalUsage;
 		recordUsage({
 			userId: auth.user.id,
 			apiKeyId: auth.key.id,

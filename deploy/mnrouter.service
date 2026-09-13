@@ -1,5 +1,5 @@
 [Unit]
-Description=MNRouter — internal AI gateway
+Description=MNRouter — internal AI gateway (Bun runtime)
 After=network-online.target
 Wants=network-online.target
 
@@ -10,10 +10,10 @@ Group=mnrouter
 WorkingDirectory=/opt/mnrouter
 EnvironmentFile=/etc/mnrouter.env
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node dist/server/index.js
+ExecStart=/usr/local/bin/bun src/server/index.ts
 Restart=always
 RestartSec=3
-# Wyse 3040 yếu — chặn RAM để không giết cả hệ thống
+# Wyse 3040 yếu — chặn RAM để không giết cả hệ thống (bun idle ~60-100MB)
 MemoryMax=512M
 MemoryHigh=384M
 NoNewPrivileges=true

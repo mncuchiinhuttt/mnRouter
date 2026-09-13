@@ -1,13 +1,13 @@
 /**
  * Import connections từ 9router (SQLite ~/.9router/db/data.sqlite) vào MNRouter.
- * Dùng: pnpm import-9router [path-to-data.sqlite]
+ * Dùng: bun scripts/import-9router.ts [path-to-data.sqlite]
  * Token trong 9router nằm plain JSON trong providerConnections.data.
  */
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { providerConnections } from "../src/server/db/schema.js";
-import { DatabaseSync } from "node:sqlite";
+import { Database } from "bun:sqlite";
 
 const sqlitePath = process.argv[2] ?? `${process.env.HOME}/.9router/db/data.sqlite`;
 const TARGET_PROVIDER: Record<string, string> = {
@@ -21,8 +21,8 @@ const TARGET_PROVIDER: Record<string, string> = {
 const client = postgres(process.env.DATABASE_URL!, { max: 1 });
 const db = drizzle(client, { schema: { providerConnections } });
 
-const sqlite = new DatabaseSync(sqlitePath, { readOnly: true });
-const rows = sqlite.prepare("SELECT id, provider, authType, name, priority, isActive, data FROM providerConnections").all() as Record<string, any>[];
+const sqlite = new Database(sqlitePath, { readonly: true });
+const rows = sqlite.query("SELECT id, provider, authType, name, priority, isActive, data FROM providerConnections").all() as Record<string, any>[];
 
 let imported = 0;
 for (const row of rows) {

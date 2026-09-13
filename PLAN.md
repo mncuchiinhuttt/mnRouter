@@ -24,15 +24,14 @@ Nguồn research:
 
 | Layer | Chọn | Lý do |
 |---|---|---|
-| Runtime | Node.js 22 LTS, ESM, TypeScript | có sẵn qua `n`, nhẹ, systemd chạy trực tiếp |
-| HTTP server | **Hono** + `@hono/node-server` | nhanh, API nhỏ gọn, hỗ trợ SSE/stream |
+| Runtime | **Bun** (TS native, không build server) | 1 binary, khởi động nhanh, RSS thấp, `bun test` sẵn | HTTP server | **Hono** trên `Bun.serve` | nhanh, API nhỏ gọn, hỗ trợ SSE/stream, static qua `hono/bun` |
 | ORM | **Drizzle ORM + drizzle-kit** → **Neon Postgres** | yêu cầu của bạn; Neon free tier, pooled connection |
 | Validate | zod | schema dùng chung client/server |
 | Mail | nodemailer + iCloud SMTP | đúng cách TestAppleMail đang làm |
 | Frontend | **Vite + React + Tailwind v4 + shadcn/ui** + TanStack Query + Recharts | yêu cầu của bạn |
 | Icons/font | lucide (shadcn ecosystem) / **Space Grotesk** (display) + **IBM Plex Mono** (data/label), self-host qua @fontsource | tech, khác font của Nous |
 | Test | vitest (unit) + e2e tự viết (mock upstream) | không cần infra ngoài |
-| Deploy | systemd + Caddy (TLS tự động) trên Wyse | không Docker |
+| Deploy | systemd + Caddy (TLS tự động) trên Wyse, **Bun** cài qua /usr/local/bin | không Docker |
 
 Repo layout (1 package duy nhất cho dễ maintain):
 
@@ -180,7 +179,7 @@ ADMIN_EMAIL=<email admin đầu tiên>     # bootstrap admin nếu DB rỗng
 
 ## 11. Deploy trên Wyse 3040 (không Docker)
 
-- Build **trên máy dev** (`pnpm build` → `dist/` + `web-dist/`), `deploy/deploy.sh` rsync artifact + `pnpm install --prod` + `drizzle-kit migrate` + restart systemd. Máy chỉ chạy node process duy nhất (~80-150MB RAM).
+- **Bun runtime**: server chạy `bun src/server/index.ts` trực tiếp (TS native). Build **web** ở máy dev (`bun run build` → `web-dist/`), `deploy/deploy.sh` rsync source + web-dist + `bun install --production` + `bun run scripts/migrate.ts` + restart systemd. Máy chỉ chạy 1 process bun (~60-100MB RAM).
 - systemd unit `mnrouter.service` (EnvironmentFile `/etc/mnrouter.env`, Restart=always, MemoryMax=512M).
 - Caddyfile: `router.mncuchiinhuttt.dev { reverse_proxy 127.0.0.1:8787 }` — Caddy tự HTTPS. (Caddy nhẹ ~40MB; nếu đã có nginx thì đổi, cấu hình tương đương.)
 - Backup: Neon giữ data; bản dump định kỳ bằng `pg_dump` cron (optional).
