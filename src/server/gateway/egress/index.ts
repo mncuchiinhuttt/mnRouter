@@ -6,6 +6,7 @@ import { buildClaudeRequest, ClaudeStreamParser, parseClaudeResponse } from "./c
 import { buildCodexRequest, CodexStreamParser, parseResponsesOutput } from "./codex.js";
 import { buildAntigravityRequest, createAntigravityParser, parseAntigravityResponse } from "./antigravity.js";
 import { buildKiroRequest, KiroStreamParser, parseKiroResult } from "./kiro.js";
+import { buildOpenAiChatRequest, OpenAiChatParser, parseOpenAiChatResponse } from "./openai-chat.js";
 
 export interface EgressConnectionInfo {
 	provider: ProviderId;
@@ -56,6 +57,12 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 			const { url, headers, body } = buildKiroRequest({ ...cfg, baseUrls: [base] }, req, conn.accessToken, conn.profileArn, conn.authMethod);
 			return { url, headers, body, parser: wrapKiro() };
 		}
+		case "grok":
+		case "opencode": {
+			const { url, headers, body } = buildOpenAiChatRequest({ ...cfg, baseUrls: [base] }, req, conn.accessToken, conn.provider, base);
+			const parser = new OpenAiChatParser();
+			return { url, headers, body, parser: { parse: (p) => parser.parse(p), finish: () => parser.finish() } };
+		}
 	}
 }
 
@@ -93,4 +100,4 @@ function wrapKiro() {
 	};
 }
 
-export { parseClaudeResponse, parseResponsesOutput, parseAntigravityResponse, parseKiroResult };
+export { parseClaudeResponse, parseResponsesOutput, parseAntigravityResponse, parseKiroResult, parseOpenAiChatResponse };

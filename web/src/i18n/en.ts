@@ -147,6 +147,7 @@ const en: Dict = {
 		desc: "Upstream OAuth accounts. The router refreshes tokens automatically, fails over by priority, and cools down on errors.",
 		oauthClaude: "OAuth Claude",
 		oauthKiro: "OAuth Kiro",
+		oauthGrok: "OAuth Grok",
 		importTokens: "Import tokens",
 		colTokenExpiry: "Token expiry",
 		colLastUsed: "Last used",
@@ -214,6 +215,24 @@ const en: Dict = {
 	},
 	errors: {
 		generic: "Something went wrong",
+	},
+	credits: {
+		credits: "CREDITS",
+		totalCredits: "TOTAL CREDITS",
+		monthCredits: "Credits this month",
+		creditBudget: "Monthly credit budget",
+		creditBudgetPlaceholder: "e.g. 50000 (= $500)",
+		unlimited: "∞",
+		priceIn: "In price (cr/1M)",
+		priceOut: "Out price (cr/1M)",
+		pricingTable: "AI credits pricing",
+		pricingDesc: "1 credit = $0.01 at each vendor's list API price. Cache read costs 10% of input, cache write 125%. Free models cost 0.",
+		usdPerM: "$/1M",
+		crPerM: "cr/1M",
+		free: "FREE",
+		colPrice: "Price (cr/1M in · out)",
+		opencodeFreeNote: "OpenCode Free needs no account (noAuth) — a connection is created automatically; free models rotate monthly.",
+		totalSpend: "Total credits",
 	},
 };
 

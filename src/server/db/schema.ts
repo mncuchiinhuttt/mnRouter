@@ -9,6 +9,7 @@ import {
 	jsonb,
 	bigserial,
 	date,
+	numeric,
 	primaryKey,
 	index,
 	uniqueIndex,
@@ -24,6 +25,8 @@ export const users = pgTable(
 		status: text("status", { enum: ["active", "disabled"] }).notNull().default("active"),
 		maxApiKeys: integer("max_api_keys").notNull().default(1),
 		monthlyTokenBudget: bigint("monthly_token_budget", { mode: "number" }),
+		/** Budget theo AI credits (1 credit = $0.01 giá API niêm yết). null = unlimited. */
+		monthlyCreditBudget: bigint("monthly_credit_budget", { mode: "number" }),
 		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 		disabledAt: timestamp("disabled_at", { withTimezone: true }),
 	},
@@ -86,9 +89,9 @@ export const providerConnections = pgTable(
 	"provider_connections",
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
-		provider: text("provider", { enum: ["claude", "codex", "antigravity", "kiro"] }).notNull(),
+		provider: text("provider", { enum: ["claude", "codex", "antigravity", "kiro", "grok", "opencode"] }).notNull(),
 		label: text("label").notNull(),
-		authType: text("auth_type", { enum: ["oauth", "api_key"] }).notNull().default("oauth"),
+		authType: text("auth_type", { enum: ["oauth", "api_key", "none"] }).notNull().default("oauth"),
 		priority: integer("priority").notNull().default(100),
 		isActive: boolean("is_active").notNull().default(true),
 		status: text("status", { enum: ["active", "cooldown", "expired", "error"] }).notNull().default("active"),
@@ -102,13 +105,16 @@ export const providerConnections = pgTable(
 
 export const models = pgTable("models", {
 	id: text("id").primaryKey(), // public model name, e.g. "claude-sonnet-4-5"
-	provider: text("provider", { enum: ["claude", "codex", "antigravity", "kiro"] }).notNull(),
+	provider: text("provider", { enum: ["claude", "codex", "antigravity", "kiro", "grok", "opencode"] }).notNull(),
 	upstreamModel: text("upstream_model").notNull(),
 	displayName: text("display_name").notNull(),
 	enabled: boolean("enabled").notNull().default(true),
 	priority: integer("priority").notNull().default(100),
 	contextWindow: integer("context_window").notNull().default(200000),
 	maxOutput: integer("max_output").notNull().default(8192),
+	/** Giá nội bộ theo AI credits (1 credit = $0.01 giá API niêm yết), tính trên 1M tokens. */
+	priceIn: integer("price_in").notNull().default(0),
+	priceOut: integer("price_out").notNull().default(0),
 	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -136,6 +142,8 @@ export const usageRequests = pgTable(
 		cacheReadTokens: bigint("cache_read_tokens", { mode: "number" }).notNull().default(0),
 		cacheWriteTokens: bigint("cache_write_tokens", { mode: "number" }).notNull().default(0),
 		reasoningTokens: bigint("reasoning_tokens", { mode: "number" }).notNull().default(0),
+		/** AI credits đã trừ cho request này (numeric 12,4). */
+		credits: numeric("credits", { precision: 12, scale: 4 }).notNull().default("0"),
 		latencyMs: integer("latency_ms"),
 		ttftMs: integer("ttft_ms"),
 		errorCode: text("error_code"),
@@ -157,6 +165,7 @@ export const usageDaily = pgTable(
 		completionTokens: bigint("completion_tokens", { mode: "number" }).notNull().default(0),
 		cacheReadTokens: bigint("cache_read_tokens", { mode: "number" }).notNull().default(0),
 		cacheWriteTokens: bigint("cache_write_tokens", { mode: "number" }).notNull().default(0),
+		credits: numeric("credits", { precision: 14, scale: 4 }).notNull().default("0"),
 	},
 	(t) => [primaryKey({ columns: [t.date, t.userId, t.provider, t.model] })],
 );

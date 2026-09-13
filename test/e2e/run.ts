@@ -120,6 +120,50 @@ function mockKiro(): Promise<Server> {
 	});
 }
 
+/** Grok (xai) — OpenAI chat.completions wire trên /v1/chat/completions */
+function mockGrok(): Promise<Server> {
+	return new Promise((resolve) => {
+		const s = createServer((req, res) => {
+			let body = "";
+			req.on("data", (d) => (body += d));
+			req.on("end", () => {
+				captured.grok = JSON.parse(body || "{}");
+				captured.grokAuth = req.headers.authorization;
+				sse(res, [
+					`data: ${JSON.stringify({ choices: [{ delta: { role: "assistant" } }] })}\n\n`,
+					`data: ${JSON.stringify({ choices: [{ delta: { content: "grok " } }] })}\n\n`,
+					`data: ${JSON.stringify({ choices: [{ delta: { content: "noi" } }] })}\n\n`,
+					`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 21, completion_tokens: 3, prompt_tokens_details: { cached_tokens: 4 } } })}\n\n`,
+					"data: [DONE]\n\n",
+				]);
+			});
+		});
+		s.listen(9995, "127.0.0.1", () => resolve(s));
+	});
+}
+
+/** OpenCode Free — /zen/v1/chat/completions noAuth (Bearer public) */
+function mockOpencode(): Promise<Server> {
+	return new Promise((resolve) => {
+		const s = createServer((req, res) => {
+			let body = "";
+			req.on("data", (d) => (body += d));
+			req.on("end", () => {
+				captured.opencode = JSON.parse(body || "{}");
+				captured.opencodeAuth = req.headers.authorization;
+				captured.opencodeClient = req.headers["x-opencode-client"];
+				sse(res, [
+					`data: ${JSON.stringify({ choices: [{ delta: { role: "assistant" } }] })}\n\n`,
+					`data: ${JSON.stringify({ choices: [{ delta: { content: "free model free" } }] })}\n\n`,
+					`data: ${JSON.stringify({ choices: [{ delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 50, completion_tokens: 6 } })}\n\n`,
+					"data: [DONE]\n\n",
+				]);
+			});
+		});
+		s.listen(9996, "127.0.0.1", () => resolve(s));
+	});
+}
+
 // ---------------- postgres ----------------
 async function startPostgres(): Promise<ChildProcess> {
 	// luôn start sạch: stop cluster cũ (nếu còn chạy) rồi initdb lại từ đầu
@@ -192,12 +236,14 @@ let pg: ChildProcess | null = null;
 
 try {
 	console.log("\n== 1. mock upstreams ==");
-	mocks.push(await mockClaude(), await mockCodex(), await mockAntigravity(), await mockKiro());
-	console.log("  ✅ 4 mocks on :9991-9994");
+	mocks.push(await mockClaude(), await mockCodex(), await mockAntigravity(), await mockKiro(), await mockGrok(), await mockOpencode());
+	console.log("  ✅ 6 mocks on :9991-9996");
 
 	console.log("\n== 2. postgres ==");
 	pg = await startPostgres();
-	await exec(`psql -h 127.0.0.1 -p ${PG_PORT} -U postgres -d mnrouter_e2e -f drizzle/0000_aspiring_gravity.sql`, "migrate");
+	for (const f of fs.readdirSync("drizzle").filter((f) => f.endsWith(".sql")).sort()) {
+		await exec(`psql -h 127.0.0.1 -p ${PG_PORT} -U postgres -d mnrouter_e2e -f drizzle/${f}`, `migrate ${f}`);
+	}
 
 	console.log("\n== 3. app ==");
 	app = await startApp();
@@ -236,6 +282,7 @@ try {
 		{ provider: "codex", label: "codex-1", priority: 1, tokens: { accessToken: "oat-good", accountId: "acc-777" }, base: "http://127.0.0.1:9992" },
 		{ provider: "antigravity", label: "ag-1", priority: 1, tokens: { accessToken: "ya29.good", projectId: "proj-1" }, base: "http://127.0.0.1:9993" },
 		{ provider: "kiro", label: "kiro-1", priority: 1, tokens: { accessToken: "kiro-tok" }, base: "http://127.0.0.1:9994" },
+		{ provider: "grok", label: "grok-1", priority: 1, tokens: { accessToken: "xai-tok-123" }, base: "http://127.0.0.1:9995" },
 	]) {
 		const r = await adminFetch("/api/admin/connections", {
 			method: "POST",
@@ -302,6 +349,31 @@ try {
 	ok(kiroJson.choices[0].message.tool_calls?.[0]?.function?.name === "read_file", "kiro tool call");
 	ok(captured.kiro.conversationState?.currentMessage?.userInputMessage?.modelId, "kiro wire: modelId trong currentMessage");
 
+	console.log("\n== 7b. Grok (openai-chat egress) ==");
+	const grokRes = await gw("/v1/chat/completions", { model: "grok-4", stream: true, messages: [{ role: "user", content: "grok?" }] });
+	ok(grokRes.status === 200, "grok stream 200", String(grokRes.status));
+	const grokChunks = (await readSse(grokRes)).filter((c) => c !== "[DONE]").map((c) => JSON.parse(c));
+	const grokText = grokChunks.map((d) => d.choices?.[0]?.delta?.content ?? "").join("");
+	ok(grokText === "grok noi", "grok SSE text", JSON.stringify(grokText));
+	const grokUsage = grokChunks.find((d) => d.usage);
+	ok(grokUsage?.usage?.prompt_tokens === 21, "grok usage chunk", JSON.stringify(grokUsage?.usage));
+	ok(captured.grok.model === "grok-4" && captured.grokAuth === "Bearer xai-tok-123", "grok wire: model + bearer");
+
+	console.log("\n== 7c. OpenCode Free (noAuth) ==");
+	// app tự seed connection opencode-free lúc boot — trỏ nó về mock
+	const conns0 = await (await adminFetch("/api/admin/connections")).json() as { connections: { id: string; provider: string; label: string }[] };
+	const ocConn = conns0.connections.find((x) => x.provider === "opencode");
+	ok(Boolean(ocConn), "opencode-free connection được seed sẵn");
+	if (ocConn) {
+		const pr = await adminFetch(`/api/admin/connections/${ocConn.id}`, { method: "PATCH", body: JSON.stringify({ baseUrlOverride: "http://127.0.0.1:9996" }) });
+		ok(pr.ok, "redirect opencode connection → mock");
+	}
+	const ocRes = await gw("/v1/chat/completions", { model: "big-pickle", stream: false, messages: [{ role: "user", content: "free?" }] });
+	const ocJson = (await ocRes.json()) as any;
+	ok(ocRes.status === 200 && ocJson.choices?.[0]?.message?.content === "free model free", "opencode text", JSON.stringify(ocJson.choices?.[0]?.message));
+	ok(captured.opencodeAuth === "Bearer public" && captured.opencodeClient === "desktop", "opencode wire: Bearer public + client header");
+	ok(ocJson.usage?.prompt_tokens === 50, "opencode usage");
+
 	console.log("\n== 8. models + errors + magic link + rotate ==");
 	const modelsRes = await fetch(`${BASE}/v1/models`, { headers: { authorization: `Bearer ${aliceKey}` } });
 	const modelsJson = (await modelsRes.json()) as any;
@@ -336,11 +408,23 @@ try {
 
 	console.log("\n== 9. usage tracking ==");
 	await sleep(2000); // recordUsage là fire-and-forget — chờ inserts kịp ghi
-	const usageRows = await db.query(`SELECT provider, model, status, prompt_tokens, completion_tokens FROM usage_requests ORDER BY id DESC LIMIT 12`);
-	ok(usageRows.length >= 6, `usage_requests ghi ${usageRows.length} rows: ${JSON.stringify(usageRows.map((r: any) => `${r.provider}/${r.status}`))}`);
+	const usageRows = await db.query(`SELECT provider, model, status, prompt_tokens, completion_tokens, credits FROM usage_requests ORDER BY id DESC LIMIT 12`);
+	ok(usageRows.length >= 8, `usage_requests ghi ${usageRows.length} rows: ${JSON.stringify(usageRows.map((r: any) => `${r.provider}/${r.status}`))}`);
 	ok(usageRows.some((r: any) => r.provider === "claude" && r.status === "ok" && Number(r.prompt_tokens) === 25), "claude usage tokens đúng");
 	ok(usageRows.some((r: any) => r.provider === "codex" && Number(r.prompt_tokens) === 40), "codex usage đúng");
 	ok(usageRows.some((r: any) => r.provider === "kiro" && Number(r.prompt_tokens) === 33), "kiro usage đúng");
+
+	console.log("\n== 9b. AI credits ==");
+	const grokRow = usageRows.find((r: any) => r.provider === "grok");
+	const grokCredits = Number(grokRow?.credits ?? 0);
+	// grok-4: 300 in / 1500 out → (21 + 4*0.1)/1e6*300 + 3/1e6*1500 = 0.01092
+	ok(Math.abs(grokCredits - 0.0109) < 0.001, `grok credits đúng (${grokCredits})`, String(grokCredits));
+	const ocRow = usageRows.find((r: any) => r.provider === "opencode");
+	ok(Number(ocRow?.credits ?? -1) === 0, `opencode free credits = 0 (${ocRow?.credits})`);
+	const claudeRow = usageRows.find((r: any) => r.provider === "claude" && Number(r.prompt_tokens) === 25);
+	ok(Number(claudeRow?.credits ?? 0) > 0, `claude credits > 0 (${claudeRow?.credits})`);
+	const { rows: dailyCreditsRows } = { rows: await db.query(`SELECT SUM(credits) AS total FROM usage_daily`) };
+	ok(Number(dailyCreditsRows[0]?.total ?? 0) > 0, "usage_daily aggregate credits > 0");
 	const dailyRows = await db.query(`SELECT * FROM usage_daily`);
 	ok(dailyRows.length >= 3, `usage_daily aggregate ${dailyRows.length} rows`);
 

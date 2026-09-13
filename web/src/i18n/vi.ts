@@ -145,6 +145,7 @@ const vi = {
 		desc: "Tài khoản OAuth upstream. Router tự refresh token, failover theo priority, cooldown khi lỗi.",
 		oauthClaude: "OAuth Claude",
 		oauthKiro: "OAuth Kiro",
+		oauthGrok: "OAuth Grok",
 		importTokens: "Import tokens",
 		colTokenExpiry: "Token hết hạn",
 		colLastUsed: "Last used",
@@ -212,6 +213,24 @@ const vi = {
 	},
 	errors: {
 		generic: "Có lỗi xảy ra",
+	},
+	credits: {
+		credits: "CREDITS",
+		totalCredits: "TOTAL CREDITS",
+		monthCredits: "Credits tháng này",
+		creditBudget: "Credit budget tháng",
+		creditBudgetPlaceholder: "vd 50000 (= $500)",
+		unlimited: "∞",
+		priceIn: "Giá in (cr/1M)",
+		priceOut: "Giá out (cr/1M)",
+		pricingTable: "Bảng giá AI credits",
+		pricingDesc: "1 credit = $0.01 theo giá API niêm yết của từng nhà. Cache read tính 10% giá in, cache write 125%. Model free = 0 credit.",
+		usdPerM: "$/1M",
+		crPerM: "cr/1M",
+		free: "FREE",
+		colPrice: "Giá (cr/1M in · out)",
+		opencodeFreeNote: "OpenCode Free không cần account (noAuth) — connection được tạo sẵn, models free xoay vòng theo tháng.",
+		totalSpend: "Tổng credits",
 	},
 };
 

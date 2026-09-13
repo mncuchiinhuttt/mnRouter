@@ -63,6 +63,14 @@ export async function refreshProviderToken(provider: ProviderId, data: Record<st
 		});
 		return res;
 	}
+	if (provider === "grok") {
+		return tokenRequest(cfg.oauth!.tokenUrl!, {
+			grant_type: "refresh_token",
+			refresh_token: refreshToken,
+			client_id: cfg.oauth!.clientId,
+			scope: cfg.oauth!.scopes,
+		});
+	}
 	if (provider === "antigravity") {
 		return tokenRequest(cfg.oauth!.tokenUrl!, {
 			grant_type: "refresh_token",
@@ -106,7 +114,7 @@ export async function refreshProviderToken(provider: ProviderId, data: Record<st
 	throw new UpstreamError("kiro refresh failed: no usable method", 401, "oauth_error", false);
 }
 
-/** Exchange an authorization code (PKCE) — claude & codex. */
+/** Exchange an authorization code (PKCE) — claude, codex & grok. */
 export async function exchangeCode(provider: ProviderId, code: string, verifier: string): Promise<TokenResult> {
 	if (provider === "claude") {
 		return tokenRequest(PROVIDERS.claude.oauth!.tokenUrl!, {
@@ -123,6 +131,15 @@ export async function exchangeCode(provider: ProviderId, code: string, verifier:
 			code,
 			client_id: PROVIDERS.codex.oauth!.clientId,
 			redirect_uri: "http://localhost:1455/auth/callback",
+			code_verifier: verifier,
+		});
+	}
+	if (provider === "grok") {
+		return tokenRequest(PROVIDERS.grok.oauth!.tokenUrl!, {
+			grant_type: "authorization_code",
+			code,
+			client_id: PROVIDERS.grok.oauth!.clientId,
+			redirect_uri: "http://127.0.0.1:56121/callback",
 			code_verifier: verifier,
 		});
 	}
@@ -157,6 +174,18 @@ export function authorizeUrl(provider: ProviderId, challenge: string, state: str
 			id_token_add_organizations: "true",
 			codex_cli_simplified_flow: "true",
 			originator: "codex_cli_rs",
+		});
+		return `${cfg.oauth!.authorizeUrl}?${params}`;
+	}
+	if (provider === "grok") {
+		const params = new URLSearchParams({
+			response_type: "code",
+			client_id: cfg.oauth!.clientId!,
+			redirect_uri: "http://127.0.0.1:56121/callback",
+			scope: cfg.oauth!.scopes!,
+			state,
+			code_challenge: challenge,
+			code_challenge_method: "S256",
 		});
 		return `${cfg.oauth!.authorizeUrl}?${params}`;
 	}

@@ -7,10 +7,12 @@ import { StatStrip, SpendArea } from "@web/components/usage-widgets";
 import type { Me } from "@web/components/shell";
 
 interface UsageResp {
-	totals: { promptTokens: number; completionTokens: number; cacheRead: number; cacheWrite: number; requests: number };
-	daily: { date: string; prompt_tokens: string; completion_tokens: string; requests: string }[];
+	totals: { promptTokens: number; completionTokens: number; cacheRead: number; cacheWrite: number; requests: number; credits: number };
+	daily: { date: string; prompt_tokens: string; completion_tokens: string; requests: string; credits: string }[];
 	budget: number | null;
 	usedThisMonth: number;
+	creditBudget: number | null;
+	usedCreditsThisMonth: number;
 }
 
 export default function Overview() {
@@ -20,6 +22,7 @@ export default function Overview() {
 
 	const daily = (data?.daily ?? []).slice(0, 30).reverse().map((d) => ({ date: d.date.slice(5), total: Number(d.prompt_tokens) + Number(d.completion_tokens) }));
 	const budgetPct = data?.budget ? Math.min(100, Math.round((data.usedThisMonth / data.budget) * 100)) : 0;
+	const creditPct = data?.creditBudget ? Math.min(100, Math.round((data.usedCreditsThisMonth / data.creditBudget) * 100)) : 0;
 
 	return (
 		<div className="space-y-10">
@@ -41,16 +44,34 @@ export default function Overview() {
 				) : (
 					<StatStrip
 						cells={[
-							{ label: t("overview.totalTokens"), value: fmtCompact((data?.totals.promptTokens ?? 0) + (data?.totals.completionTokens ?? 0)), highlight: true },
+							{ label: t("credits.totalCredits"), value: fmtCredit(data?.totals.credits), highlight: true },
+							{ label: t("overview.totalTokens"), value: fmtCompact((data?.totals.promptTokens ?? 0) + (data?.totals.completionTokens ?? 0)) },
 							{ label: t("overview.inputTokens"), value: fmtCompact(data?.totals.promptTokens) },
 							{ label: t("overview.outputTokens"), value: fmtCompact(data?.totals.completionTokens) },
 							{ label: t("overview.cacheReads"), value: fmtCompact(data?.totals.cacheRead) },
-							{ label: t("overview.cacheWrites"), value: fmtCompact(data?.totals.cacheWrite) },
 							{ label: t("overview.requests"), value: fmtNum(data?.totals.requests) },
 						]}
 					/>
 				)}
 			</section>
+
+			{data?.creditBudget != null && (
+				<section>
+					<h2 className="mb-4 text-2xl font-semibold tracking-tight sm:text-[28px]">{t("credits.creditBudget")}</h2>
+					<div className="rounded-lg border border-line bg-white p-5">
+						<div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+							<div className={(creditPct >= 100 ? "label-mono text-[#c6293b]" : "label-mono text-accent") + " "}>{creditPct >= 100 ? t("overview.budgetExceeded") : `${creditPct}% ${t("overview.budgetUsed")}`}</div>
+							<div className="font-mono text-sm text-ink-2">
+								{fmtNum(data.usedCreditsThisMonth)} / {fmtNum(data.creditBudget)} cr
+								<span className="text-ink-2/60"> (≈ ${(data.creditBudget / 100).toFixed(2)})</span>
+							</div>
+						</div>
+						<div className="h-2.5 w-full overflow-hidden rounded-full bg-paper-2">
+							<div className="h-full rounded-full transition-all" style={{ width: `${creditPct}%`, background: creditPct >= 100 ? "#c6293b" : "var(--color-accent)" }} />
+						</div>
+					</div>
+				</section>
+			)}
 
 			{data?.budget != null && (
 				<section>
@@ -77,6 +98,13 @@ export default function Overview() {
 			</section>
 		</div>
 	);
+}
+
+function fmtCredit(v: number | undefined): string {
+	const n = Number(v ?? 0);
+	if (n === 0) return "0";
+	if (n >= 1000) return `${(n / 1000).toFixed(2)}K`;
+	return n.toFixed(n < 10 ? 2 : 0).replace(/\.00$/, "");
 }
 
 export function EmptyChart({ message }: { message?: string }) {

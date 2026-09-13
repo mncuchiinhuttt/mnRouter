@@ -9,9 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@web/components/ui/tab
 import { TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
 
 interface UsageResp {
-	totals: { promptTokens: number; completionTokens: number; cacheRead: number; cacheWrite: number; requests: number };
-	daily: { date: string; prompt_tokens: string; completion_tokens: string; requests: string }[];
-	byModel: { model: string; provider: string; prompt_tokens: string; completion_tokens: string; requests: string }[];
+	totals: { promptTokens: number; completionTokens: number; cacheRead: number; cacheWrite: number; requests: number; credits: number };
+	daily: { date: string; prompt_tokens: string; completion_tokens: string; requests: string; credits: string }[];
+	byModel: { model: string; provider: string; prompt_tokens: string; completion_tokens: string; requests: string; credits: string }[];
 }
 
 export default function UsagePage() {
@@ -58,33 +58,35 @@ export default function UsagePage() {
 				<div className="rounded-lg border border-line bg-white">
 					<Table>
 						<THead>
-							<TR>
-								<TH>{t("usage.byModelTable")}</TH>
-								<TH>{t("common.provider")}</TH>
-								<TH className="text-right">{t("usage.input")}</TH>
-								<TH className="text-right">{t("usage.output")}</TH>
-								<TH className="text-right">{t("usage.requests")}</TH>
+						<TR>
+							<TH>{t("usage.byModelTable")}</TH>
+							<TH>{t("common.provider")}</TH>
+							<TH className="text-right">{t("usage.input")}</TH>
+							<TH className="text-right">{t("usage.output")}</TH>
+							<TH className="text-right">{t("usage.requests")}</TH>
+							<TH className="text-right">{t("credits.credits")}</TH>
+						</TR>
+					</THead>
+					<TBody>
+						{(data?.byModel ?? []).map((m) => (
+							<TR key={`${m.provider}/${m.model}`}>
+								<TD className="font-mono text-[13px]">{m.model}</TD>
+								<TD>
+									<span className="label-mono">{m.provider}</span>
+								</TD>
+								<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.prompt_tokens)}</TD>
+								<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.completion_tokens)}</TD>
+								<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.requests)}</TD>
+								<TD className="text-right font-mono text-[13px] tabular-nums">{Number(m.credits ?? 0) > 0 ? Number(m.credits).toFixed(2) : "—"}</TD>
 							</TR>
-						</THead>
-						<TBody>
-							{(data?.byModel ?? []).map((m) => (
-								<TR key={`${m.provider}/${m.model}`}>
-									<TD className="font-mono text-[13px]">{m.model}</TD>
-									<TD>
-										<span className="label-mono">{m.provider}</span>
-									</TD>
-									<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.prompt_tokens)}</TD>
-									<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.completion_tokens)}</TD>
-									<TD className="text-right font-mono text-[13px] tabular-nums">{fmtNum(m.requests)}</TD>
-								</TR>
-							))}
-							{(data?.byModel?.length ?? 0) === 0 && (
-								<TR>
-									<TD colSpan={5} className="py-10 text-center text-sm text-ink-2">
-										{t("usage.noUsage")}
-									</TD>
-								</TR>
-							)}
+						))}
+						{(data?.byModel?.length ?? 0) === 0 && (
+							<TR>
+								<TD colSpan={6} className="py-10 text-center text-sm text-ink-2">
+									{t("usage.noUsage")}
+								</TD>
+							</TR>
+						)}
 						</TBody>
 					</Table>
 				</div>

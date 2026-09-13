@@ -113,6 +113,9 @@ export default function AdminConnections() {
 					<Button variant="outline" onClick={() => startOauth("kiro")} disabled={oauthBusy !== null} className="flex-1 sm:flex-none">
 						<Link2 /> {t("adminConnections.oauthKiro")}
 					</Button>
+					<Button variant="outline" onClick={() => startOauth("grok")} disabled={oauthBusy !== null} className="flex-1 sm:flex-none">
+						<Link2 /> {t("adminConnections.oauthGrok")}
+					</Button>
 					<Button onClick={() => setImportOpen(true)} className="flex-1 sm:flex-none">
 						<Plus /> {t("adminConnections.importTokens")}
 					</Button>

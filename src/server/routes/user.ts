@@ -4,7 +4,7 @@ import { db } from "../db/index.js";
 import { apiKeys } from "../db/schema.js";
 import { requireAuth } from "../auth/guards.js";
 import { generateApiKey } from "../auth/crypto.js";
-import { usageSummary, monthlyTokensForUser } from "../usage/index.js";
+import { usageSummary, monthlyTokensForUser, monthlyCreditsForUser } from "../usage/index.js";
 
 export function userRoutes() {
 	const app = new Hono();
@@ -59,7 +59,8 @@ export function userRoutes() {
 		const user = c.get("user");
 		const summary = await usageSummary(user.id);
 		const usedThisMonth = await monthlyTokensForUser(user.id);
-		return c.json({ ...summary, budget: user.monthlyTokenBudget, usedThisMonth });
+		const usedCreditsThisMonth = await monthlyCreditsForUser(user.id);
+		return c.json({ ...summary, budget: user.monthlyTokenBudget, usedThisMonth, creditBudget: user.monthlyCreditBudget, usedCreditsThisMonth });
 	});
 
 	return app;

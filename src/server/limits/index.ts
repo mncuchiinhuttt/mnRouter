@@ -1,8 +1,8 @@
-/** Rate limit in-memory token bucket per API key + monthly budget check. */
+/** Rate limit in-memory token bucket per API key + monthly budget check (tokens & credits). */
 import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { settings as settingsTable } from "../db/schema.js";
-import { monthlyTokensForUser } from "../usage/index.js";
+import { monthlyTokensForUser, monthlyCreditsForUser } from "../usage/index.js";
 import { DEFAULT_SETTINGS } from "../gateway/registry.js";
 
 const buckets = new Map<string, { tokens: number; updated: number }>();
@@ -33,10 +33,26 @@ export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boole
 	return { allowed: true, retryAfter: 0 };
 }
 
-export async function checkBudget(user: { id: string; monthlyTokenBudget: number | null }): Promise<{ allowed: boolean; used: number; budget: number | null }> {
-	if (user.monthlyTokenBudget === null || user.monthlyTokenBudget <= 0) {
-		return { allowed: true, used: 0, budget: user.monthlyTokenBudget };
-	}
-	const used = await monthlyTokensForUser(user.id);
-	return { allowed: used < user.monthlyTokenBudget, used, budget: user.monthlyTokenBudget };
+export interface BudgetCheck {
+	allowed: boolean;
+	reason?: "tokens" | "credits";
+	usedTokens: number;
+	tokenBudget: number | null;
+	usedCredits: number;
+	creditBudget: number | null;
+}
+
+export async function checkBudget(user: { id: string; monthlyTokenBudget: number | null; monthlyCreditBudget: number | null }): Promise<BudgetCheck> {
+	const usedTokens = await monthlyTokensForUser(user.id);
+	const usedCredits = await monthlyCreditsForUser(user.id);
+	const tokenExceeded = user.monthlyTokenBudget != null && user.monthlyTokenBudget > 0 && usedTokens >= user.monthlyTokenBudget;
+	const creditExceeded = user.monthlyCreditBudget != null && user.monthlyCreditBudget > 0 && usedCredits >= user.monthlyCreditBudget;
+	return {
+		allowed: !tokenExceeded && !creditExceeded,
+		reason: tokenExceeded ? "tokens" : creditExceeded ? "credits" : undefined,
+		usedTokens,
+		tokenBudget: user.monthlyTokenBudget,
+		usedCredits,
+		creditBudget: user.monthlyCreditBudget,
+	};
 }

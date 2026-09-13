@@ -9,7 +9,7 @@ import { db } from "../db/index.js";
 import { models as modelsTable } from "../db/schema.js";
 import { authenticateApiKey } from "../auth/guards.js";
 import { checkBudget, checkRateLimit } from "../limits/index.js";
-import { recordUsage } from "../usage/index.js";
+import { recordUsage, computeCredits } from "../usage/index.js";
 import type { CanonicalRequest, StreamEvent, CanonicalUsage } from "../gateway/canonical.js";
 import { UpstreamError, emptyUsage } from "../gateway/canonical.js";
 import type { ProviderId } from "../gateway/registry.js";
@@ -53,14 +53,14 @@ function errorResponse(kind: IngressKind, status: number, message: string, code:
 	return openAiError(status, message, code);
 }
 
-async function resolveModel(raw: string | undefined): Promise<{ id: string; provider: ProviderId; upstreamModel: string } | null> {
+async function resolveModel(raw: string | undefined): Promise<{ id: string; provider: ProviderId; upstreamModel: string; priceIn: number; priceOut: number } | null> {
 	if (!raw) return null;
 	const id = raw.includes("/") ? raw.split("/").slice(1).join("/") : raw;
 	const [row] = await db
 		.select()
 		.from(modelsTable)
 		.where(and(eq(modelsTable.id, id), eq(modelsTable.enabled, true)));
-	if (row) return { id: row.id, provider: row.provider as ProviderId, upstreamModel: row.upstreamModel };
+	if (row) return { id: row.id, provider: row.provider as ProviderId, upstreamModel: row.upstreamModel, priceIn: row.priceIn, priceOut: row.priceOut };
 	// fallback: model không có trong bảng → thử dùng chính nó làm upstream (admin tự thêm nếu muốn chặn)
 	return null;
 }
@@ -139,7 +139,7 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 		});
 	}
 
-	// 3. budget
+	// 3. budget (tokens & credits)
 	const budget = await checkBudget(auth.user);
 	if (!budget.allowed) {
 		recordUsage({
@@ -152,9 +152,13 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 			status: "budget_exceeded",
 			httpStatus: 429,
 			errorCode: "budget_exceeded",
-			meta: { used: budget.used, budget: budget.budget },
+			meta: { reason: budget.reason, usedTokens: budget.usedTokens, tokenBudget: budget.tokenBudget, usedCredits: budget.usedCredits, creditBudget: budget.creditBudget },
 		});
-		return errorResponse(kind, 429, `Monthly token budget exceeded (${budget.used}/${budget.budget}). Contact your admin.`, "budget_exceeded");
+		const msg =
+			budget.reason === "credits"
+				? `Monthly credit budget exceeded (${budget.usedCredits}/${budget.creditBudget} cr). Contact your admin.`
+				: `Monthly token budget exceeded (${budget.usedTokens}/${budget.tokenBudget}). Contact your admin.`;
+		return errorResponse(kind, 429, msg, "budget_exceeded");
 	}
 
 	// 4. resolve model + parse ingress
@@ -244,6 +248,7 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 					endpoint: kind,
 					status: hadError ? "error" : "ok",
 					usage: finalUsage,
+					credits: computeCredits(resolved.priceIn, resolved.priceOut, finalUsage),
 					latencyMs: Date.now() - startedAt,
 					ttftMs: ttftTracker.value,
 					errorCode: hadError ? "stream_error" : undefined,
@@ -284,9 +289,10 @@ async function handleGateway(c: { req: { raw: Request; text(): Promise<string> }
 			endpoint: kind,
 			status: "ok",
 			usage: finalUsage,
+			credits: computeCredits(resolved.priceIn, resolved.priceOut, finalUsage),
 			latencyMs: Date.now() - startedAt,
 			ttftMs: ttftTracker.value,
-			meta: { connection: upstream.connectionLabel, streaming: false, estimated: finalUsage !== result.usage },
+			meta: { connection: upstream.connectionLabel, streaming: false },
 		});
 		return Response.json(formatter.formatNonStream(result, resolved.id));
 	} catch (err) {

@@ -19,9 +19,11 @@ interface UsersResp {
 		status: "active" | "disabled";
 		maxApiKeys: number;
 		monthlyTokenBudget: number | null;
+		monthlyCreditBudget: number | null;
 		createdAt: string;
 		activeKeys: number;
 		totalTokens: number;
+		totalCredits: number;
 	}[];
 }
 
@@ -30,7 +32,7 @@ export default function AdminUsers() {
 	const qc = useQueryClient();
 	const { data, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => api<UsersResp>("/api/admin/users") });
 	const [createOpen, setCreateOpen] = useState(false);
-	const [form, setForm] = useState({ email: "", displayName: "", maxApiKeys: 1, monthlyTokenBudget: "" as string, role: "user" as "user" | "admin" });
+	const [form, setForm] = useState({ email: "", displayName: "", maxApiKeys: 1, monthlyTokenBudget: "" as string, monthlyCreditBudget: "" as string, role: "user" as "user" | "admin" });
 	const [newKey, setNewKey] = useState<{ key: string; email: string } | null>(null);
 	const [editing, setEditing] = useState<UsersResp["users"][number] | null>(null);
 
@@ -41,12 +43,13 @@ export default function AdminUsers() {
 				displayName: form.displayName || undefined,
 				maxApiKeys: Number(form.maxApiKeys),
 				monthlyTokenBudget: form.monthlyTokenBudget ? Number(form.monthlyTokenBudget) : null,
+				monthlyCreditBudget: form.monthlyCreditBudget ? Number(form.monthlyCreditBudget) : null,
 				role: form.role,
 			}),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["admin-users"] });
 			setCreateOpen(false);
-			setForm({ email: "", displayName: "", maxApiKeys: 1, monthlyTokenBudget: "", role: "user" });
+			setForm({ email: "", displayName: "", maxApiKeys: 1, monthlyTokenBudget: "", monthlyCreditBudget: "", role: "user" });
 			toast.success(t("adminUsers.createdToast"));
 		},
 		onError: (e) => toast.error((e as Error).message),
@@ -91,6 +94,7 @@ export default function AdminUsers() {
 							<TH>{t("common.email")}</TH>
 							<TH>Role</TH>
 							<TH>{t("adminUsers.colKeys")}</TH>
+							<TH className="text-right">{t("credits.totalSpend")}</TH>
 							<TH className="text-right">{t("adminUsers.colTotalTokens")}</TH>
 							<TH>{t("adminUsers.colBudget")}</TH>
 							<TH>{t("common.status")}</TH>
@@ -100,7 +104,7 @@ export default function AdminUsers() {
 					<TBody>
 						{isLoading && (
 							<TR>
-								<TD colSpan={7} className="py-8 text-center text-sm text-ink-2">
+								<TD colSpan={8} className="py-8 text-center text-sm text-ink-2">
 									{t("common.loading")}
 								</TD>
 							</TR>
@@ -119,8 +123,14 @@ export default function AdminUsers() {
 										</Button>
 									)}
 								</TD>
+								<TD className="text-right font-mono text-[13px] tabular-nums">
+									{Number(u.totalCredits).toLocaleString("en-US", { maximumFractionDigits: 2 })} cr
+								</TD>
 								<TD className="text-right font-mono text-[13px] tabular-nums">{fmtCompact(u.totalTokens)}</TD>
-								<TD className="font-mono text-[13px]">{u.monthlyTokenBudget ? fmtCompact(u.monthlyTokenBudget) : "∞"}</TD>
+								<TD className="font-mono text-[12px]">
+									<div>tok: {u.monthlyTokenBudget ? fmtCompact(u.monthlyTokenBudget) : "∞"}</div>
+									<div className="text-ink-2">cr: {u.monthlyCreditBudget ? fmtCompact(u.monthlyCreditBudget) : "∞"}</div>
+								</TD>
 								<TD>
 									<div className="flex items-center gap-2">
 										<Switch checked={u.status === "active"} onCheckedChange={(v) => patchUser.mutate({ id: u.id, status: v ? "active" : "disabled" })} />
@@ -164,6 +174,10 @@ export default function AdminUsers() {
 								<Input id="u-budget" inputMode="numeric" value={form.monthlyTokenBudget} onChange={(e) => setForm({ ...form, monthlyTokenBudget: e.target.value.replace(/\D/g, "") })} placeholder={t("adminUsers.budgetPlaceholder")} />
 							</div>
 						</div>
+						<div>
+							<Label htmlFor="u-credit-budget">{t("credits.creditBudget")}</Label>
+							<Input id="u-credit-budget" inputMode="numeric" value={form.monthlyCreditBudget} onChange={(e) => setForm({ ...form, monthlyCreditBudget: e.target.value.replace(/\D/g, "") })} placeholder={t("credits.creditBudgetPlaceholder")} />
+						</div>
 						<div className="flex items-center gap-2">
 							<Label className="pt-1">{t("adminUsers.role")}</Label>
 							<select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "user" | "admin" })} className="h-9 rounded-sm border border-line bg-white px-3 text-sm">
@@ -205,13 +219,34 @@ export default function AdminUsers() {
 									onChange={(e) => setEditing({ ...editing, monthlyTokenBudget: e.target.value.replace(/\D/g, "") ? Number(e.target.value.replace(/\D/g, "")) : null })}
 								/>
 							</div>
+							<div className="sm:col-span-2">
+								<Label>{t("credits.creditBudget")}</Label>
+								<Input
+									inputMode="numeric"
+									value={editing.monthlyCreditBudget ?? ""}
+									placeholder="∞"
+									onChange={(e) => setEditing({ ...editing, monthlyCreditBudget: e.target.value.replace(/\D/g, "") ? Number(e.target.value.replace(/\D/g, "")) : null })}
+								/>
+							</div>
 						</div>
 					)}
 					<DialogFooter>
 						<Button variant="outline" onClick={() => setEditing(null)}>
 							{t("common.cancel")}
 						</Button>
-						<Button onClick={() => editing && patchUser.mutate({ id: editing.id, maxApiKeys: editing.maxApiKeys, monthlyTokenBudget: editing.monthlyTokenBudget })}>{t("common.save")}</Button>
+						<Button
+							onClick={() =>
+								editing &&
+								patchUser.mutate({
+									id: editing.id,
+									maxApiKeys: editing.maxApiKeys,
+									monthlyTokenBudget: editing.monthlyTokenBudget,
+									monthlyCreditBudget: editing.monthlyCreditBudget,
+								})
+							}
+						>
+							{t("common.save")}
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

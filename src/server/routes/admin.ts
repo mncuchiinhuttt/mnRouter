@@ -29,9 +29,11 @@ export function adminRoutes() {
 				status: users.status,
 				maxApiKeys: users.maxApiKeys,
 				monthlyTokenBudget: users.monthlyTokenBudget,
+				monthlyCreditBudget: users.monthlyCreditBudget,
 				createdAt: users.createdAt,
 				activeKeys: sql<number>`(SELECT COUNT(*) FROM api_keys k WHERE k.user_id = ${users.id} AND k.revoked_at IS NULL)`,
 				totalTokens: sql<number>`COALESCE((SELECT SUM(prompt_tokens + completion_tokens) FROM usage_daily u WHERE u.user_id = ${users.id}), 0)`,
+				totalCredits: sql<number>`COALESCE((SELECT SUM(credits) FROM usage_daily u WHERE u.user_id = ${users.id}), 0)`,
 			})
 			.from(users)
 			.orderBy(users.createdAt);
@@ -43,6 +45,7 @@ export function adminRoutes() {
 		displayName: z.string().optional(),
 		maxApiKeys: z.number().int().min(0).max(50).default(1),
 		monthlyTokenBudget: z.number().int().nullable().default(null),
+		monthlyCreditBudget: z.number().int().nullable().default(null),
 		role: z.enum(["admin", "user"]).default("user"),
 	});
 
@@ -59,6 +62,7 @@ export function adminRoutes() {
 				displayName: body.data.displayName,
 				maxApiKeys: body.data.maxApiKeys,
 				monthlyTokenBudget: body.data.monthlyTokenBudget,
+				monthlyCreditBudget: body.data.monthlyCreditBudget,
 				role: body.data.role,
 			})
 			.returning();
@@ -72,6 +76,7 @@ export function adminRoutes() {
 		const patch: Record<string, unknown> = {};
 		if (body.maxApiKeys !== undefined) patch.maxApiKeys = Number(body.maxApiKeys);
 		if (body.monthlyTokenBudget !== undefined) patch.monthlyTokenBudget = body.monthlyTokenBudget === null ? null : Number(body.monthlyTokenBudget);
+		if (body.monthlyCreditBudget !== undefined) patch.monthlyCreditBudget = body.monthlyCreditBudget === null ? null : Number(body.monthlyCreditBudget);
 		if (body.status !== undefined && ["active", "disabled"].includes(body.status)) patch.status = body.status;
 		if (body.displayName !== undefined) patch.displayName = body.displayName;
 		const [user] = await db.update(users).set(patch).where(eq(users.id, id)).returning();
@@ -156,7 +161,7 @@ export function adminRoutes() {
 	});
 
 	const importConnectionSchema = z.object({
-		provider: z.enum(["claude", "codex", "antigravity", "kiro"]),
+		provider: z.enum(["claude", "codex", "antigravity", "kiro", "grok", "opencode"]),
 		label: z.string().min(1).max(80),
 		priority: z.number().int().default(100),
 		tokens: z.object({
@@ -315,7 +320,7 @@ export function adminRoutes() {
 		const id = c.req.param("id");
 		const body = await c.req.json().catch(() => ({}));
 		const patch: Record<string, unknown> = {};
-		for (const key of ["enabled", "upstreamModel", "priority", "displayName", "maxOutput", "contextWindow"]) {
+		for (const key of ["enabled", "upstreamModel", "priority", "displayName", "maxOutput", "contextWindow", "priceIn", "priceOut"]) {
 			if (body[key] !== undefined) patch[key] = body[key];
 		}
 		const [row] = await db.update(modelsTable).set(patch).where(eq(modelsTable.id, id)).returning();
@@ -328,10 +333,12 @@ export function adminRoutes() {
 		const body = await c.req.json().catch(() => ({}));
 		const schema = z.object({
 			id: z.string().min(1),
-			provider: z.enum(["claude", "codex", "antigravity", "kiro"]),
+			provider: z.enum(["claude", "codex", "antigravity", "kiro", "grok", "opencode"]),
 			upstreamModel: z.string().min(1),
 			displayName: z.string().optional(),
 			priority: z.number().int().default(100),
+			priceIn: z.number().int().min(0).default(0),
+			priceOut: z.number().int().min(0).default(0),
 		});
 		const parsed = schema.safeParse(body);
 		if (!parsed.success) return c.json({ error: "invalid_input", details: parsed.error.flatten() }, 400);
@@ -399,6 +406,7 @@ export function adminRoutes() {
 				cacheReadTokens: usageRequests.cacheReadTokens,
 				cacheWriteTokens: usageRequests.cacheWriteTokens,
 				reasoningTokens: usageRequests.reasoningTokens,
+				credits: usageRequests.credits,
 				latencyMs: usageRequests.latencyMs,
 				ttftMs: usageRequests.ttftMs,
 				errorCode: usageRequests.errorCode,
@@ -432,11 +440,34 @@ export function adminRoutes() {
 	return app;
 }
 
-/** Seed bảng models nếu rỗng (gọi lúc boot). */
+/** Seed bảng models (insert các id còn thiếu) + đảm bảo có connection opencode free. Gọi lúc boot. */
 export async function seedModels() {
-	const modelCount = (await db.select({ count: sql<number>`COUNT(*)::int` }).from(modelsTable))[0]?.count ?? 0;
-	if (modelCount === 0) {
-		await db.insert(modelsTable).values(DEFAULT_MODELS.map((m) => ({ ...m })));
-		console.log(`[seed] inserted ${DEFAULT_MODELS.length} default models`);
+	const existing = await db.select({ id: modelsTable.id }).from(modelsTable);
+	const have = new Set(existing.map((r) => r.id));
+	const missing = DEFAULT_MODELS.filter((m) => !have.has(m.id));
+	if (missing.length > 0) {
+		await db.insert(modelsTable).values(missing.map((m) => ({ ...m })));
+		console.log(`[seed] inserted ${missing.length} new default models`);
+	}
+	// backfill giá cho model cũ chưa có giá (chỉ fill khi đang = 0/0, không đè giá admin tự sửa)
+	for (const m of DEFAULT_MODELS) {
+		if (m.priceIn > 0 || m.priceOut > 0) {
+			await db
+				.update(modelsTable)
+				.set({ priceIn: m.priceIn, priceOut: m.priceOut })
+				.where(and(eq(modelsTable.id, m.id), eq(modelsTable.priceIn, 0), eq(modelsTable.priceOut, 0)));
+		}
+	}
+	// opencode free là noAuth — chỉ cần 1 connection rỗng để router có gì đó để chọn
+	const oc = await db.select({ id: providerConnections.id }).from(providerConnections).where(eq(providerConnections.provider, "opencode")).limit(1);
+	if (oc.length === 0) {
+		await db.insert(providerConnections).values({
+			provider: "opencode",
+			label: "opencode-free",
+			authType: "none",
+			priority: 10,
+			data: {},
+		});
+		console.log("[seed] created opencode-free connection");
 	}
 }

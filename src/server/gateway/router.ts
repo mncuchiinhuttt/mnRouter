@@ -93,6 +93,8 @@ async function markExpired(conn: ConnRow, error: string) {
 export async function ensureFreshToken(conn: ConnRow): Promise<string> {
 	const d = dataOf(conn);
 	const provider = conn.provider as ProviderId;
+	// provider noAuth (opencode free) — không cần token
+	if (PROVIDERS[provider].noAuth) return "";
 	const expiresAt = typeof d.expiresAt === "number" ? d.expiresAt : d.expiresAt ? new Date(d.expiresAt as string).getTime() : undefined;
 	const lead = PROVIDERS[provider].oauth?.refreshLeadMs ?? 60_000;
 	if (d.accessToken && (!expiresAt || Date.now() + lead < expiresAt)) return d.accessToken as string;
