@@ -3,17 +3,14 @@ import { fmtCompact, fmtNum } from "@web/lib/utils";
 
 export function StatStrip({ cells }: { cells: { label: string; value: string; highlight?: boolean }[] }) {
 	return (
-		<div className="grid grid-cols-2 border border-line bg-white sm:grid-cols-3 lg:grid-cols-6">
-			{cells.map((cell, i) => (
+		<div className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
+			{cells.map((cell) => (
 				<div
 					key={cell.label}
-					className={
-						"flex min-h-[104px] flex-col justify-between border-line p-4 [&:not(:last-child)]:border-r max-lg:[&:nth-child(-n+4)]:border-b max-sm:[&:nth-child(-n+5)]:border-b" +
-						(i === cells.length - 1 ? " max-lg:[&:nth-child(3)]:border-r-0" : "")
-					}
-					style={cell.highlight ? { background: "var(--color-accent)", borderColor: "var(--color-accent)" } : undefined}
+					className="flex min-h-[96px] flex-col justify-between gap-3 p-4 sm:min-h-[104px]"
+					style={cell.highlight ? { background: "var(--color-accent)" } : { background: "var(--color-paper)" }}
 				>
-					<div className={"stat-number text-[34px] leading-none " + (cell.highlight ? "text-white" : "text-ink")}>{cell.value}</div>
+					<div className={"stat-number text-[30px] leading-none sm:text-[34px] " + (cell.highlight ? "text-white" : "text-ink")}>{cell.value}</div>
 					<div className={"label-mono " + (cell.highlight ? "text-white/80" : "text-ink-2")}>{cell.label}</div>
 				</div>
 			))}

@@ -1,0 +1,19 @@
+[Unit]
+Description=Cloudflare Tunnel — expose MNRouter (router.mncuchiinhuttt.dev)
+After=network-online.target mnrouter.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel run --token-file /etc/cloudflared/token
+Restart=always
+RestartSec=5
+# IP nhà chung cư là IP động — tunnel outbound nên không cần mở port nào
+MemoryMax=128M
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

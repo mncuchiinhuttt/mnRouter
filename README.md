@@ -52,12 +52,21 @@ SMOKE_KEY=mr_... SMOKE_BASE=http://127.0.0.1:8787 bun run smoke claude-sonnet-4.
 
 ## Deploy lên Wyse 3040
 
+**Public exposure: Cloudflare Tunnel** — IP nhà chung cư là IP động nên không mở port, không cần TLS cert local (Cloudflare đứng trước, app chỉ nghe HTTP nội bộ).
+
 1. Cài Bun trên Wyse: `curl -fsSL https://bun.sh/install | bash && sudo ln -sf ~/.bun/bin/bun /usr/local/bin/bun`
 2. Tạo user + dir: `sudo useradd -r mnrouter && sudo mkdir -p /opt/mnrouter`
 3. `/etc/mnrouter.env` (mode 600) — xem `.env.example`; `NODE_ENV=production`, `APP_URL=https://router.mncuchiinhuttt.dev`
 4. Copy `deploy/mnrouter.service` → `/etc/systemd/system/`, `systemctl enable --now mnrouter`
-5. Cài Caddy, copy `deploy/Caddyfile` → `/etc/caddy/Caddyfile`, trỏ DNS A record của `router.mncuchiinhuttt.dev` về IP Wyse, `systemctl reload caddy` (TLS tự động)
-6. Deploy mỗi lần cập nhật: `./deploy/deploy.sh user@wyse-host` (build web ở máy dev, rsync source + web-dist, migrate, restart — không build trên Wyse)
+5. **Cloudflare Tunnel**: tạo tunnel trong Cloudflare Zero Trust dashboard → public hostname `router.mncuchiinhuttt.dev` → service `http://localhost:8787` → copy token:
+   ```
+   sudo mkdir -p /etc/cloudflared && sudo chmod 700 /etc/cloudflared
+   echo "<tunnel-token>" | sudo tee /etc/cloudflared/token > /dev/null
+   # cài cloudflared (amd64 .deb từ github.com/cloudflare/cloudflared/releases) rồi:
+   sudo cp deploy/cloudflared.service /etc/systemd/system/
+   sudo systemctl enable --now cloudflared
+   ```
+6. Deploy mỗi lần cập nhật: `./deploy/deploy.sh user@wyse-host` (build web ở máy dev, rsync source + web-dist, migrate, restart — không build trên Wyse; tunnel không cần đụng tới)
 
 Server production chạy `bun src/server/index.ts` trực tiếp (Bun chạy TS native — không cần bước build server).
 

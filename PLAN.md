@@ -31,7 +31,7 @@ Nguồn research:
 | Frontend | **Vite + React + Tailwind v4 + shadcn/ui** + TanStack Query + Recharts | yêu cầu của bạn |
 | Icons/font | lucide (shadcn ecosystem) / **Space Grotesk** (display) + **IBM Plex Mono** (data/label), self-host qua @fontsource | tech, khác font của Nous |
 | Test | vitest (unit) + e2e tự viết (mock upstream) | không cần infra ngoài |
-| Deploy | systemd + Caddy (TLS tự động) trên Wyse, **Bun** cài qua /usr/local/bin | không Docker |
+| Deploy | systemd + **Cloudflare Tunnel** (IP động — không mở port, TLS ở Cloudflare), **Bun** qua /usr/local/bin | không Docker |
 
 Repo layout (1 package duy nhất cho dễ maintain):
 
@@ -39,7 +39,7 @@ Repo layout (1 package duy nhất cho dễ maintain):
 mnRouter/
 ├─ PLAN.md, README.md, .env.example
 ├─ package.json / tsconfig.json / vite.config.ts / drizzle.config.ts
-├─ deploy/            # mnrouter.service, Caddyfile, deploy.sh, setup-wyse.md
+├─ deploy/            # mnrouter.service, cloudflared.service, deploy.sh, setup-wyse.md
 ├─ src/
 │  ├─ server/
 │  │  ├─ index.ts            # bootstrap: hono app + static + refresher cron
@@ -181,7 +181,7 @@ ADMIN_EMAIL=<email admin đầu tiên>     # bootstrap admin nếu DB rỗng
 
 - **Bun runtime**: server chạy `bun src/server/index.ts` trực tiếp (TS native). Build **web** ở máy dev (`bun run build` → `web-dist/`), `deploy/deploy.sh` rsync source + web-dist + `bun install --production` + `bun run scripts/migrate.ts` + restart systemd. Máy chỉ chạy 1 process bun (~60-100MB RAM).
 - systemd unit `mnrouter.service` (EnvironmentFile `/etc/mnrouter.env`, Restart=always, MemoryMax=512M).
-- Caddyfile: `router.mncuchiinhuttt.dev { reverse_proxy 127.0.0.1:8787 }` — Caddy tự HTTPS. (Caddy nhẹ ~40MB; nếu đã có nginx thì đổi, cấu hình tương đương.)
+- **Exposure qua Cloudflare Tunnel** (`deploy/cloudflared.service`): tunnel outbound từ Wyse → không cần mở port/DNS trỏ IP (IP chung cư là IP động); public hostname `router.mncuchiinhuttt.dev` → `http://localhost:8787`; TLS terminate ở Cloudflare, app chỉ nghe HTTP nội bộ.
 - Backup: Neon giữ data; bản dump định kỳ bằng `pg_dump` cron (optional).
 
 ## 12. Kiểm thử (tự test toàn bộ)

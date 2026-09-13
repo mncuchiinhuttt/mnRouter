@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, KeyRound, Copy, Ban } from "lucide-react";
+import { Plus, KeyRound, Copy } from "lucide-react";
 import { api, apiJson } from "@web/lib/api";
-import { fmtCompact, fmtDate } from "@web/lib/utils";
+import { fmtCompact } from "@web/lib/utils";
 import { Button } from "@web/components/ui/button";
 import { Badge, Input, Label, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@web/components/ui/dialog";
@@ -25,6 +26,7 @@ interface UsersResp {
 }
 
 export default function AdminUsers() {
+	const { t } = useTranslation();
 	const qc = useQueryClient();
 	const { data, isLoading } = useQuery({ queryKey: ["admin-users"], queryFn: () => api<UsersResp>("/api/admin/users") });
 	const [createOpen, setCreateOpen] = useState(false);
@@ -45,7 +47,7 @@ export default function AdminUsers() {
 			qc.invalidateQueries({ queryKey: ["admin-users"] });
 			setCreateOpen(false);
 			setForm({ email: "", displayName: "", maxApiKeys: 1, monthlyTokenBudget: "", role: "user" });
-			toast.success("Đã tạo user. User tự login bằng magic link.");
+			toast.success(t("adminUsers.createdToast"));
 		},
 		onError: (e) => toast.error((e as Error).message),
 	});
@@ -65,20 +67,20 @@ export default function AdminUsers() {
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["admin-users"] });
 			setEditing(null);
-			toast.success("Đã lưu");
+			toast.success(t("adminUsers.savedToast"));
 		},
 		onError: (e) => toast.error((e as Error).message),
 	});
 
 	return (
 		<div className="space-y-8">
-			<header className="flex items-end justify-between">
+			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="text-[44px] font-semibold leading-none tracking-tight">Users</h1>
-					<p className="mt-3 text-[15px] text-ink-2">Tạo user, cấp số key tối đa và budget token hàng tháng. User login bằng magic link — không có mật khẩu.</p>
+					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("adminUsers.title")}</h1>
+					<p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">{t("adminUsers.desc")}</p>
 				</div>
-				<Button onClick={() => setCreateOpen(true)}>
-					<Plus /> Tạo user
+				<Button onClick={() => setCreateOpen(true)} className="shrink-0">
+					<Plus /> {t("adminUsers.create")}
 				</Button>
 			</header>
 
@@ -86,19 +88,21 @@ export default function AdminUsers() {
 				<Table>
 					<THead>
 						<TR>
-							<TH>Email</TH>
+							<TH>{t("common.email")}</TH>
 							<TH>Role</TH>
-							<TH>Keys</TH>
-							<TH className="text-right">Total tokens</TH>
-							<TH>Budget / tháng</TH>
-							<TH>Status</TH>
-							<TH className="text-right">Actions</TH>
+							<TH>{t("adminUsers.colKeys")}</TH>
+							<TH className="text-right">{t("adminUsers.colTotalTokens")}</TH>
+							<TH>{t("adminUsers.colBudget")}</TH>
+							<TH>{t("common.status")}</TH>
+							<TH className="text-right">{t("common.actions")}</TH>
 						</TR>
 					</THead>
 					<TBody>
 						{isLoading && (
 							<TR>
-								<TD colSpan={7} className="py-8 text-center text-sm text-ink-2">Đang tải…</TD>
+								<TD colSpan={7} className="py-8 text-center text-sm text-ink-2">
+									{t("common.loading")}
+								</TD>
 							</TR>
 						)}
 						{(data?.users ?? []).map((u) => (
@@ -111,7 +115,7 @@ export default function AdminUsers() {
 									{u.activeKeys}/{u.maxApiKeys}
 									{u.activeKeys < u.maxApiKeys && u.status === "active" && (
 										<Button size="sm" variant="outline" className="ml-2 h-6 px-2" onClick={() => createKey.mutate(u.id)}>
-											<KeyRound className="!size-3" /> cấp key
+											<KeyRound className="!size-3" /> {t("adminUsers.grantKey")}
 										</Button>
 									)}
 								</TD>
@@ -125,7 +129,7 @@ export default function AdminUsers() {
 								</TD>
 								<TD className="text-right">
 									<Button size="sm" variant="ghost" onClick={() => setEditing(u)}>
-										Sửa
+										{t("common.edit")}
 									</Button>
 								</TD>
 							</TR>
@@ -138,30 +142,30 @@ export default function AdminUsers() {
 			<Dialog open={createOpen} onOpenChange={setCreateOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Tạo user mới</DialogTitle>
-						<DialogDescription>User sẽ tự đăng nhập bằng magic link gửi tới email này.</DialogDescription>
+						<DialogTitle>{t("adminUsers.createTitle")}</DialogTitle>
+						<DialogDescription>{t("adminUsers.createDesc")}</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-3">
 						<div>
-							<Label htmlFor="u-email">Email</Label>
+							<Label htmlFor="u-email">{t("common.email")}</Label>
 							<Input id="u-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="user@mncuchiinhuttt.dev" />
 						</div>
 						<div>
-							<Label htmlFor="u-name">Tên hiển thị (tuỳ chọn)</Label>
+							<Label htmlFor="u-name">{t("adminUsers.displayName")}</Label>
 							<Input id="u-name" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
 						</div>
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div>
-								<Label htmlFor="u-keys">Số key tối đa</Label>
+								<Label htmlFor="u-keys">{t("adminUsers.maxKeys")}</Label>
 								<Input id="u-keys" type="number" min={0} value={form.maxApiKeys} onChange={(e) => setForm({ ...form, maxApiKeys: Number(e.target.value) })} />
 							</div>
 							<div>
-								<Label htmlFor="u-budget">Budget tokens/tháng (bỏ trống = ∞)</Label>
-								<Input id="u-budget" inputMode="numeric" value={form.monthlyTokenBudget} onChange={(e) => setForm({ ...form, monthlyTokenBudget: e.target.value.replace(/\D/g, "") })} placeholder="10000000" />
+								<Label htmlFor="u-budget">{t("adminUsers.budgetLabel")}</Label>
+								<Input id="u-budget" inputMode="numeric" value={form.monthlyTokenBudget} onChange={(e) => setForm({ ...form, monthlyTokenBudget: e.target.value.replace(/\D/g, "") })} placeholder={t("adminUsers.budgetPlaceholder")} />
 							</div>
 						</div>
 						<div className="flex items-center gap-2">
-							<Label className="pt-1">Role</Label>
+							<Label className="pt-1">{t("adminUsers.role")}</Label>
 							<select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as "user" | "admin" })} className="h-9 rounded-sm border border-line bg-white px-3 text-sm">
 								<option value="user">user</option>
 								<option value="admin">admin</option>
@@ -169,8 +173,12 @@ export default function AdminUsers() {
 						</div>
 					</div>
 					<DialogFooter>
-						<Button variant="outline" onClick={() => setCreateOpen(false)}>Hủy</Button>
-						<Button onClick={() => create.mutate()} disabled={!form.email || create.isPending}>Tạo</Button>
+						<Button variant="outline" onClick={() => setCreateOpen(false)}>
+							{t("common.cancel")}
+						</Button>
+						<Button onClick={() => create.mutate()} disabled={!form.email || create.isPending}>
+							{t("common.create")}
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
@@ -179,29 +187,31 @@ export default function AdminUsers() {
 			<Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
-						<DialogTitle>Sửa user</DialogTitle>
+						<DialogTitle>{t("adminUsers.editTitle")}</DialogTitle>
 						<DialogDescription>{editing?.email}</DialogDescription>
 					</DialogHeader>
 					{editing && (
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div>
-								<Label>Số key tối đa</Label>
+								<Label>{t("adminUsers.maxKeys")}</Label>
 								<Input type="number" min={0} defaultValue={editing.maxApiKeys} onChange={(e) => setEditing({ ...editing, maxApiKeys: Number(e.target.value) })} />
 							</div>
 							<div>
-								<Label>Budget tokens/tháng</Label>
+								<Label>{t("adminUsers.budgetLabel")}</Label>
 								<Input
 									inputMode="numeric"
 									value={editing.monthlyTokenBudget ?? ""}
-									placeholder="bỏ trống = ∞"
+									placeholder="∞"
 									onChange={(e) => setEditing({ ...editing, monthlyTokenBudget: e.target.value.replace(/\D/g, "") ? Number(e.target.value.replace(/\D/g, "")) : null })}
 								/>
 							</div>
 						</div>
 					)}
 					<DialogFooter>
-						<Button variant="outline" onClick={() => setEditing(null)}>Hủy</Button>
-						<Button onClick={() => editing && patchUser.mutate({ id: editing.id, maxApiKeys: editing.maxApiKeys, monthlyTokenBudget: editing.monthlyTokenBudget })}>Lưu</Button>
+						<Button variant="outline" onClick={() => setEditing(null)}>
+							{t("common.cancel")}
+						</Button>
+						<Button onClick={() => editing && patchUser.mutate({ id: editing.id, maxApiKeys: editing.maxApiKeys, monthlyTokenBudget: editing.monthlyTokenBudget })}>{t("common.save")}</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
@@ -210,8 +220,10 @@ export default function AdminUsers() {
 			<Dialog open={newKey !== null} onOpenChange={(o) => !o && setNewKey(null)}>
 				<DialogContent className="max-w-xl">
 					<DialogHeader>
-						<DialogTitle>Key cho {newKey?.email}</DialogTitle>
-						<DialogDescription>Chỉ hiện 1 lần — gửi user qua kênh an toàn (password manager, v.v.).</DialogDescription>
+						<DialogTitle>
+							{t("adminUsers.keyTitle")} {newKey?.email}
+						</DialogTitle>
+						<DialogDescription>{t("adminUsers.keyDesc")}</DialogDescription>
 					</DialogHeader>
 					<div className="flex items-center gap-2 rounded-md border border-line bg-paper-2 p-3">
 						<code className="flex-1 break-all font-mono text-[13px]">{newKey?.key}</code>
@@ -220,21 +232,17 @@ export default function AdminUsers() {
 							variant="secondary"
 							onClick={() => {
 								void navigator.clipboard.writeText(newKey?.key ?? "");
-								toast.success("Đã copy");
+								toast.success(t("common.copied"));
 							}}
 						>
 							<Copy />
 						</Button>
 					</div>
 					<DialogFooter>
-						<Button onClick={() => setNewKey(null)}>Xong</Button>
+						<Button onClick={() => setNewKey(null)}>{t("adminUsers.done")}</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		</div>
 	);
-}
-
-export function BannedIcon() {
-	return <Ban className="h-3.5 w-3.5" />;
 }

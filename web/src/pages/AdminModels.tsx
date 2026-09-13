@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -13,6 +14,7 @@ interface ModelsResp {
 }
 
 export default function AdminModels() {
+	const { t } = useTranslation();
 	const qc = useQueryClient();
 	const { data, isLoading } = useQuery({ queryKey: ["models"], queryFn: () => api<ModelsResp>("/api/admin/models") });
 	const [addOpen, setAddOpen] = useState(false);
@@ -30,22 +32,20 @@ export default function AdminModels() {
 			qc.invalidateQueries({ queryKey: ["models"] });
 			setAddOpen(false);
 			setForm({ id: "", provider: "claude", upstreamModel: "", displayName: "" });
-			toast.success("Đã thêm model");
+			toast.success(t("adminModels.addedToast"));
 		},
 		onError: (e) => toast.error((e as Error).message),
 	});
 
 	return (
 		<div className="space-y-8">
-			<header className="flex items-end justify-between">
+			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="text-[44px] font-semibold leading-none tracking-tight">Models</h1>
-					<p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-ink-2">
-						Tên model công khai (client gọi) → model upstream thật. Tắt model để chặn client gọi.
-					</p>
+					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("adminModels.title")}</h1>
+					<p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">{t("adminModels.desc")}</p>
 				</div>
-				<Button onClick={() => setAddOpen(true)}>
-					<Plus /> Thêm model
+				<Button onClick={() => setAddOpen(true)} className="shrink-0">
+					<Plus /> {t("adminModels.add")}
 				</Button>
 			</header>
 
@@ -53,24 +53,28 @@ export default function AdminModels() {
 				<Table>
 					<THead>
 						<TR>
-							<TH>Public ID</TH>
-							<TH>Provider</TH>
-							<TH>Upstream model</TH>
-							<TH className="text-right">Context</TH>
-							<TH className="text-right">Max out</TH>
-							<TH>Enabled</TH>
+							<TH>{t("adminModels.colPublicId")}</TH>
+							<TH>{t("common.provider")}</TH>
+							<TH>{t("adminModels.colUpstream")}</TH>
+							<TH className="text-right">{t("adminModels.colContext")}</TH>
+							<TH className="text-right">{t("adminModels.colMaxOut")}</TH>
+							<TH>{t("adminModels.colEnabled")}</TH>
 						</TR>
 					</THead>
 					<TBody>
 						{isLoading && (
 							<TR>
-								<TD colSpan={6} className="py-8 text-center text-sm text-ink-2">Đang tải…</TD>
+								<TD colSpan={6} className="py-8 text-center text-sm text-ink-2">
+									{t("common.loading")}
+								</TD>
 							</TR>
 						)}
 						{(data?.models ?? []).map((m) => (
 							<TR key={m.id}>
 								<TD className="font-mono text-[13px] font-medium">{m.id}</TD>
-								<TD><Badge>{m.provider}</Badge></TD>
+								<TD>
+									<Badge>{m.provider}</Badge>
+								</TD>
 								<TD>
 									<Input
 										className="h-7 w-56 px-2 font-mono text-[12px]"
@@ -92,16 +96,16 @@ export default function AdminModels() {
 			<Dialog open={addOpen} onOpenChange={setAddOpen}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>Thêm model</DialogTitle>
+						<DialogTitle>{t("adminModels.addTitle")}</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-3">
-						<div className="grid grid-cols-2 gap-3">
+						<div className="grid gap-3 sm:grid-cols-2">
 							<div>
-								<Label>Public ID</Label>
+								<Label>{t("adminModels.colPublicId")}</Label>
 								<Input value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} placeholder="claude-opus-4-6" />
 							</div>
 							<div>
-								<Label>Provider</Label>
+								<Label>{t("common.provider")}</Label>
 								<select value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="h-9 w-full rounded-sm border border-line bg-white px-3 text-sm">
 									<option value="claude">claude</option>
 									<option value="codex">codex</option>
@@ -111,17 +115,21 @@ export default function AdminModels() {
 							</div>
 						</div>
 						<div>
-							<Label>Upstream model</Label>
+							<Label>{t("adminModels.colUpstream")}</Label>
 							<Input value={form.upstreamModel} onChange={(e) => setForm({ ...form, upstreamModel: e.target.value })} placeholder="claude-opus-4-6" />
 						</div>
 						<div>
-							<Label>Display name</Label>
+							<Label>{t("adminModels.displayName")}</Label>
 							<Input value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} placeholder="Claude Opus 4.6" />
 						</div>
 					</div>
 					<DialogFooter>
-						<Button variant="outline" onClick={() => setAddOpen(false)}>Hủy</Button>
-						<Button onClick={() => add.mutate()} disabled={!form.id || !form.upstreamModel}>Thêm</Button>
+						<Button variant="outline" onClick={() => setAddOpen(false)}>
+							{t("common.cancel")}
+						</Button>
+						<Button onClick={() => add.mutate()} disabled={!form.id || !form.upstreamModel}>
+							{t("adminModels.add")}
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

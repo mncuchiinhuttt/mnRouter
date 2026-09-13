@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@web/lib/api";
 import { fmtNum } from "@web/lib/utils";
@@ -14,6 +15,7 @@ interface UsageResp {
 }
 
 export default function UsagePage() {
+	const { t } = useTranslation();
 	const { data, isLoading } = useQuery({ queryKey: ["usage", "page"], queryFn: () => api<UsageResp>("/api/me/usage") });
 	const [view, setView] = useState<"area" | "bars">("area");
 
@@ -23,28 +25,28 @@ export default function UsagePage() {
 	return (
 		<div className="space-y-8">
 			<header>
-				<h1 className="text-[44px] font-semibold leading-none tracking-tight">Usage</h1>
+				<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("usage.title")}</h1>
 			</header>
 
 			<section>
-				<div className="mb-3 flex items-center justify-between">
-					<h2 className="text-2xl font-semibold tracking-tight">30D tokens</h2>
+				<div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+					<h2 className="text-2xl font-semibold tracking-tight">{t("usage.tokens30d")}</h2>
 					<Tabs value={view} onValueChange={(v) => setView(v as "area" | "bars")}>
 						<TabsList>
-							<TabsTrigger value="area">by day</TabsTrigger>
-							<TabsTrigger value="bars">by model</TabsTrigger>
+							<TabsTrigger value="area">{t("usage.byDay")}</TabsTrigger>
+							<TabsTrigger value="bars">{t("usage.byModel")}</TabsTrigger>
 						</TabsList>
 					</Tabs>
 				</div>
-				<div className="rounded-lg border border-line bg-white p-4">
+				<div className="rounded-lg border border-line bg-white p-3 sm:p-4">
 					{isLoading ? (
 						<div className="h-[320px] animate-pulse rounded-md bg-paper-2" />
 					) : daily.length === 0 ? (
-						<EmptyChart />
+						<EmptyChart message={t("usage.noData")} />
 					) : view === "area" ? (
 						<SpendArea data={daily} />
 					) : byModel.length === 0 ? (
-						<EmptyChart />
+						<EmptyChart message={t("usage.noData")} />
 					) : (
 						<ModelBars data={byModel} />
 					)}
@@ -52,16 +54,16 @@ export default function UsagePage() {
 			</section>
 
 			<section>
-				<h2 className="mb-3 text-2xl font-semibold tracking-tight">By model</h2>
+				<h2 className="mb-3 text-2xl font-semibold tracking-tight">{t("usage.byModelTable")}</h2>
 				<div className="rounded-lg border border-line bg-white">
 					<Table>
 						<THead>
 							<TR>
-								<TH>Model</TH>
-								<TH>Provider</TH>
-								<TH className="text-right">Input</TH>
-								<TH className="text-right">Output</TH>
-								<TH className="text-right">Requests</TH>
+								<TH>{t("usage.byModelTable")}</TH>
+								<TH>{t("common.provider")}</TH>
+								<TH className="text-right">{t("usage.input")}</TH>
+								<TH className="text-right">{t("usage.output")}</TH>
+								<TH className="text-right">{t("usage.requests")}</TH>
 							</TR>
 						</THead>
 						<TBody>
@@ -79,7 +81,7 @@ export default function UsagePage() {
 							{(data?.byModel?.length ?? 0) === 0 && (
 								<TR>
 									<TD colSpan={5} className="py-10 text-center text-sm text-ink-2">
-										Chưa có usage nào.
+										{t("usage.noUsage")}
 									</TD>
 								</TR>
 							)}

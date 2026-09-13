@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy MNRouter (Bun runtime) lên Wyse 3040:
+# Deploy MNRouter (Bun runtime + Cloudflare Tunnel) lên Wyse 3040:
 #   build web ở máy dev → rsync source + web-dist → migrate → restart systemd
 # Dùng: ./deploy/deploy.sh user@wyse-host
 set -euo pipefail
@@ -24,4 +24,4 @@ ssh "$REMOTE" "cd $APP_DIR && \
 	sudo systemctl restart mnrouter && \
 	sleep 2 && curl -sf http://127.0.0.1:8787/healthz"
 
-echo "==> ✅ deployed. healthz OK."
+echo "==> ✅ deployed. healthz OK (Cloudflare Tunnel giữ nguyên trạng thái, không cần restart)."

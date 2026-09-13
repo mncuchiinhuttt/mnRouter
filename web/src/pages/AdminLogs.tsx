@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtDate, fmtNum } from "@web/lib/utils";
@@ -33,6 +34,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 export default function AdminLogs() {
+	const { t } = useTranslation();
 	const [status, setStatus] = useState("");
 	const { data, isLoading, refetch, isFetching } = useQuery({
 		queryKey: ["logs", status],
@@ -44,23 +46,21 @@ export default function AdminLogs() {
 
 	return (
 		<div className="space-y-8">
-			<header className="flex items-end justify-between">
+			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
-					<h1 className="text-[44px] font-semibold leading-none tracking-tight">Request Logs</h1>
-					<p className="mt-3 text-[15px] text-ink-2">
-						Mọi request qua gateway — {fmtNum(total)} tokens trong {data?.logs.length ?? 0} dòng hiển thị. Tự refresh 15s.
-					</p>
+					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("adminLogs.title")}</h1>
+					<p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">{t("adminLogs.desc", { tokens: fmtNum(total), count: data?.logs.length ?? 0 })}</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 rounded-sm border border-line bg-white px-3 font-mono text-[12px]">
-						<option value="">all status</option>
+						<option value="">{t("adminLogs.allStatus")}</option>
 						<option value="ok">ok</option>
 						<option value="error">error</option>
 						<option value="rate_limited">rate_limited</option>
 						<option value="budget_exceeded">budget_exceeded</option>
 					</select>
 					<button onClick={() => refetch()} className="label-mono text-accent hover:underline cursor-pointer">
-						{isFetching ? "loading…" : "refresh"}
+						{isFetching ? t("common.loading").toLowerCase() : t("common.refresh")}
 					</button>
 				</div>
 			</header>
@@ -69,21 +69,23 @@ export default function AdminLogs() {
 				<Table>
 					<THead>
 						<TR>
-							<TH>Time</TH>
-							<TH>User</TH>
-							<TH>Model</TH>
-							<TH>Status</TH>
-							<TH className="text-right">In</TH>
-							<TH className="text-right">Out</TH>
-							<TH className="text-right">Cache</TH>
-							<TH className="text-right">Latency</TH>
+							<TH>{t("adminLogs.colTime")}</TH>
+							<TH>{t("adminLogs.colUser")}</TH>
+							<TH>{t("adminLogs.colModel")}</TH>
+							<TH>{t("adminLogs.colStatus")}</TH>
+							<TH className="text-right">{t("adminLogs.colIn")}</TH>
+							<TH className="text-right">{t("adminLogs.colOut")}</TH>
+							<TH className="text-right">{t("adminLogs.colCache")}</TH>
+							<TH className="text-right">{t("adminLogs.colLatency")}</TH>
 							<TH className="text-right">TTFT</TH>
 						</TR>
 					</THead>
 					<TBody>
 						{isLoading && (
 							<TR>
-								<TD colSpan={9} className="py-8 text-center text-sm text-ink-2">Đang tải…</TD>
+								<TD colSpan={9} className="py-8 text-center text-sm text-ink-2">
+									{t("common.loading")}
+								</TD>
 							</TR>
 						)}
 						{(data?.logs ?? []).map((l) => (
@@ -92,7 +94,9 @@ export default function AdminLogs() {
 								<TD className="font-mono text-[12px]">{l.userEmail ?? "—"}</TD>
 								<TD>
 									<div className="font-mono text-[12px]">{l.model}</div>
-									<div className="label-mono text-[9.5px] text-ink-2">{l.provider} · {l.endpoint}</div>
+									<div className="label-mono text-[9.5px] text-ink-2">
+										{l.provider} · {l.endpoint}
+									</div>
 								</TD>
 								<TD>
 									<Badge className={STATUS_COLOR[l.status] ?? ""}>{l.status.toUpperCase()}</Badge>
@@ -107,7 +111,9 @@ export default function AdminLogs() {
 						))}
 						{!isLoading && (data?.logs.length ?? 0) === 0 && (
 							<TR>
-								<TD colSpan={9} className="py-10 text-center text-sm text-ink-2">Chưa có request nào.</TD>
+								<TD colSpan={9} className="py-10 text-center text-sm text-ink-2">
+									{t("adminLogs.noLogs")}
+								</TD>
 							</TR>
 						)}
 					</TBody>

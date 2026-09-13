@@ -22,8 +22,10 @@
 	"dependencies": {
 		"drizzle-orm": "^0.44.2",
 		"hono": "^4.8.9",
+		"i18next": "^26.4.2",
 		"nodemailer": "^7.0.4",
 		"postgres": "^3.4.7",
+		"react-i18next": "^17.0.14",
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
