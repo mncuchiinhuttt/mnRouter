@@ -54,7 +54,7 @@ export function ThreadSidebar({
 	};
 
 	return (
-		<div style={{ width: width ? `${width}px` : undefined }} className="flex h-full w-full shrink-0 flex-col border-r border-line bg-paper">
+		<div style={{ width: width ? `${width}px` : undefined }} className="flex h-full w-full min-w-[220px] flex-col border-r border-line bg-paper overflow-hidden">
 			{/* Top Actions */}
 			<div className="p-3 border-b border-line">
 				<Button onClick={onNewThread} className="w-full justify-center gap-2 h-9 text-xs font-mono">

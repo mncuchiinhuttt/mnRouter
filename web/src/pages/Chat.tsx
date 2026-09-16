@@ -131,14 +131,14 @@ export default function ChatPage() {
 
 	return (
 		<div className="flex h-full w-full overflow-hidden bg-white">
-			<Group orientation="horizontal" id="mn_chat_panels">
-				<Panel id="sidebar" defaultSize={18} minSize={12} maxSize={30} className="flex flex-col">
+			<Group orientation="horizontal" className="h-full w-full flex-1">
+				<Panel id="sidebar" defaultSize="260px" minSize="220px" maxSize="380px" className="flex flex-col">
 					<ThreadSidebar threads={threads} activeThreadId={activeThreadId} onSelectThread={setActiveThreadId} onNewThread={handleNewThread} onDeleteThread={(id) => deleteThread.mutate(id)} />
 				</Panel>
 				<Separator className="w-1.5 bg-line/60 hover:bg-accent active:bg-accent transition-colors cursor-col-resize z-10" />
-				<Panel id="main" minSize={30} className="flex flex-col flex-1 overflow-hidden bg-paper">
+				<Panel id="main" minSize="320px" className="flex flex-col flex-1 overflow-hidden bg-paper">
 					{activeThreadId && (
-						<div className="flex items-center justify-between border-b border-line bg-white px-4 py-1.5 text-xs">
+						<div className="flex min-h-[42px] items-center justify-between border-b border-line bg-white px-4 py-1.5 text-xs shrink-0">
 							<span className="font-semibold text-ink truncate max-w-md">{threadDetails?.thread.title === "New conversation" ? t("chat.newConversation") : threadDetails?.thread.title}</span>
 							<Button size="sm" variant="outline" className="h-6 gap-1 font-mono text-xs px-2" onClick={() => setShareOpen(true)}>
 								<Share2 className="size-3 text-accent" /> Share
@@ -159,7 +159,7 @@ export default function ChatPage() {
 				{activeArtifact && (
 					<>
 						<Separator className="w-1.5 bg-line/60 hover:bg-accent active:bg-accent transition-colors cursor-col-resize z-10" />
-						<Panel id="artifact" defaultSize={45} minSize={25} maxSize={70} className="flex flex-col overflow-hidden bg-white shadow-2xl z-20">
+						<Panel id="artifact" defaultSize="45%" minSize="320px" maxSize="70%" className="flex flex-col overflow-hidden bg-white shadow-2xl z-20">
 							<ArtifactViewer artifact={activeArtifact} onClose={() => setActiveArtifact(null)} />
 						</Panel>
 					</>
