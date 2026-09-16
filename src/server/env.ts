@@ -4,7 +4,7 @@ import "dotenv/config";
 const schema = z.object({
 	PORT: z.coerce.number().default(8787),
 	APP_URL: z.string().default("http://localhost:5173"),
-	DATABASE_URL: z.string(),
+	DATABASE_URL: z.string().default("./data/mnrouter.db"),
 	SESSION_SECRET: z.string().default("dev-secret-change-me"),
 	SMTP_HOST: z.string().default("smtp.mail.me.com"),
 	SMTP_PORT: z.coerce.number().default(587),

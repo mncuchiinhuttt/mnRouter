@@ -1,3 +1,29 @@
+// Polyfill DOMMatrix, Path2D, and ImageData for headless Linux environments (used by pdf/canvas parsers)
+if (typeof (globalThis as any).DOMMatrix === "undefined") {
+	(globalThis as any).DOMMatrix = class DOMMatrix {
+		a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+		m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+		m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+		m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+		m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+		is2D = true; isIdentity = true;
+		inverse() { return this; }
+		multiply() { return this; }
+		translate() { return this; }
+		scale() { return this; }
+		rotate() { return this; }
+		transformPoint(p: any) { return p; }
+	};
+}
+if (typeof (globalThis as any).Path2D === "undefined") {
+	(globalThis as any).Path2D = class Path2D {};
+}
+if (typeof (globalThis as any).ImageData === "undefined") {
+	(globalThis as any).ImageData = class ImageData {
+		width = 0; height = 0; data = new Uint8ClampedArray(0);
+	};
+}
+
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { readFile } from "node:fs/promises";
@@ -8,8 +34,19 @@ import { authRoutes } from "./routes/auth.js";
 import { userRoutes } from "./routes/user.js";
 import { adminRoutes, seedModels } from "./routes/admin.js";
 import { gatewayRoutes } from "./routes/gateway.js";
+import { setupScriptRoutes } from "./routes/setup-scripts.js";
+import { announcementRoutes } from "./routes/announcements.js";
+import { chatRoutes } from "./routes/chat.js";
+import { adminQuotaRoutes } from "./routes/admin-quotas.js";
+import { adminAnalyticsRoutes } from "./routes/admin-analytics.js";
+import { leaderboardRoutes } from "./routes/leaderboard.js";
+import { feedbackRoutes } from "./routes/feedback.js";
+import { mcpRoutes } from "./routes/mcp.js";
+import { customSkillRoutes } from "./routes/custom-skills.js";
 import { sessionMiddleware } from "./auth/guards.js";
 import { startRefresher, stopRefresher } from "./gateway/refresher.js";
+import { startChatSweeper, stopChatSweeper } from "./chat/sweeper.js";
+import { userRepo } from "./repositories/user.repository.js";
 
 const app = new Hono();
 
@@ -21,7 +58,15 @@ app.route("/", authRoutes());
 app.route("/", userRoutes());
 app.route("/", adminRoutes());
 app.route("/", gatewayRoutes());
-
+app.route("/", setupScriptRoutes());
+app.route("/", announcementRoutes());
+app.route("/", chatRoutes());
+app.route("/", adminQuotaRoutes());
+app.route("/", adminAnalyticsRoutes());
+app.route("/", leaderboardRoutes());
+app.route("/", feedbackRoutes());
+app.route("/", mcpRoutes());
+app.route("/", customSkillRoutes());
 // static web (built SPA)
 const webDist = path.resolve(process.cwd(), "web-dist");
 if (existsSync(webDist)) {
@@ -51,14 +96,30 @@ void (async () => {
 	} catch (err) {
 		console.error("[boot] seed failed:", (err as Error).message);
 	}
+	if (env.ADMIN_EMAIL) {
+		try {
+			const existing = await userRepo.findByEmail(env.ADMIN_EMAIL);
+			if (!existing) {
+				await userRepo.create({
+					email: env.ADMIN_EMAIL.toLowerCase().trim(),
+					role: "admin",
+					maxApiKeys: 10,
+				});
+				console.log(`[boot] auto-seeded admin user: ${env.ADMIN_EMAIL}`);
+			}
+		} catch (err) {
+			console.error("[boot] admin seed failed:", (err as Error).message);
+		}
+	}
 	startRefresher();
+	startChatSweeper();
 })();
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
 	process.on(sig, () => {
 		console.log(`[mnrouter] ${sig} — shutting down`);
 		stopRefresher();
-		server.stop(true);
+		stopChatSweeper();
 		process.exit(0);
 	});
 }
