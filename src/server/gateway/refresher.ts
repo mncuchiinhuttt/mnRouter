@@ -1,7 +1,7 @@
 /** Background OAuth token refresher — quét mỗi 60s, refresh connection sắp hết hạn. */
 import { eq } from "drizzle-orm";
-import { db } from "../db/index.js";
-import { providerConnections } from "../db/schema.js";
+import { db } from "@db";
+import { providerConnections } from "@db/schema";
 import { ensureFreshToken } from "./router.js";
 import type { ProviderId } from "./registry.js";
 

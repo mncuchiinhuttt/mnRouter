@@ -66,6 +66,12 @@ export function buildClaudeRequest(cfg: ProviderConfig, req: CanonicalRequest, t
 		messages: toClaudeMessages(req.messages),
 		stream: req.stream,
 	};
+	if (req.thinking?.type === "enabled") {
+		body.thinking = { type: "enabled", budget_tokens: req.thinking.budgetTokens };
+		if (!req.maxTokens || req.maxTokens <= req.thinking.budgetTokens) {
+			body.max_tokens = req.thinking.budgetTokens + 4096;
+		}
+	}
 	if (req.system) body.system = req.system;
 	if (req.temperature !== undefined) body.temperature = req.temperature;
 	if (req.topP !== undefined) body.top_p = req.topP;

@@ -65,7 +65,17 @@ export function buildCodexRequest(cfg: ProviderConfig, req: CanonicalRequest, to
 		})),
 		tool_choice: req.toolChoice === "required" ? "required" : req.toolChoice === "none" ? "none" : "auto",
 		parallel_tool_calls: false,
-		reasoning: { effort: req.reasoningEffort ?? "medium", summary: "auto" },
+		reasoning: {
+			effort: (() => {
+				const isOpencode = cfg.id === "opencode" || req.upstreamModel.includes("muse-spark");
+				const eff = (req.reasoningEffort as string) ?? "medium";
+				if (eff === "max") return isOpencode ? "xhigh" : "high";
+				if (eff === "xhigh" && !isOpencode) return "high";
+				if (eff === "off" || eff === "none") return isOpencode ? "minimal" : "low";
+				return eff;
+			})(),
+			summary: "auto",
+		},
 		store: false,
 		stream: true,
 		include: ["reasoning.encrypted_content"],

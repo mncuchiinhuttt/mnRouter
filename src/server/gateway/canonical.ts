@@ -48,7 +48,11 @@ export interface CanonicalRequest {
 	temperature?: number;
 	topP?: number;
 	/** reasoning effort hint for providers that support it */
-	reasoningEffort?: "low" | "medium" | "high";
+	reasoningEffort?: "low" | "medium" | "high" | "xhigh" | "max";
+	/** thinking token budget */
+	thinking?: { type: "enabled"; budgetTokens: number };
+	/** Google Search Grounding / web search */
+	webSearch?: boolean;
 	/** Provider-specific raw fields to merge back when egress family matches ingress family. */
 	passthrough?: Record<string, unknown>;
 }
@@ -71,6 +75,7 @@ export type StreamEvent =
 	| { type: "toolcall_delta"; id: string; delta: string }
 	| { type: "toolcall_end"; id: string; name: string; arguments: Record<string, unknown> }
 	| { type: "done"; stopReason: StopReason; usage: CanonicalUsage }
+	| { type: "grounding_delta"; queries: string[]; sources: { title: string; uri: string; domain?: string }[]; count: number }
 	| { type: "error"; errorCode: string; message: string; retryable: boolean; httpStatus?: number };
 
 /** Result of a completed non-streaming upstream call. */

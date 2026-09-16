@@ -59,6 +59,24 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 		}
 		case "grok":
 		case "opencode": {
+			if (conn.provider === "opencode" && req.upstreamModel.includes("muse-spark")) {
+				const token = conn.accessToken || "OPENCODE_ZEN_TOKEN_REMOVED";
+				const { body } = buildCodexRequest({ ...cfg, baseUrls: [base] }, req, token);
+				const parser = new CodexStreamParser();
+				return {
+					url: `${base}/zen/v1/responses`,
+					headers: {
+						"content-type": "application/json",
+						authorization: `Bearer ${token}`,
+						"user-agent": "opencode",
+						"x-opencode-client": "desktop",
+						"x-opencode-session": `ses_${crypto.randomUUID().replace(/-/g, "")}`,
+						"x-opencode-request": `msg_${crypto.randomUUID().replace(/-/g, "")}`,
+					},
+					body,
+					parser: { parse: (p) => parser.parse(p), finish: () => parser.finish() },
+				};
+			}
 			const { url, headers, body } = buildOpenAiChatRequest({ ...cfg, baseUrls: [base] }, req, conn.accessToken, conn.provider, base);
 			const parser = new OpenAiChatParser();
 			return { url, headers, body, parser: { parse: (p) => parser.parse(p), finish: () => parser.finish() } };

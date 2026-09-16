@@ -3,8 +3,8 @@
  * failover có cooldown/backoff per connection (tham khảo 9router), stream pipeline.
  */
 import { and, eq, sql } from "drizzle-orm";
-import { db } from "../db/index.js";
-import { providerConnections, settings as settingsTable } from "../db/schema.js";
+import { db } from "@db";
+import { providerConnections, settings as settingsTable } from "@db/schema";
 import type { CanonicalRequest, StreamEvent } from "./canonical.js";
 import { UpstreamError, classifyUpstreamError } from "./canonical.js";
 import { PROVIDERS, type ProviderId, DEFAULT_SETTINGS } from "./registry.js";
@@ -43,17 +43,15 @@ async function orderConnections(provider: ProviderId, strategy: string): Promise
 	return usable;
 }
 
-/** Health updates phải MERGE vào data (||) thay vì ghi đè — tránh xóa token vừa refresh bởi request khác. */
 async function patchConnData(id: string, patch: Record<string, unknown>, status?: "active" | "cooldown" | "expired" | "error") {
-	await db.execute(sql`
-		UPDATE provider_connections
-		SET data = data || ${JSON.stringify(patch)}::jsonb
-			${status ? sql`, status = ${status}` : sql``},
-			updated_at = now()
-		WHERE id = ${id}
-	`);
+	const [conn] = await db.select().from(providerConnections).where(eq(providerConnections.id, id));
+	if (!conn) return;
+	const existing = (conn.data as Record<string, unknown>) ?? {};
+	const merged = { ...existing, ...patch };
+	const updateSet: Record<string, unknown> = { data: merged, updatedAt: new Date() };
+	if (status) updateSet.status = status;
+	await db.update(providerConnections).set(updateSet).where(eq(providerConnections.id, id));
 }
-
 async function markSuccess(conn: ConnRow) {
 	await patchConnData(
 		conn.id,

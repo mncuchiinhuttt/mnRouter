@@ -30,26 +30,13 @@ function toContents(messages: CanonicalMessage[]): GeminiContent[] {
 		else contents.push({ role, parts: [part] });
 	};
 	for (const msg of messages) {
-		if (msg.role === "user") {
-			for (const b of msg.content) {
-				if (b.type === "text" && b.text) push("user", { text: b.text });
-				else if (b.type === "image") push("user", { inlineData: { mimeType: b.mime, data: b.data } });
-				else if (b.type === "toolResult") {
-					push("user", { functionResponse: { id: b.toolUseId, name: b.toolUseId, response: { output: b.content } } });
-				}
-			}
-		} else if (msg.role === "assistant") {
-			for (const b of msg.content) {
-				if (b.type === "text" && b.text) push("model", { text: b.text });
-				else if (b.type === "thinking") push("model", { text: b.thinking, thought: true, thoughtSignature: b.signature });
-				else if (b.type === "toolCall") push("model", { functionCall: { id: b.id, name: b.name, args: b.arguments ?? {} } });
-			}
-		} else if (msg.role === "toolResult") {
-			for (const b of msg.content) {
-				if (b.type === "toolResult") {
-					push("user", { functionResponse: { id: b.toolUseId, name: b.toolUseId, response: { output: b.content } } });
-				}
-			}
+		const role = msg.role === "assistant" ? "model" : "user";
+		for (const b of msg.content) {
+			if (b.type === "text" && b.text) push(role, { text: b.text });
+			else if (b.type === "thinking") push("model", { text: b.thinking, thought: true, thoughtSignature: b.signature });
+			else if (b.type === "image") push("user", { inlineData: { mimeType: b.mime, data: b.data } });
+			else if (b.type === "toolCall") push("model", { functionCall: { id: b.id, name: b.name, args: b.arguments ?? {} } });
+			else if (b.type === "toolResult") push("user", { functionResponse: { id: b.toolUseId, name: b.toolUseId, response: { output: b.content } } });
 		}
 	}
 	return contents;
@@ -77,28 +64,32 @@ export function buildAntigravityRequest(cfg: ProviderConfig, req: CanonicalReque
 	if (req.temperature !== undefined) generationConfig.temperature = req.temperature;
 	if (req.topP !== undefined) generationConfig.topP = req.topP;
 	if (req.maxTokens) generationConfig.maxOutputTokens = req.maxTokens;
-	if (req.upstreamModel.toLowerCase().includes("gemini-3")) {
-		generationConfig.thinkingConfig = { includeThoughts: true, thinkingLevel: "high" };
+	if (req.upstreamModel.toLowerCase().includes("gemini")) {
+		if ((req.reasoningEffort as string) === "off" || (req.thinking && req.thinking.budgetTokens === 0)) {
+			generationConfig.thinkingConfig = { includeThoughts: false, thinkingBudget: 0 };
+		} else {
+			const level = req.reasoningEffort === "low" ? "low" : req.reasoningEffort === "medium" ? "medium" : "high";
+			generationConfig.thinkingConfig = { includeThoughts: true, thinkingLevel: level };
+		}
 	}
 	if (Object.keys(generationConfig).length) request.generationConfig = generationConfig;
 
+	const toolsList: Record<string, unknown>[] = [];
 	if (req.tools?.length) {
-		request.tools = [
-			{
-				functionDeclarations: req.tools.map((t) => ({
-					name: t.name,
-					description: t.description ?? "",
-					parameters: t.parameters,
-				})),
-			},
-		];
-		const isClaude = req.upstreamModel.toLowerCase().includes("claude");
+		toolsList.push({
+			functionDeclarations: req.tools.map((t) => ({
+				name: t.name,
+				description: t.description ?? "",
+				parameters: t.parameters,
+			})),
+		});
 		if (req.toolChoice === "none") request.toolConfig = { functionCallingConfig: { mode: "NONE" } };
 		else if (typeof req.toolChoice === "object")
 			request.toolConfig = { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [req.toolChoice.name] } };
 		else request.toolConfig = { functionCallingConfig: { mode: "VALIDATED" } };
-		void isClaude;
 	}
+	if (req.webSearch) toolsList.push({ googleSearch: {} });
+	if (toolsList.length > 0) request.tools = toolsList;
 
 	const envelope = buildEnvelope(req.upstreamModel);
 	request.labels = envelope.labels;
@@ -173,6 +164,19 @@ export function createAntigravityParser() {
 					if (part.text) events.push({ type: "thinking_delta", delta: part.text });
 				} else if (part.text) {
 					events.push({ type: "text_delta", delta: part.text });
+				}
+			}
+			const grounding = candidate?.groundingMetadata;
+			if (grounding) {
+				const queries = (grounding.webSearchQueries as string[]) || [];
+				const chunks = (grounding.groundingChunks as any[]) || [];
+				const sources = chunks.map((c: any) => ({
+					title: String(c.web?.title || ""),
+					uri: String(c.web?.uri || ""),
+					domain: c.web?.uri ? new URL(c.web.uri).hostname.replace(/^www\./, "") : "",
+				})).filter((s: any) => s.uri);
+				if (queries.length > 0 || sources.length > 0) {
+					events.push({ type: "grounding_delta", queries, sources, count: sources.length || queries.length });
 				}
 			}
 			const u = resp.usageMetadata;

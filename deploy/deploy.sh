@@ -1,27 +1,32 @@
 #!/usr/bin/env bash
-# Deploy MNRouter (Bun runtime + Cloudflare Tunnel) lên Wyse 3040:
-#   build web ở máy dev → rsync source + web-dist → migrate → restart systemd
-# Dùng: ./deploy/deploy.sh user@wyse-host
+# Deploy MNRouter lên Dell Wyse 3040 (Standalone Linux x64 Binary):
+#   1. Build web SPA trên máy dev (web-dist)
+#   2. Compile standalone binary (target: bun-linux-x64-baseline cho CPU Intel Atom)
+#   3. Pipe binary + web-dist lên server bằng tar stream
+#   4. Tự cài / restart systemd service & verify healthz
+# Dùng: ./deploy/deploy.sh [user@host hoặc host alias (mặc định: my-server)]
 set -euo pipefail
 
-REMOTE="${1:?Usage: ./deploy/deploy.sh user@wyse-host}"
+REMOTE="${1:-my-server}"
 APP_DIR="/opt/mnrouter"
-BUN="/usr/local/bin/bun"
 
-echo "==> 1. build web…"
+echo "==> 1. Build web frontend…"
 bun run build
 
-echo "==> 2. rsync source + web-dist…"
-ssh "$REMOTE" "sudo mkdir -p $APP_DIR && sudo chown \$USER: $APP_DIR"
-rsync -az --delete \
-	src scripts drizzle web-dist package.json bun.lock tsconfig.json \
-	"$REMOTE:$APP_DIR/"
+echo "==> 2. Compile standalone binary for Intel Atom (x64 baseline)…"
+bun build --compile --target=bun-linux-x64-baseline src/server/index.ts --outfile ./mnrouter
 
-echo "==> 3. bun install --production + migrate + restart…"
-ssh "$REMOTE" "cd $APP_DIR && \
-	$BUN install --production --frozen-lockfile && \
-	$BUN run scripts/migrate.ts && \
-	sudo systemctl restart mnrouter && \
-	sleep 2 && curl -sf http://127.0.0.1:8787/healthz"
+echo "==> 3. Upload to $REMOTE…"
+ssh "$REMOTE" "mkdir -p $APP_DIR/data"
+tar -czf - ./mnrouter web-dist deploy | ssh "$REMOTE" "tar -xzf - -C $APP_DIR/"
+ssh "$REMOTE" "chmod +x $APP_DIR/mnrouter"
+rm -f ./mnrouter
 
-echo "==> ✅ deployed. healthz OK (Cloudflare Tunnel giữ nguyên trạng thái, không cần restart)."
+echo "==> 4. Restart service & health check…"
+ssh "$REMOTE" "
+pkill -9 mnrouter || true
+sleep 3
+curl -sf http://127.0.0.1:8787/healthz && echo ''
+"
+
+echo "==> ✅ Deployed successfully! Service running on $REMOTE."

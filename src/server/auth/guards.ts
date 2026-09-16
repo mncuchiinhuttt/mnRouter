@@ -1,17 +1,15 @@
 import type { Context, Next } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import { and, eq, isNull } from "drizzle-orm";
-import { db } from "../db/index.js";
-import { apiKeys, users } from "../db/schema.js";
-import { hashToken } from "./crypto.js";
-import { getSessionUser, SESSION_COOKIE } from "./service.js";
-import type { User } from "../db/schema.js";
+import { authService, SESSION_COOKIE } from "../services/auth.service.js";
+import type { User, ApiKey } from "@db/schema";
+
+export { SESSION_COOKIE };
 
 export function sessionMiddleware() {
 	return async (c: Context, next: Next) => {
 		const token = getCookie(c, SESSION_COOKIE);
 		if (token) {
-			const user = await getSessionUser(token);
+			const user = await authService.authenticateSession(token);
 			if (user) {
 				c.set("user", user);
 				c.set("sessionToken", token);
@@ -61,16 +59,8 @@ declare module "hono" {
 }
 
 /** Gateway auth: Bearer mr_… → resolve key row + owning user. */
-export async function authenticateApiKey(authHeader: string | undefined) {
-	if (!authHeader?.startsWith("Bearer ")) return null;
-	const key = authHeader.slice(7).trim();
-	if (!key.startsWith("mr_")) return null;
-	const [row] = await db
-		.select({ key: apiKeys, user: users })
-		.from(apiKeys)
-		.innerJoin(users, eq(users.id, apiKeys.userId))
-		.where(and(eq(apiKeys.keyHash, hashToken(key)), isNull(apiKeys.revokedAt)));
-	if (!row || row.user.status !== "active") return null;
-	void db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.key.id)).catch(() => {});
-	return row;
+export async function authenticateApiKey(authHeader: string | undefined): Promise<{ key: ApiKey; user: User } | null> {
+	const res = await authService.authenticateApiKey(authHeader);
+	if (!res) return null;
+	return { key: res.apiKey, user: res.user };
 }

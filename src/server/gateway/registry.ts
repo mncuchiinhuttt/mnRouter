@@ -81,7 +81,7 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 			tokenUrl: "https://oauth2.googleapis.com/token",
 			refreshLeadMs: 25 * 60 * 1000,
 		},
-		userAgent: "antigravity/1.107.0 IDE/2.1.1",
+		userAgent: "antigravity/hub/2.8.0 (aidev_client; os_type=darwin; arch=arm64; cl=963137146)",
 		headers: {},
 		retryStatuses: [429, 500, 502, 503, 504],
 	},
@@ -138,44 +138,8 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 	},
 };
 
-/**
- * Default model catalog seeded on boot (insert missing ids only).
- * Giá = AI credits / 1M tokens, 1 credit = $0.01 giá API niêm yết.
- * Nguồn: pricing công bố của Anthropic/OpenAI/Google/xAI (9/2026); model free = 0.
- */
-export const DEFAULT_MODELS = [
-	// ── claude (OAuth Claude Code) — anthropic.com/pricing
-	{ id: "claude-sonnet-5", provider: "claude", upstreamModel: "claude-sonnet-5", displayName: "Claude Sonnet 5", contextWindow: 1000000, maxOutput: 128000, priority: 10, priceIn: 300, priceOut: 1500 },
-	{ id: "claude-opus-5", provider: "claude", upstreamModel: "claude-opus-5", displayName: "Claude Opus 5", contextWindow: 200000, maxOutput: 128000, priority: 20, priceIn: 500, priceOut: 2500 },
-	{ id: "claude-fable-5", provider: "claude", upstreamModel: "claude-fable-5", displayName: "Claude Fable 5", contextWindow: 200000, maxOutput: 128000, priority: 30, priceIn: 1000, priceOut: 5000 },
-	{ id: "claude-haiku-4-5", provider: "claude", upstreamModel: "claude-haiku-4-5", displayName: "Claude Haiku 4.5", contextWindow: 200000, maxOutput: 64000, priority: 40, priceIn: 100, priceOut: 500 },
-	// ── codex (ChatGPT backend) — openai.com/api/pricing
-	{ id: "gpt-5.5", provider: "codex", upstreamModel: "gpt-5.5", displayName: "GPT-5.5", contextWindow: 272000, maxOutput: 128000, priority: 10, priceIn: 500, priceOut: 3000 },
-	{ id: "gpt-5.4", provider: "codex", upstreamModel: "gpt-5.4", displayName: "GPT-5.4", contextWindow: 272000, maxOutput: 128000, priority: 20, priceIn: 125, priceOut: 1000 },
-	{ id: "gpt-5.3-codex-spark", provider: "codex", upstreamModel: "gpt-5.3-codex-spark", displayName: "GPT-5.3 Codex Spark", contextWindow: 272000, maxOutput: 128000, priority: 30, priceIn: 25, priceOut: 200 },
-	{ id: "gpt-5.6-terra", provider: "codex", upstreamModel: "gpt-5.6-terra", displayName: "GPT-5.6 Terra", contextWindow: 400000, maxOutput: 128000, priority: 40, priceIn: 200, priceOut: 1200 },
-	// ── antigravity (Google Cloud Code) — ai.google.dev/pricing làm chuẩn nội bộ
-	{ id: "gemini-pro-agent", provider: "antigravity", upstreamModel: "gemini-pro-agent", displayName: "Gemini Pro Agent (AG)", contextWindow: 1000000, maxOutput: 65536, priority: 10, priceIn: 200, priceOut: 1200 },
-	{ id: "gemini-3.1-pro-low", provider: "antigravity", upstreamModel: "gemini-3.1-pro-low", displayName: "Gemini 3.1 Pro Low (AG)", contextWindow: 1000000, maxOutput: 65536, priority: 20, priceIn: 200, priceOut: 1200 },
-	{ id: "gemini-3.5-flash-low", provider: "antigravity", upstreamModel: "gemini-3.5-flash-low", displayName: "Gemini 3.5 Flash Low (AG)", contextWindow: 1000000, maxOutput: 65536, priority: 30, priceIn: 50, priceOut: 300 },
-	{ id: "claude-sonnet-4-6-ag", provider: "antigravity", upstreamModel: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6 (via AG)", contextWindow: 200000, maxOutput: 128000, priority: 40, priceIn: 300, priceOut: 1500 },
-	// ── kiro (AWS) — giá nội bộ theo model nền (Claude)
-	{ id: "claude-sonnet-4.5-kiro", provider: "kiro", upstreamModel: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (via Kiro)", contextWindow: 200000, maxOutput: 64000, priority: 10, priceIn: 300, priceOut: 1500 },
-	{ id: "claude-sonnet-5-kiro", provider: "kiro", upstreamModel: "claude-sonnet-5", displayName: "Claude Sonnet 5 (via Kiro)", contextWindow: 200000, maxOutput: 128000, priority: 20, priceIn: 300, priceOut: 1500 },
-	{ id: "claude-opus-5-kiro", provider: "kiro", upstreamModel: "claude-opus-5", displayName: "Claude Opus 5 (via Kiro)", contextWindow: 200000, maxOutput: 128000, priority: 30, priceIn: 500, priceOut: 2500 },
-	// ── grok (xAI OAuth) — x.ai/api#pricing
-	{ id: "grok-4", provider: "grok", upstreamModel: "grok-4", displayName: "Grok 4", contextWindow: 256000, maxOutput: 32000, priority: 10, priceIn: 300, priceOut: 1500 },
-	{ id: "grok-4-fast-reasoning", provider: "grok", upstreamModel: "grok-4-fast-reasoning", displayName: "Grok 4 Fast Reasoning", contextWindow: 2000000, maxOutput: 32000, priority: 20, priceIn: 20, priceOut: 50 },
-	{ id: "grok-code-fast-1", provider: "grok", upstreamModel: "grok-code-fast-1", displayName: "Grok Code Fast 1", contextWindow: 256000, maxOutput: 32000, priority: 30, priceIn: 20, priceOut: 150 },
-	{ id: "grok-3", provider: "grok", upstreamModel: "grok-3", displayName: "Grok 3", contextWindow: 131072, maxOutput: 32000, priority: 40, priceIn: 300, priceOut: 1500 },
-	// ── opencode free (noAuth, models xoay vòng theo tháng — xem opencode.ai/docs/zen)
-	{ id: "big-pickle", provider: "opencode", upstreamModel: "big-pickle", displayName: "Big Pickle (stealth free)", contextWindow: 200000, maxOutput: 32000, priority: 10, priceIn: 0, priceOut: 0 },
-	{ id: "mimo-v2.5-free", provider: "opencode", upstreamModel: "mimo-v2.5-free", displayName: "MiMo V2.5 Free", contextWindow: 200000, maxOutput: 32000, priority: 20, priceIn: 0, priceOut: 0 },
-	{ id: "ling-3.0-flash-fin-free", provider: "opencode", upstreamModel: "ling-3.0-flash-fin-free", displayName: "Ling 3.0 Flash Fin Free", contextWindow: 128000, maxOutput: 32000, priority: 30, priceIn: 0, priceOut: 0 },
-	{ id: "nemotron-3-ultra-free", provider: "opencode", upstreamModel: "nemotron-3-ultra-free", displayName: "Nemotron 3 Ultra Free", contextWindow: 256000, maxOutput: 32000, priority: 40, priceIn: 0, priceOut: 0 },
-	{ id: "nemotron-3.5-lightning-free", provider: "opencode", upstreamModel: "nemotron-3.5-lightning-free", displayName: "Nemotron 3.5 Lightning Free", contextWindow: 256000, maxOutput: 32000, priority: 50, priceIn: 0, priceOut: 0 },
-	{ id: "deepseek-v4-flash-free", provider: "opencode", upstreamModel: "deepseek-v4-flash-free", displayName: "DeepSeek V4 Flash Free", contextWindow: 200000, maxOutput: 32000, priority: 60, priceIn: 0, priceOut: 0 },
-] as const;
+/** Default text-model catalog seeded on boot (insert missing ids only). */
+export { DEFAULT_MODELS } from "./models.js";
 
 export const DEFAULT_SETTINGS = {
 	/** per-provider connection selection strategy */
