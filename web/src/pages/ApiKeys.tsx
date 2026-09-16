@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { RotateCcw, Copy, Ban } from "lucide-react";
+import { RotateCcw, Copy, Ban, Plus } from "lucide-react";
 import { api, apiJson } from "@web/lib/api";
 import { fmtDate } from "@web/lib/utils";
 import { Button } from "@web/components/ui/button";
-import { Badge, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
+import { Badge, Input, Label, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@web/components/ui/dialog";
 
 interface KeysResp {
@@ -19,8 +19,23 @@ export default function ApiKeys() {
 	const qc = useQueryClient();
 	const { data, isLoading } = useQuery({ queryKey: ["my-keys"], queryFn: () => api<KeysResp>("/api/me/keys") });
 	const [newKey, setNewKey] = useState<string | null>(null);
+	const [createOpen, setCreateOpen] = useState(false);
+	const [createName, setCreateName] = useState("");
 	const [confirmRotate, setConfirmRotate] = useState<string | null>(null);
 
+	const activeKeysCount = (data?.keys ?? []).filter((k) => k.active).length;
+
+	const create = useMutation({
+		mutationFn: (name: string) => apiJson<{ key: string }>("/api/me/keys", "POST", { name: name.trim() || undefined }),
+		onSuccess: (res) => {
+			setNewKey(res.key);
+			setCreateOpen(false);
+			setCreateName("");
+			qc.invalidateQueries({ queryKey: ["my-keys"] });
+			toast.success(t("keys.createdToast"));
+		},
+		onError: (e) => toast.error((e as Error).message),
+	});
 	const rotate = useMutation({
 		mutationFn: (id: string) => apiJson<{ key: string }>(`/api/me/keys/${id}/rotate`, "POST", {}),
 		onSuccess: () => {
@@ -50,12 +65,21 @@ export default function ApiKeys() {
 				<div>
 					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("keys.title")}</h1>
 					<p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">
-						{t("keys.desc1")} <b>{t("keys.descRotate")}</b> {t("keys.desc2")} <b className="font-mono">{data?.maxKeys ?? "?"}</b>
+						{t("keys.desc1")} <b className="font-mono">{data?.maxKeys ?? "?"}</b> {t("keys.desc2")}
 					</p>
 				</div>
-				<div className="sm:text-right">
-					<div className="label-mono text-ink-2">{t("keys.baseUrlLabel")}</div>
-					<code className="rounded-xs bg-paper-2 px-2 py-1 font-mono text-[12px] break-all">{location.origin}/v1</code>
+				<div className="flex flex-wrap items-center gap-3 sm:justify-end">
+					<div className="hidden text-right md:block">
+						<div className="label-mono text-ink-2">{t("keys.baseUrlLabel")}</div>
+						<code className="rounded-xs bg-paper-2 px-2 py-1 font-mono text-[12px] break-all">{location.origin}/v1</code>
+					</div>
+					<Button
+						onClick={() => setCreateOpen(true)}
+						disabled={activeKeysCount >= (data?.maxKeys ?? 0)}
+						className="shrink-0"
+					>
+						<Plus /> {t("keys.createKey")}
+					</Button>
 				</div>
 			</header>
 
@@ -118,6 +142,42 @@ export default function ApiKeys() {
 				</Table>
 			</div>
 
+
+			{/* create key */}
+			<Dialog open={createOpen} onOpenChange={setCreateOpen}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle>{t("keys.createTitle")}</DialogTitle>
+						<DialogDescription>{t("keys.createDesc")}</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							create.mutate(createName);
+						}}
+					>
+						<div className="space-y-2 py-2">
+							<Label htmlFor="create-key-name">{t("keys.keyName")}</Label>
+							<Input
+								id="create-key-name"
+								value={createName}
+								onChange={(e) => setCreateName(e.target.value)}
+								placeholder={t("keys.namePlaceholder")}
+								maxLength={50}
+								autoFocus
+							/>
+						</div>
+						<DialogFooter className="mt-4">
+							<Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+								{t("common.cancel")}
+							</Button>
+							<Button type="submit" disabled={create.isPending}>
+								{t("keys.createKey")}
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 			{/* confirm rotate */}
 			<Dialog open={confirmRotate !== null} onOpenChange={(o) => !o && setConfirmRotate(null)}>
 				<DialogContent className="max-w-md">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMe } from "../App";
+import { LangToggle } from "@web/components/shell";
 import { apiJson } from "@web/lib/api";
 import { Button } from "@web/components/ui/button";
 import { Input } from "@web/components/ui/primitives";
@@ -32,7 +33,10 @@ export default function Login() {
 	};
 
 	return (
-		<div className="flex min-h-[100dvh] flex-col bg-navy lg:flex-row">
+		<div className="relative flex min-h-[100dvh] flex-col bg-navy lg:flex-row">
+			<div className="absolute right-6 top-6 z-10 sm:right-8 sm:top-8">
+				<LangToggle />
+			</div>
 			<div className="halftone flex flex-col justify-between p-8 sm:p-12 lg:min-h-[100dvh] lg:flex-1 lg:p-14">
 				<div className="font-mono text-[15px] font-semibold tracking-[0.08em] text-white">
 					MN <span className="text-accent-bright">//</span> ROUTER
