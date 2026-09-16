@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Clock, Code2, Copy, ExternalLink, Eye, FileCode, Printer, X } from "lucide-react";
+import { Check, Clock, Code2, Copy, Download, ExternalLink, Eye, FileCode, Printer, X } from "lucide-react";
 import { toast } from "sonner";
 import hljs from "highlight.js";
 import { Button } from "@web/components/ui/button";
 import { getBeautifiedHtml } from "./artifact-html-utils";
+import { downloadArtifactFile } from "./artifact-download";
 import type { ArtifactItem } from "./message-list";
 
 export interface ArtifactViewerProps {
@@ -13,7 +14,8 @@ export interface ArtifactViewerProps {
 }
 
 export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	const isVi = i18n.language?.startsWith("vi");
 	const [activeTab, setActiveTab] = useState<"preview" | "code">(
 		artifact?.type === "html" || artifact?.type === "svg" ? "preview" : "code"
 	);
@@ -51,6 +53,10 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 		setCopied(true);
 		toast.success(t("chat.copied"));
 		setTimeout(() => setCopied(false), 2000);
+	};
+	const handleDownload = () => {
+		const filename = downloadArtifactFile(artifact);
+		toast.success(isVi ? `Đã tải về ${filename}` : `Downloaded ${filename}`);
 	};
 
 	const handlePrint = () => {
@@ -129,6 +135,11 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 							</Button>
 						</>
 					)}
+
+					<Button size="sm" variant="outline" className="h-6 gap-1 text-[11px] font-mono px-2" onClick={handleDownload} title={isVi ? "Tải về file" : "Download file"}>
+						<Download className="size-3 text-accent" />
+						<span>{isVi ? "Tải về" : "Download"}</span>
+					</Button>
 
 					<Button size="sm" variant="outline" className="h-6 gap-1 text-[11px] font-mono px-2" onClick={handleCopy}>
 						{copied ? <Check className="size-3 text-[#1d7a33]" /> : <Copy className="size-3 text-ink-2" />}

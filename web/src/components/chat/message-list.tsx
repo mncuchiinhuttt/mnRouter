@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bot, Code2, Copy, FileCode2, FileText, Globe, Sparkles, ThumbsDown, User as UserIcon } from "lucide-react";
+import { Bot, Code2, Copy, Download, FileCode2, FileText, Globe, Sparkles, ThumbsDown, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { fmtCompact } from "@web/lib/utils";
 import { Markdown } from "./markdown";
@@ -8,7 +8,7 @@ import { ExecutionLogBox } from "./execution-log-box";
 import { ClarificationBox, extractClarification } from "./clarification-box";
 import { FeedbackDialog } from "./feedback-dialog";
 import type { ExecutionStep, SearchData } from "./execution-types";
-
+import { downloadArtifactFile } from "./artifact-download";
 export interface MessageItem {
 	id: string;
 	threadId?: string;
@@ -146,17 +146,15 @@ export function MessageList({
 							{msgArtifacts.length > 0 && (
 								<div className="flex flex-wrap gap-2 pt-1">
 									{msgArtifacts.map((art) => (
-										<button
-											key={art.id}
-											type="button"
-											onClick={() => onOpenArtifact(art)}
-											className="flex items-center gap-2 rounded-md border border-[#d5daff] bg-[#f6f8ff] px-3 py-1.5 text-xs text-[#2323e6] hover:bg-[#eef0ff] transition cursor-pointer shadow-2xs font-mono"
-										>
-											<Code2 className="size-3.5" />
-											<span className="font-semibold">{art.title}</span>
-											<span className="rounded bg-white px-1.5 py-0.5 text-[10px] text-ink-2 border border-[#d5daff] uppercase">{art.type}</span>
-											<span className="text-[10px] text-[#1d7a33]">24h</span>
-										</button>
+										<div key={art.id} className="inline-flex items-center rounded-md border border-[#d5daff] bg-[#f6f8ff] text-xs text-[#2323e6] shadow-2xs font-mono overflow-hidden">
+											<button type="button" onClick={() => onOpenArtifact(art)} className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#eef0ff] transition cursor-pointer">
+												<Code2 className="size-3.5" />
+												<span className="font-semibold">{art.title}</span>
+												<span className="rounded bg-white px-1.5 py-0.2 text-[10px] text-ink-2 border border-[#d5daff] uppercase">{art.language || art.type}</span>
+												<span className="text-[10px] text-[#1d7a33]">24h</span>
+											</button>
+											<button type="button" onClick={(e) => { e.stopPropagation(); const fn = downloadArtifactFile(art); toast.success(`Đã tải về ${fn}`); }} className="border-l border-[#d5daff] px-2 py-1.5 hover:bg-[#eef0ff] hover:text-accent cursor-pointer transition text-[#2323e6]/80" title="Tải về file"><Download className="size-3.5" /></button>
+										</div>
 									))}
 								</div>
 							)}
