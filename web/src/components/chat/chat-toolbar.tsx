@@ -9,6 +9,7 @@ import { HARNESS_SKILLS, THINKING_LEVELS, getModelThinkingLevels, type ThinkingL
 import type { ModelItem } from "./thread-sidebar";
 import type { ThreadTokensInfo } from "@web/lib/chat-tokens";
 import { fmtCompact } from "@web/lib/utils";
+import { groupModelsByProvider } from "./model-selector-utils";
 interface ChatToolbarProps {
 	selectedModel: string;
 	onSelectModel: (model: string) => void;
@@ -47,13 +48,7 @@ export function ChatToolbar({
 		}
 	}, [availableLevels, thinkingLevel, onSelectThinking]);
 
-	const groupedModels = useMemo(() => {
-		const order = ["claude", "codex", "antigravity", "opencode", "other"], labels: Record<string, string> = { claude: "Anthropic Claude", codex: "OpenAI Codex", antigravity: "Google Antigravity", opencode: "OpenCode" };
-		const groups: Record<string, ModelItem[]> = {};
-		for (const m of filteredModels) { const p = (m.provider || "other").toLowerCase(); if (!groups[p]) groups[p] = []; groups[p]!.push(m); }
-		for (const p in groups) groups[p]!.sort((a, b) => (a.displayName || a.id).localeCompare(b.displayName || b.id));
-		return Object.keys(groups).sort((a, b) => (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b))).map((p) => ({ provider: p, name: labels[p] || p.toUpperCase(), models: groups[p]! }));
-	}, [filteredModels]);
+	const groupedModels = useMemo(() => groupModelsByProvider(filteredModels), [filteredModels]);
 	const { data: skillsQueryData } = useQuery({ queryKey: ["custom-skills"], queryFn: () => api<{ builtInSkills: HarnessSkill[]; customSkills: { id: string; name: string; slug: string; description: string; icon: string; enabled: boolean }[] }>("/api/skills") });
 	const customSkills = skillsQueryData?.customSkills ?? [];
 	const allAvailableSkills = useMemo(() => {
@@ -92,30 +87,16 @@ export function ChatToolbar({
 							type="button"
 							onClick={onOpenCompact}
 							title="Context Window & Compactor"
-							className={`flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-[10.5px] transition cursor-pointer shadow-2xs ${
-								tokensInfo.percent >= 80
-									? "border-[#c6293b] bg-[#c6293b]/10 text-[#c6293b] font-bold animate-pulse"
-									: tokensInfo.percent >= 50
-									? "border-[#9a6b0a] bg-[#9a6b0a]/10 text-[#9a6b0a] font-medium"
-									: "border-line bg-paper-2 text-ink-2 hover:border-accent hover:text-ink"
-							}`}
+							className={`flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-[10.5px] transition cursor-pointer shadow-2xs ${tokensInfo.percent >= 80 ? "border-[#c6293b] bg-[#c6293b]/10 text-[#c6293b] font-bold animate-pulse" : tokensInfo.percent >= 50 ? "border-[#9a6b0a] bg-[#9a6b0a]/10 text-[#9a6b0a] font-medium" : "border-line bg-paper-2 text-ink-2 hover:border-accent hover:text-ink"}`}
 						>
 							<Brain className="size-3 text-accent shrink-0" />
 							<span className="text-[9.5px] uppercase tracking-wider text-ink-2/70 font-semibold">Context:</span>
-							<span className="font-semibold text-ink">
-								{fmtCompact(tokensInfo.usedTokens)} / {fmtCompact(tokensInfo.contextWindow)}
-							</span>
+							<span className="font-semibold text-ink">{fmtCompact(tokensInfo.usedTokens)} / {fmtCompact(tokensInfo.contextWindow)}</span>
 							<span className="opacity-70">({tokensInfo.percent}%)</span>
-							{tokensInfo.percent >= 60 && (
-								<span className="rounded bg-[#c6293b] px-1 py-0.2 text-[8.5px] font-bold text-white uppercase">
-									Compact
-								</span>
-							)}
+							{tokensInfo.percent >= 60 && <span className="rounded bg-[#c6293b] px-1 py-0.2 text-[8.5px] font-bold text-white uppercase">Compact</span>}
 						</button>
 					)}
-					{budget != null && (
-						<span className="text-[10px] text-ink-2/60">{t("chat.resetCountdown", { days: daysToReset })}</span>
-					)}
+					{budget != null && <span className="text-[10px] text-ink-2/60">{t("chat.resetCountdown", { days: daysToReset })}</span>}
 				</div>
 			</div>
 
@@ -145,7 +126,10 @@ export function ChatToolbar({
 													<div className="flex flex-col gap-1 min-w-[270px] text-left">
 														<div className="flex items-center justify-between gap-2">
 															<span className="font-mono text-xs font-semibold text-ink truncate">{m.displayName || m.id}</span>
-															<span className="shrink-0 rounded bg-paper-2 border border-line px-1.5 py-0.2 font-mono text-[9px] uppercase text-ink-2">{m.provider}</span>
+															<div className="flex items-center gap-1.5 shrink-0">
+																<span className="rounded bg-accent/10 border border-accent/25 px-1.5 py-0.2 font-mono text-[9px] font-semibold text-accent">{fmtCompact(m.contextWindow || 200_000)}</span>
+																<span className="rounded bg-paper-2 border border-line px-1.5 py-0.2 font-mono text-[9px] uppercase text-ink-2">{m.provider}</span>
+															</div>
 														</div>
 														<div className="flex items-center gap-1.5 font-mono text-[10px] text-ink-2">
 															{isFree ? <span className="font-semibold text-[#1d7a33]">Free (0 cr)</span> : (
@@ -183,16 +167,13 @@ export function ChatToolbar({
 						type="button"
 						onClick={() => setSkillsOpen(true)}
 						className={`flex h-7 shrink-0 items-center gap-1.5 rounded-md border px-2.5 font-mono text-xs shadow-2xs transition cursor-pointer ${
-							selectedSkills.length > 0
-								? "border-accent bg-accent text-white font-medium"
-								: "border-line bg-white text-ink-2 hover:text-ink hover:border-ink-2"
+							selectedSkills.length > 0 ? "border-accent bg-accent text-white font-medium" : "border-line bg-white text-ink-2 hover:text-ink hover:border-ink-2"
 						}`}
 						title="Harness Agent Skills"
 					>
 						<Zap className="size-3.5" />
 						<span>Agent Skills ({selectedSkills.length})</span>
 					</button>
-
 				</div>
 
 				{/* 4. Active Skill Chips: Horizontally scrollable track right next to buttons */}
@@ -200,15 +181,10 @@ export function ChatToolbar({
 					<div className="flex-1 min-w-0 overflow-x-auto py-0.5" style={{ scrollbarWidth: "none" }}>
 						<div className="flex items-center gap-1.5 w-max pr-1">
 							{activeSkillObjects.map((s) => (
-								<div
-									key={s.id}
-									className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d5daff] bg-[#f6f8ff] px-2 py-0.5 font-mono text-[10.5px] text-[#2323e6] shadow-2xs"
-								>
+								<div key={s.id} className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d5daff] bg-[#f6f8ff] px-2 py-0.5 font-mono text-[10.5px] text-[#2323e6] shadow-2xs">
 									<SkillIcon icon={s.icon} className="size-3" />
 									<span className="font-medium">{s.shortName}</span>
-									<button type="button" onClick={() => onToggleSkill(s.id)} className="hover:text-[#c6293b] cursor-pointer">
-										<X className="size-3" />
-									</button>
+									<button type="button" onClick={() => onToggleSkill(s.id)} className="hover:text-[#c6293b] cursor-pointer"><X className="size-3" /></button>
 								</div>
 							))}
 						</div>

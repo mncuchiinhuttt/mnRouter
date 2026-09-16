@@ -617,6 +617,7 @@ const en: Dict = {
 		searchPlaceholder: "Search model name or ID...",
 		colModel: "MODEL & PROVIDER",
 		colId: "MODEL ID (FOR CLI / IDE)",
+		colContext: "CONTEXT WINDOW",
 		colInput: "INPUT (CR/1M)",
 		colOutput: "OUTPUT (CR/1M)",
 		colCache: "CACHE (CR/1M)",

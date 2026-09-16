@@ -95,6 +95,7 @@ export function ModelDirectoryView({ models }: ModelDirectoryViewProps) {
 							<TR>
 								<TH className="w-1/3">{t("modelsDirectory.colModel")}</TH>
 								<TH>{t("modelsDirectory.colId")}</TH>
+								<TH className="text-right">{t("modelsDirectory.colContext")}</TH>
 								<TH className="text-right">{t("modelsDirectory.colInput")}</TH>
 								<TH className="text-right">{t("modelsDirectory.colOutput")}</TH>
 								<TH className="text-right">{t("modelsDirectory.colCache")}</TH>
@@ -104,7 +105,7 @@ export function ModelDirectoryView({ models }: ModelDirectoryViewProps) {
 						<TBody>
 							{filteredModels.length === 0 ? (
 								<TR>
-									<TD colSpan={6} className="py-8 text-center text-xs text-ink-2 font-mono">
+									<TD colSpan={7} className="py-8 text-center text-xs text-ink-2 font-mono">
 										{t("modelsDirectory.noModels")}
 									</TD>
 								</TR>
@@ -137,6 +138,11 @@ export function ModelDirectoryView({ models }: ModelDirectoryViewProps) {
 														{m.id}
 													</code>
 												</div>
+											</TD>
+											<TD className="text-right font-mono text-xs tabular-nums">
+												<span className="inline-flex items-center rounded-md px-1.5 py-0.5 font-semibold text-[11px] bg-accent/10 text-accent border border-accent/20">
+													{fmtCompact(m.contextWindow || 200_000)}
+												</span>
 											</TD>
 											<TD className="text-right font-mono text-xs tabular-nums">
 												{isFree ? (

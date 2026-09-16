@@ -168,45 +168,24 @@ export function ContextCompactDialog({
 					<Button variant="ghost" onClick={() => onOpenChange(false)} disabled={compacting}>
 						{isVi ? "Đóng" : "Close"}
 					</Button>
-					{isOverloadMode ? (
-						<Button
-							variant="default"
-							onClick={() => handleCompact(true)}
-							disabled={compacting || !tokensInfo.canCompact}
-							className="gap-1.5 bg-[#c6293b] hover:bg-[#b02232] text-white"
-						>
-							{compacting ? (
-								<>
-									<Loader2 className="size-3.5 animate-spin" />
-									<span>{isVi ? "Đang thu gọn & chuyển..." : "Compacting & switching..."}</span>
-								</>
-							) : (
-								<>
-									<span>{isVi ? "Thu gọn & Chuyển model" : "Compact & Switch Model"}</span>
-									<ArrowRight className="size-3.5" />
-								</>
-							)}
-						</Button>
-					) : (
-						<Button
-							variant="default"
-							onClick={() => handleCompact(false)}
-							disabled={compacting || !tokensInfo.canCompact}
-							className="gap-1.5"
-						>
-							{compacting ? (
-								<>
-									<Loader2 className="size-3.5 animate-spin" />
-									<span>{isVi ? "Đang thu gọn..." : "Compacting context..."}</span>
-								</>
-							) : (
-								<>
-									<Sparkles className="size-3.5" />
-									<span>{isVi ? "Thu gọn ngữ cảnh ngay" : "Compact Context Now"}</span>
-								</>
-							)}
-						</Button>
-					)}
+					<Button
+						variant="default"
+						onClick={() => handleCompact(Boolean(isOverloadMode))}
+						disabled={compacting || !tokensInfo.canCompact}
+						className={`gap-1.5 ${isOverloadMode ? "bg-[#c6293b] hover:bg-[#b02232] text-white" : ""}`}
+					>
+						{compacting ? (
+							<>
+								<Loader2 className="size-3.5 animate-spin" />
+								<span>{isOverloadMode ? (isVi ? "Đang thu gọn & chuyển..." : "Compacting & switching...") : (isVi ? "Đang thu gọn..." : "Compacting context...")}</span>
+							</>
+						) : (
+							<>
+								{isOverloadMode ? <ArrowRight className="size-3.5" /> : <Sparkles className="size-3.5" />}
+								<span>{isOverloadMode ? (isVi ? "Thu gọn & Chuyển model" : "Compact & Switch Model") : (isVi ? "Thu gọn ngữ cảnh ngay" : "Compact Context Now")}</span>
+							</>
+						)}
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

@@ -615,6 +615,7 @@ const vi = {
 		searchPlaceholder: "Tìm tên hoặc model ID...",
 		colModel: "MODEL & PROVIDER",
 		colId: "MODEL ID (DÙNG CHO CLI / IDE)",
+		colContext: "CONTEXT WINDOW",
 		colInput: "INPUT (CR/1M)",
 		colOutput: "OUTPUT (CR/1M)",
 		colCache: "CACHE (CR/1M)",
