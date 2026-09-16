@@ -12,9 +12,21 @@ export function fmtNum(n: number | string | null | undefined): string {
 
 export function fmtCompact(n: number | string | null | undefined): string {
 	const v = Number(n ?? 0);
-	if (Math.abs(v) >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(2)}B`;
-	if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
-	if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+	const abs = Math.abs(v);
+	if (abs >= 1_000_000_000) {
+		const val = v / 1_000_000_000;
+		return `${Number(val.toFixed(val >= 10 ? 0 : 1))}B`;
+	}
+	if (abs >= 1_000_000) {
+		if (abs >= 1_000_000 && abs <= 1_050_000) return "1M";
+		if (abs >= 2_000_000 && abs <= 2_100_000) return "2M";
+		const val = v / 1_000_000;
+		return `${Number(val.toFixed(val >= 10 ? 0 : 1))}M`;
+	}
+	if (abs >= 1_000) {
+		const val = v / 1_000;
+		return `${Number(val.toFixed(val >= 10 ? 0 : 1))}K`;
+	}
 	return String(v);
 }
 

@@ -27,9 +27,11 @@ export class ModelService {
 					await modelRepo.update(m.id, { priceIn: m.priceIn, priceOut: m.priceOut });
 				}
 			}
+			const existing = await modelRepo.findById(m.id);
+			if (existing && existing.contextWindow !== m.contextWindow) {
+				await modelRepo.update(m.id, { contextWindow: m.contextWindow });
+			}
 		}
-
-		// Ensure default opencode-free connection exists
 		const openCodeConns = await connectionRepo.findActiveByProvider("opencode");
 		if (openCodeConns.length === 0) {
 			await connectionRepo.create({
