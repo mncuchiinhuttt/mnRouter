@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { buildOpenAiChatRequest, OpenAiChatParser, parseOpenAiChatResponse } from "../../src/server/gateway/egress/openai-chat.js";
 import { computeCredits } from "../../src/server/usage/index.js";
 import type { CanonicalRequest } from "../../src/server/gateway/canonical.js";
-import { PROVIDERS } from "../../src/server/gateway/registry.js";
+import { DEFAULT_MODELS, PROVIDERS } from "../../src/server/gateway/registry.js";
 
 const req: CanonicalRequest = {
 	model: "grok-4",
@@ -61,9 +61,46 @@ describe("openai-chat egress (grok + opencode)", () => {
 	});
 });
 
+describe("default model catalog", () => {
+	it("configures the current OpenCode catalog with lightweight credit pricing", () => {
+		const openCodeModels = DEFAULT_MODELS.filter((model) => model.provider === "opencode");
+		const ids = openCodeModels.map((model) => model.id);
+		expect(ids).toEqual(
+			expect.arrayContaining([
+				"big-pickle",
+				"muse-spark-1.3-contributor-free",
+				"muse-spark-1.2-contributor-free",
+				"ling-3.0-flash-fin-free",
+				"nemotron-3.5-lightning-free",
+				"nemotron-3-ultra-free",
+				"mimo-v2.5-free",
+				"deepseek-v4-flash-free",
+			]),
+		);
+		expect(openCodeModels.every((model) => model.priceIn > 0 && model.priceOut > 0)).toBe(true);
+		expect(openCodeModels.find((model) => model.id === "muse-spark-1.3-contributor-free")?.displayName).toBe("Muse Spark 1.3");
+	});
+
+	it("includes the latest text model families for every configured provider", () => {
+		const required: Record<string, string[]> = {
+			claude: ["claude-fable-5-1", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6"],
+			codex: ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-luna", "gpt-5.3-codex"],
+			antigravity: ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite", "gemini-3-flash-preview"],
+			kiro: ["gpt-5.6-sol-kiro", "gpt-5.6-terra-kiro", "gpt-5.6-luna-kiro", "claude-opus-4.8-kiro"],
+			grok: ["grok-4.6", "grok-4.5", "grok-4.3", "grok-4.20-0309-reasoning"],
+		};
+		for (const [provider, ids] of Object.entries(required)) {
+			const available = new Set(DEFAULT_MODELS.filter((model) => model.provider === provider).map((model) => model.id));
+			for (const id of ids) expect(available.has(id)).toBe(true);
+		}
+		expect(new Set(DEFAULT_MODELS.map((model) => model.id)).size).toBe(DEFAULT_MODELS.length);
+	});
+});
+
+
 describe("credits engine", () => {
 	it("computes credits = in/1M*priceIn + out/1M*priceOut (1 cr = $0.01)", () => {
-		// claude-sonnet-5: 300 in / 1500 out (=$3/$15 per M)
+		// Explicit sample prices: 300 input / 1500 output credits per 1M.
 		const cr = computeCredits(300, 1500, { promptTokens: 1_000_000, completionTokens: 100_000, cacheReadTokens: 0, cacheWriteTokens: 0, reasoningTokens: 0 });
 		expect(cr).toBe(300 + 150); // $3 + $1.5 → 450 cr
 	});
@@ -71,6 +108,11 @@ describe("credits engine", () => {
 	it("applies cache read 10% and cache write 125% of input price", () => {
 		const cr = computeCredits(300, 1500, { promptTokens: 0, completionTokens: 0, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, reasoningTokens: 0 });
 		expect(cr).toBe(30 + 375);
+	});
+
+	it("uses explicit per-model cache prices when configured", () => {
+		const cr = computeCredits(100, 200, { promptTokens: 1_000_000, completionTokens: 100_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 1_000_000, reasoningTokens: 0 }, 7, 11);
+		expect(cr).toBe(138);
 	});
 
 	it("free models cost 0", () => {
