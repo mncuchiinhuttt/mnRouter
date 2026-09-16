@@ -1,50 +1,68 @@
 # MNRouter
 
-**Internal AI gateway** — một cổng API duy nhất (OpenAI/Anthropic-compatible) phía trước các tài khoản OAuth thật: **Claude (Claude Code OAuth)**, **ChatGPT/Codex**, **Google Antigravity/Gemini**, **AWS Kiro**. Chạy trên **Bun runtime** — nhẹ tối đa cho Dell Wyse 3040 (Debian 12), không Docker, DB hosted trên Neon Postgres.
+**Internal AI gateway** — một cổng API duy nhất (OpenAI/Anthropic-compatible) phía trước các tài khoản OAuth thật: **Claude (Claude Code OAuth)**, **ChatGPT/Codex**, **Google Antigravity/Gemini**, **AWS Kiro**, **Grok/xAI** và **OpenCode Free**. Chạy trên **Bun runtime** — nhẹ tối đa cho Dell Wyse 3040 (Debian 12), không Docker, DB sử dụng **SQLite native (bun:sqlite)** với chế độ WAL siêu nhanh, tự động khởi tạo bảng khi khởi động.
 
 > Plan chi tiết: [PLAN.md](./PLAN.md)
 
 ## Kiến trúc (30 giây)
 
 ```
-Claude Code ──/v1/messages──┐
-Codex CLI ────/v1/responses─┤──► [MNRouter: Hono trên Bun.serve] ──► canonical ──► adapters ──► Claude / Codex / Antigravity / Kiro
-Bất kỳ tool ──/v1/chat/…────┘        │ auth (magic link + API key)        (OAuth auto-refresh, failover, cooldown)
-                                     │ usage log + budget + rate limit
-                                     └─► Neon Postgres
+[Client (Web / CLI / Agents)]
+       │
+       ▼
+[1. Router & Controllers] (Hono / Ingress validation & HTTP formatting)
+       │
+       ▼
+[2. Domain Services] (Auth, User, Invitation, Budget, Gateway, Model, Connection)
+       │
+       ▼
+[3. Data Repositories] (UserRepository, KeyRepository, UsageRepository, etc.)
+       │
+       ▼
+[4. SQLite Database] (bun:sqlite + WAL mode, ./data/mnrouter.db)
 ```
 
 - **Ingress**: `POST /v1/chat/completions` (OpenAI), `POST /v1/responses` (Codex), `POST /v1/messages` (Anthropic), `GET /v1/models` — stream + non-stream.
 - **Chuẩn hoá**: mọi request dịch về canonical format rồi adapter phân phối ra wire format từng provider (tham khảo `@oh-my-pi/pi-ai`).
 - **Providers**: Claude (OAuth), ChatGPT/Codex (OAuth), Google Antigravity/Gemini (OAuth), AWS Kiro (OAuth), **Grok/xAI** (OAuth PKCE `auth.x.ai`), **OpenCode Free** (`opencode.ai/zen` — noAuth, models free xoay vòng theo tháng, xem [docs](https://opencode.ai/docs/zen/)).
 - **Router**: connection theo priority (`fill-first`/`round-robin`), failover tự động + baseUrl chain (kiro: runtime → codewhisperer → q), cooldown/backoff per connection, refresh OAuth nền mỗi 60s.
-- **Quản lý**: chỉ admin tạo user; login bằng **magic link** (hết hạn 15 phút); session **15 ngày**; **API key do admin cấp**, user chỉ **rotate/revoke**; budget token + **AI credits**/tháng + rate limit per key; log toàn bộ request.
+- **Quản lý**: admin gửi invitation kèm package (token budget, AI credit budget, max keys, model ACL); user accept link một lần thì account mới được tạo trong DB. User tự tạo API key cho mình (trong giới hạn package) và có nút rotate/revoke; admin quản lý user, danh sách key và có quyền revoke key của user, chỉnh model/giá AI credits.
 
 ## AI Credits (bảng giá nội bộ)
 
 1 credit = **$0.01** theo giá API niêm yết của từng nhà — budget tháng trừ theo credits nên model nào cũng so được với nhau:
 
 ```
-credits = (prompt + cacheRead×0.1 + cacheWrite×1.25)/1M × giáIn + completion/1M × giáOut
+credits = prompt/1M × priceIn + cacheRead/1M × priceCacheRead + cacheWrite/1M × priceCacheWrite + completion/1M × priceOut
 ```
 
-| Model | Provider | $/1M in | $/1M out | cr/1M in | cr/1M out |
-|---|---|---|---|---|---|
-| Claude Fable 5 | claude | $10 | $50 | 1000 | 5000 |
-| GPT-5.5 | codex | $5 | $30 | 500 | 3000 |
-| Claude Opus 5 (+via Kiro) | claude/kiro | $5 | $25 | 500 | 2500 |
-| Claude Sonnet 5 (+AG/Kiro) | claude/ag/kiro | $3 | $15 | 300 | 1500 |
-| Grok 4 / Grok 3 | grok | $3 | $15 | 300 | 1500 |
-| GPT-5.6 Terra | codex | $2 | $12 | 200 | 1200 |
-| Gemini Pro Agent / 3.1 Pro | antigravity | $2 | $12 | 200 | 1200 |
-| Gemini 3.5 Flash | antigravity | $0.50 | $3 | 50 | 300 |
-| GPT-5.4 | codex | $1.25 | $10 | 125 | 1000 |
-| GPT-5.3 Codex Spark | codex | $0.25 | $2 | 25 | 200 |
-| Grok Code Fast 1 | grok | $0.20 | $1.50 | 20 | 150 |
-| Grok 4 Fast Reasoning | grok | $0.20 | $0.50 | 20 | 50 |
-| OpenCode free (big-pickle, MiMo, Nemotron, …) | opencode | free | free | 0 | 0 |
+| Model family | Provider | $/1M in | $/1M out | cr/1M in | cr/1M out |
+|---|---|---:|---:|---:|---:|
+| Claude Fable 5.1 | claude | $10 | $50 | 1000 | 5000 |
+| Claude Opus 5 / 4.8 / 4.7 | claude/kiro | $5 | $25 | 500 | 2500 |
+| Claude Sonnet 5 | claude/ag/kiro | $2 | $10 | 200 | 1000 |
+| GPT-6 Astra | codex | $10 | $50 | 1000 | 5000 |
+| GPT-5.6 Sol | codex/kiro | $4 | $20 | 400 | 2000 |
+| GPT-5.6 Terra | codex/kiro | $2 | $12 | 200 | 1200 |
+| GPT-5.6 Luna | codex/kiro | $0.20 | $1.20 | 20 | 120 |
+| GPT-5.4 Mini / Nano | codex | $0.75 / $0.20 | $4.50 / $1.25 | 75 / 20 | 450 / 125 |
+| Grok 4.6 / 4.5 | grok | $2 | $6 | 200 | 600 |
+| Gemini 3.8 / 3.7 / 3.6 Flash | antigravity | $0.75 | $3.75 | 75 | 375 |
+| Gemini 3.5 Flash | antigravity | $1.50 | $9 | 150 | 900 |
+| OpenCode Zen free (Muse, Big Pickle, MiMo, Ling, Nemotron, DeepSeek) | opencode | free | free | 0 | 0 |
 
-Sửa giá trực tiếp trong **Admin → Models → Bảng giá AI credits** (edit theo model, seed tự backfill model mới, không đè giá admin đã sửa). Nguồn giá: [Anthropic](https://www.anthropic.com/news/claude-sonnet-5), [OpenAI](https://developers.openai.com/api/docs/pricing), Google, [xAI](https://x.ai/api#pricing) (9/2026).
+Sửa giá trực tiếp trong **Admin → Models → Bảng giá AI credits**. Catalog seed thêm model mới lúc boot nhưng không đè giá admin đã sửa; model Muse hiển thị tên ngắn theo OpenCode Zen nhưng wire ID dùng hậu tố chính thức `-contributor-free`.
+
+Nguồn giá/model: [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [Google Gemini](https://ai.google.dev/gemini-api/docs/pricing), [xAI](https://docs.x.ai/developers/models), [OpenCode Zen](https://opencode.ai/docs/zen/).
+
+## Invitations, packages và model access
+
+- Admin mở **Users → Send invitation**, nhập email, tên package, token budget/tháng, AI credit budget/tháng, số API key tối đa và danh sách model được phép.
+- Invitation hết hạn sau 7 ngày, chỉ dùng một lần. User mở link, nhập display name tuỳ chọn và accept; backend transaction tạo `users`, copy package fields, copy model ACL vào `user_models` và tạo session.
+- User gọi model không nằm trong ACL nhận `403 model_forbidden` và request vẫn được ghi vào usage log.
+- User vượt token budget hoặc credit budget nhận `429 budget_exceeded`. `null` là không giới hạn; giá trị `0` chặn ngay từ đầu tháng.
+- User portal → **Usage** hiển thị aggregate usage và từng request với input/cache/output tokens, latency và AI credits.
+- Migration mới: `drizzle/0003_add_invitation_package_name.sql`.
 
 ## Dev local
 
@@ -63,7 +81,7 @@ Magic link chạy dev (chưa set SMTP_PASS) sẽ **in link vào console** — b�
 ```bash
 bun run typecheck   # tsc --noEmit (bun-types)
 bun test            # unit: converters 3 ingress + 4 provider parsers + keys (bun:test)
-bun run test:e2e    # e2e: postgres tạm + mock 4 upstream + server thật chạy bằng bun (45+ assertions)
+bun run test:e2e    # e2e: postgres tạm + 6 mock upstream + server thật (invitation/ACL/credits/logs)
 ```
 
 E2e tự dựng Postgres ở `/tmp/mnrouter-e2e-pg` (cần `initdb` của Homebrew Postgres).

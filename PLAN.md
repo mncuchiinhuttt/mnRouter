@@ -14,7 +14,7 @@ Nguồn research:
 
 ## 1. Nguyên tắc thiết kế
 
-1. **Nhẹ**: 1 process Node duy nhất (serve cả API + web tĩnh), KHÔNG Docker, KHÔNG Redis (single instance → rate-limit in-memory là đủ), DB hosted trên Neon (máy chỉ chạy app).
+1. **Nhẹ & Không phụ thuộc ngoài**: 1 process Bun duy nhất (serve cả API + web tĩnh), KHÔNG Docker, KHÔNG Redis, DB dùng **SQLite native (bun:sqlite)** với chế độ WAL — 0 network latency, 0 cold start, tự động khởi tạo bảng khi boot.
 2. **Chuẩn hoá ở giữa**: mọi ingress (OpenAI Chat, OpenAI Responses, Anthropic Messages) → **Canonical format** → adapter provider. Thêm harness mới = thêm 1 bộ converter, không đụng adapter provider.
 3. **Adapter provider là data-driven**: endpoint, clientId, scopes, refresh lead, retry/cooldown nằm trong registry config → Antigravity/Kiro đổi endpoint chỉ cần sửa config, không sửa logic.
 4. **Ghi log hết**: 1 row / request (token in/out/cache, latency, status, user, key, connection) + aggregate theo ngày + audit log hành động admin.
@@ -25,7 +25,7 @@ Nguồn research:
 | Layer | Chọn | Lý do |
 |---|---|---|
 | Runtime | **Bun** (TS native, không build server) | 1 binary, khởi động nhanh, RSS thấp, `bun test` sẵn | HTTP server | **Hono** trên `Bun.serve` | nhanh, API nhỏ gọn, hỗ trợ SSE/stream, static qua `hono/bun` |
-| ORM | **Drizzle ORM + drizzle-kit** → **Neon Postgres** | yêu cầu của bạn; Neon free tier, pooled connection |
+| ORM | **Drizzle ORM + bun:sqlite** (WAL mode) | Chuẩn System Design: Repository tách biệt, siêu nhẹ cho Wyse, 0 network latency |
 | Validate | zod | schema dùng chung client/server |
 | Mail | nodemailer + iCloud SMTP | đúng cách TestAppleMail đang làm |
 | Frontend | **Vite + React + Tailwind v4 + shadcn/ui** + TanStack Query + Recharts | yêu cầu của bạn |
@@ -42,21 +42,16 @@ mnRouter/
 ├─ deploy/            # mnrouter.service, cloudflared.service, deploy.sh, setup-wyse.md
 ├─ src/
 │  ├─ server/
-│  │  ├─ index.ts            # bootstrap: hono app + static + refresher cron
-│  │  ├─ env.ts              # zod-parse env
-│  │  ├─ db/                 # schema.ts, index.ts (drizzle + postgres.js)
-│  │  ├─ mail/               # nodemailer service + template magic link
-│  │  ├─ auth/               # magic-link, session, api-key, guards
-│  │  ├─ gateway/
-│  │  │  ├─ canonical.ts     # kiểu dữ liệu chuẩn hoá (tham khảo pi-ai)
-│  │  │  ├─ ingress/         # openai-chat.ts, openai-responses.ts, anthropic.ts  → canonical
-│  │  │  ├─ egress/          # claude.ts, codex.ts, antigravity.ts, kiro.ts    → canonical↔wire
-│  │  │  ├─ registry.ts      # provider registry (endpoint/oauth/retry) data-driven
-│  │  │  ├─ router.ts        # chọn connection, failover, cooldown/backoff
-│  │  │  ├─ refresher.ts     # background refresh token
-│  │  │  └─ usage.ts         # trích usage từ response/stream
-│  │  ├─ limits/             # rate-limit in-memory + monthly budget check
-│  │  └─ routes/             # gateway.ts (/v1/*), admin.ts, user.ts, auth.ts
+│  │  ├─ index.ts               # bootstrap: Hono app + static + refresher cron + script routes
+│  │  ├─ env.ts                 # zod-parse env (DATABASE_URL default: ./data/mnrouter.db)
+│  │  ├─ db/                    # Layer 4: SQLite Database (schema.ts, index.ts, init.ts)
+│  │  ├─ repositories/          # Layer 3: Data Access Layer (user, key, invitation, model, conn, usage)
+│  │  ├─ services/              # Layer 2: Business Logic (auth, user, invitation, budget, gateway, model)
+│  │  ├─ routes/ / controllers/ # Layer 1: HTTP Router & Controllers (ingress validation & response)
+│  │  ├─ gateway/               # Pipeline adapters (canonical, ingress, egress, router, refresher)
+│  │  ├─ auth/                  # guards, crypto utilities
+│  │  └─ mail/                  # nodemailer service + template
+│  └─ shared/                   # types + zod schemas
 │  └─ shared/                # types + zod schema dùng chung web/server
 ├─ web/                      # React app (Vite root), dist build → server phục vụ tĩnh
 │  └─ src/{pages,components/ui (shadcn),lib}
@@ -66,9 +61,12 @@ mnRouter/
 ## 3. Data model (Drizzle / Postgres)
 
 ```
-users             id uuid pk, email citext unique, role enum(admin,user), displayName,
+users             id uuid pk, email unique, role enum(admin,user), displayName, packageName,
                   status enum(active,disabled), maxApiKeys int default 1,
-                  monthlyTokenBudget bigint null (=unlimited), createdAt, disabledAt
+                  monthlyTokenBudget bigint null, monthlyCreditBudget bigint null,
+                  allModels bool default true, createdAt, disabledAt
+invitations       id, email, tokenHash sha256, packageName, invitedBy, package limits,
+                  allModels, allowedModels jsonb, status, expiresAt, acceptedAt, createdAt
 magic_links       id, email, tokenHash sha256, expiresAt (15'), usedAt, ip, ua, createdAt
 sessions          id, userId→users, tokenHash, expiresAt (15 ngày), lastUsedAt, ip, ua
 api_keys          id, userId→users, name, prefix (8 ký tự đầu để hiển thị), keyHash sha256 unique,
@@ -78,13 +76,14 @@ provider_connections  id, provider enum(claude,codex,antigravity,kiro), label, p
                   data jsonb { accessToken, refreshToken, expiresAt, accountId, projectId,
                                backoffLevel, lastErrorAt, lastError, lastUsedAt, consecutiveUseCount },
                   baseUrlOverride text null (để test/mock), createdAt, updatedAt
-models            id text pk (tên public, vd "claude-sonnet-4-5"), provider, upstreamModel,
-                  displayName, enabled, priority, contextWindow, maxOutput
+models            id text pk (tên public), provider, upstreamModel, displayName,
+                  enabled, priority, contextWindow, maxOutput,
+                  priceIn, priceCacheRead, priceCacheWrite, priceOut
 settings          key pk, value jsonb   (routing strategies, rate limit default, pricing…)
 usage_requests    id bigserial, ts, userId, apiKeyId, provider, connectionId, model, endpoint,
-                  status enum(ok,error,budget_exceeded,rate_limited), httpStatus,
+                  status enum(ok,error,budget_exceeded,rate_limited,forbidden), httpStatus,
                   promptTokens, completionTokens, cacheReadTokens, cacheWriteTokens,
-                  reasoningTokens, latencyMs, ttftMs, errorCode, meta jsonb
+                  reasoningTokens, credits, latencyMs, ttftMs, errorCode, meta jsonb
 usage_daily       (date, userId, provider, model) pk, requests, errors,
                   promptTokens, completionTokens, cacheRead, cacheWrite   ← pre-aggregate cho chart
 audit_logs        id, ts, actorUserId, action, target, data jsonb
@@ -141,25 +140,27 @@ Mỗi adapter implement cùng interface: `translateRequest(canonical→wire)`, `
 
 ## 6. Auth & phân quyền (đúng yêu cầu)
 
-1. **Không signup.** User chỉ được admin tạo (email + max keys + budget). DB rỗng lần đầu → script `bootstrap-admin <email>` tạo admin.
-2. **Login = magic link**: nhập email → tạo `magic_links` (token 32B, hash lưu DB, hết hạn 15', single-use) → nodemailer gửi từ `system@mncuchiinhuttt.dev` → click link `APP_URL/auth/verify?token=…` → tạo session (cookie httpOnly, Secure, SameSite=Lax, **15 ngày**). Email không tồn tại → vẫn trả OK (tránh dò email), không gửi gì.
-3. **API key**: user KHÔNG tự tạo. Admin bấm "Create key" cho user (tôn trọng `maxApiKeys`); user chỉ có nút **Rotate** (tạo key mới + thu cũ, hiện key plaintext đúng 1 lần) và **Revoke**. Key gắn user, mọi request log về user.
-4. **Session admin/user**: cùng cơ chế, UI render theo `role`.
+1. **Không signup.** Admin gửi invitation kèm package; user accept invitation thì transaction tạo account, copy budget/model ACL và tạo session. DB rỗng lần đầu → script `bootstrap-admin <email>` tạo admin.
+2. **Login = magic link**: user đã có account nhập email → tạo `magic_links` (token 32B, hash lưu DB, hết hạn 15', single-use) → nodemailer gửi → click link → tạo session (cookie httpOnly, Secure, SameSite=Lax, **15 ngày**).
+3. **Invitation accept**: link `/invite/accept?token=…` → user nhập display name tuỳ chọn → `POST /api/auth/invitations/accept`; backend lock invitation pending/unexpired, insert user + model assignments + session atomically.
+4. **API key**: user tự tạo API key trong portal `/keys` (trong giới hạn `maxApiKeys`), có nút **Rotate** và **Revoke**. Admin quản lý danh sách key của từng user tại `/admin/users` và có quyền **Revoke** khi cần.
+5. **Session admin/user**: cùng cơ chế, UI render theo `role`.
 
 ## 7. Usage, budget, rate limit
 
-- Mỗi request (kể cả lỗi) → 1 row `usage_requests` + upsert `usage_daily` (async, sau khi stream kết thúc, không chặn pipeline).
-- **Budget tháng per user** (admin set, null = unlimited): tổng (prompt+completion) tháng hiện tại vượt budget → chặn 429 `budget_exceeded` trước khi gọi upstream.
+- **Budget tháng per user** (admin set, null = unlimited): tổng (prompt+completion) tháng hiện tại vượt budget → chặn 429 `budget_exceeded` trước khi gọi upstream. Giá trị 0 chặn ngay.
+- **AI credits**: mỗi model có giá input/cache read/cache write/output theo credits trên 1M tokens; admin điều chỉnh tại Models. Cache price bằng 0 dùng fallback 10%/125% giá input.
+- **Model ACL**: user có `allModels=true` hoặc danh sách trong `user_models`; model không được cấp → 403 `model_forbidden` và ghi usage log.
 - **Rate limit nhẹ per key**: token bucket in-memory, mặc định 60 req/phút (đặt trong settings) → 429 `rate_limited` + header `Retry-After`.
-- Dashboard user: thẻ SPEND-token / INPUT / OUTPUT / CACHE / REQUESTS + chart 30D (Recharts, by model / by day) — giống layout portal.nousresearch.com.
+- Dashboard user: thẻ credits/token/input/cache/output/requests, chart 30D và request log chi tiết.
 
 ## 8. UI — phong cách Nous Portal, font tech hơn
 
 - **Layout**: sidebar tối màu navy đậm (#0B0B26) chiếm ~19%, có texture halftone/pixel + logo mark + nav chữ mono small-caps với đường kẻ chân lý; content nền sáng (#F4F4F2), heading display lớn, breadcrumb `// SECTION` trên đầu.
 - **Màu**: navy `#0B0B26` / electric blue `#2727F5` (accent duy nhất) / nền sáng off-white / chữ near-black. Không gradient tím AI.
 - **Font**: Space Grotesk (heading/body) + IBM Plex Mono (label, số liệu, nav). Khác với Nous (họ dùng serif-condensed) → "tech hơn".
-- **Trang user**: Overview (hero "Everything to power your agents" + thẻ LOW BALANCE-style budget + stats strip), Usage (chart + filter by model/bar), API Keys (bảng key đã mask + Rotate/Revoke).
-- **Trang admin** (thêm): Users (tạo user, set maxKeys/budget, disable, xem tổng token từng user), Keys (tạo key cho user), Connections (thêm tài khoản OAuth từng provider — mở flow thiết bị/PKCE, xem health/cooldown, priority, strategy, test kết nối), Models (bật/tắt, map alias), Request Logs (explorer có filter), Audit, Settings (route strategy, rate limit).
+- **Trang user**: Overview (hero + package/budget + stats), Usage (chart + by-model + request log chi tiết), API Keys (tự tạo key, mask + Rotate/Revoke), Tools Config (`/config`: hướng dẫn + script tự động cấu hình 10 AI harness về mnRouter).
+- **Trang admin**: Users (send invitation package, revoke invitation, budget, disable, cấp key, model ACL), Connections, Models (bật/tắt, map alias, chỉnh input/cache/output prices), Request Logs, Settings.
 - shadcn/ui: button, card, dialog, table, tabs, badge, input, select, toast, dropdown-menu — tuỳ biến token (radius nhỏ 6px, border 1px, mono label) — **không dùng default state**.
 
 ## 9. Mail (magic link)
@@ -186,10 +187,10 @@ ADMIN_EMAIL=<email admin đầu tiên>     # bootstrap admin nếu DB rỗng
 
 ## 12. Kiểm thử (tự test toàn bộ)
 
-1. **Unit (vitest)**: converter OpenAI↔canonical, Anthropic↔canonical, Responses↔canonical, claude/codex/antigravity/kiro wire→StreamEvent (fixture mẫu), extractUsage từng provider, key hash/verify, budget & rate limit, magic-link lifecycle.
-2. **E2E (node test runner)**: dựng 4 **mock upstream server** (claude/codex/antigravity/kiro) → khởi app thật với `DATABASE_URL` trỏ DB test trên Neon (branch tạm) → connection `baseUrlOverride` trỏ mock → gọi đủ 3 ingress (stream + non-stream) → assert SSE đúng định dạng từng chuẩn + usage_requests/usage_daily ghi đúng + budget chặn đúng + rotate key hoạt động.
-3. **Smoke thật (tuỳ chọn, có token)**: `scripts/import-9router.ts` đọc `~/.9router/db/data.sqlite` (bảng `providerConnections`, token nằm plain JSON) import connection thật → test 1 request `claude-sonnet…` qua claude + 1 qua codex.
-4. **UI**: build pass + chạy dev, tự soi các trang chính (login, overview, keys, connections, logs).
+1. **Unit (bun:test)**: converter OpenAI↔canonical, Anthropic↔canonical, Responses↔canonical, provider parsers, key hash/verify, credits, budget/ACL, invitation lifecycle.
+2. **E2E (Bun script)**: PostgreSQL tạm + 6 mock upstream + server thật → invitation accept/account inheritance → model ACL → gọi đủ 3 ingress → usage/log/credits → budget/rate limit → rotate key.
+3. **Smoke thật (tuỳ chọn, có token)**: `scripts/import-9router.ts` đọc `~/.9router/db/data.sqlite` rồi test provider thật.
+4. **UI**: build pass + chạy dev, tự soi login/invitation/overview/usage/keys/admin users/models/connections/logs.
 
 ## 13. Thứ tự triển khai (milestone)
 
