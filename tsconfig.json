@@ -16,6 +16,8 @@
 		"jsx": "react-jsx",
 		"baseUrl": ".",
 		"paths": {
+			"@db": ["src/server/db/index.ts"],
+			"@db/*": ["src/server/db/*"],
 			"@shared/*": ["src/shared/*"],
 			"@server/*": ["src/server/*"],
 			"@web/*": ["web/src/*"]

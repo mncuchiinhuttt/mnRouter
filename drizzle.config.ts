@@ -4,8 +4,8 @@ import "dotenv/config";
 export default defineConfig({
 	schema: "./src/server/db/schema.ts",
 	out: "./drizzle",
-	dialect: "postgresql",
+	dialect: "sqlite",
 	dbCredentials: {
-		url: process.env.DATABASE_URL ?? "postgres://localhost:5432/mnrouter",
+		url: process.env.DATABASE_URL ?? "./data/mnrouter.db",
 	},
 });

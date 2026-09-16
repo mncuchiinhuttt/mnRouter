@@ -15,6 +15,20 @@
       "when": 1789331553803,
       "tag": "0001_steady_miss_america",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789332747785,
+      "tag": "0002_ambitious_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789380000000,
+      "tag": "0003_add_invitation_package_name",
+      "breakpoints": true
     }
   ]
 }
