@@ -132,11 +132,11 @@ export default function ChatPage() {
 	return (
 		<div className="flex h-full w-full overflow-hidden bg-white">
 			<Group orientation="horizontal" id="mn_chat_panels">
-				<Panel id="sidebar" defaultSize={260} minSize={200} maxSize={460} className="flex flex-col">
+				<Panel id="sidebar" defaultSize={18} minSize={12} maxSize={30} className="flex flex-col">
 					<ThreadSidebar threads={threads} activeThreadId={activeThreadId} onSelectThread={setActiveThreadId} onNewThread={handleNewThread} onDeleteThread={(id) => deleteThread.mutate(id)} />
 				</Panel>
-				<Separator className="w-1 bg-line/60 hover:bg-accent active:bg-accent transition-all cursor-col-resize z-10" />
-				<Panel id="main" minSize={400} className="flex flex-col flex-1 overflow-hidden bg-paper">
+				<Separator className="w-1.5 bg-line/60 hover:bg-accent active:bg-accent transition-colors cursor-col-resize z-10" />
+				<Panel id="main" minSize={30} className="flex flex-col flex-1 overflow-hidden bg-paper">
 					{activeThreadId && (
 						<div className="flex items-center justify-between border-b border-line bg-white px-4 py-1.5 text-xs">
 							<span className="font-semibold text-ink truncate max-w-md">{threadDetails?.thread.title === "New conversation" ? t("chat.newConversation") : threadDetails?.thread.title}</span>
@@ -158,8 +158,8 @@ export default function ChatPage() {
 				</Panel>
 				{activeArtifact && (
 					<>
-						<Separator className="w-1 bg-line/60 hover:bg-accent active:bg-accent transition-all cursor-col-resize z-10" />
-						<Panel id="artifact" defaultSize={360} minSize={280} maxSize={600} className="flex flex-col overflow-hidden bg-white shadow-2xl z-20">
+						<Separator className="w-1.5 bg-line/60 hover:bg-accent active:bg-accent transition-colors cursor-col-resize z-10" />
+						<Panel id="artifact" defaultSize={45} minSize={25} maxSize={70} className="flex flex-col overflow-hidden bg-white shadow-2xl z-20">
 							<ArtifactViewer artifact={activeArtifact} onClose={() => setActiveArtifact(null)} />
 						</Panel>
 					</>

@@ -1,55 +1,57 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Clock, Code, Copy, ExternalLink, Eye, Printer, X } from "lucide-react";
+import { Check, Clock, Code2, Copy, ExternalLink, Eye, FileCode, Printer, X } from "lucide-react";
 import { toast } from "sonner";
+import hljs from "highlight.js";
 import { Button } from "@web/components/ui/button";
+import { getBeautifiedHtml } from "./artifact-html-utils";
 import type { ArtifactItem } from "./message-list";
 
-const CLEAN_PRINT_STYLE = `<style id="mnrouter-clean-print">
-button[style*="28a745"], button[style*="green"], .print-btn, button[onclick*="print"] {
-  background: #0f172a !important;
-  color: #ffffff !important;
-  border-radius: 9999px !important;
-  border: 1px solid rgba(255,255,255,0.2) !important;
-  font-family: ui-sans-serif, system-ui, sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  padding: 6px 14px !important;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.2) !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer !important;
-}
-button[style*="28a745"]:hover, button[style*="green"]:hover, .print-btn:hover, button[onclick*="print"]:hover {
-  background: #1e293b !important;
-  transform: translateY(-1px) !important;
-}
-@media print {
-  button, .no-print, [onclick*="print"] { display: none !important; }
-}
-</style>`;
-const SVG_PRINTER_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1.5px;margin-right:6px;"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>`;
-
-function getBeautifiedHtml(content: string): string {
-	if (!content.includes("<html") && !content.includes("<body")) return content;
-	const res = content.replace(/🖨\s*/g, SVG_PRINTER_ICON);
-	if (res.includes("</head>")) {
-		return res.replace("</head>", `${CLEAN_PRINT_STYLE}</head>`);
-	}
-	return `${CLEAN_PRINT_STYLE}${res}`;
-}
-interface ArtifactViewerProps {
+export interface ArtifactViewerProps {
 	artifact: ArtifactItem | null;
 	onClose: () => void;
 }
 
 export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 	const { t } = useTranslation();
-	const [activeTab, setActiveTab] = useState<"preview" | "code">(artifact?.type === "html" || artifact?.type === "svg" ? "preview" : "code");
-	useEffect(() => {
-		if (artifact) setActiveTab(artifact.type === "html" || artifact.type === "svg" ? "preview" : "code");
-	}, [artifact?.id, artifact?.type]);
+	const [activeTab, setActiveTab] = useState<"preview" | "code">(
+		artifact?.type === "html" || artifact?.type === "svg" ? "preview" : "code"
+	);
 	const [copied, setCopied] = useState(false);
 	const iframeRef = useRef<HTMLIFrameElement>(null);
+
+	useEffect(() => {
+		if (artifact) {
+			setActiveTab(artifact.type === "html" || artifact.type === "svg" ? "preview" : "code");
+		}
+	}, [artifact?.id, artifact?.type]);
+
+	const isPreviewable = artifact?.type === "html" || artifact?.type === "svg";
+	const effectiveTab = !isPreviewable ? "code" : activeTab;
+
+	const { highlightedHtml, lineCount } = useMemo(() => {
+		if (!artifact?.content) return { highlightedHtml: "", lineCount: 0 };
+		const code = artifact.content;
+		const lang = (artifact.language || "").trim().toLowerCase();
+
+		let result = "";
+		if (lang && hljs.getLanguage(lang)) {
+			result = hljs.highlight(code, { language: lang }).value;
+		} else {
+			result = hljs.highlightAuto(code).value;
+		}
+
+		return { highlightedHtml: result, lineCount: code.split("\n").length };
+	}, [artifact?.content, artifact?.language]);
+
+	if (!artifact) return null;
+
+	const handleCopy = async () => {
+		await navigator.clipboard.writeText(artifact.content);
+		setCopied(true);
+		toast.success(t("chat.copied"));
+		setTimeout(() => setCopied(false), 2000);
+	};
 
 	const handlePrint = () => {
 		if (effectiveTab !== "preview") setActiveTab("preview");
@@ -57,18 +59,6 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 			iframeRef.current?.contentWindow?.focus();
 			iframeRef.current?.contentWindow?.print();
 		}, 150);
-	};
-
-	if (!artifact) return null;
-
-	const isPreviewable = artifact.type === "html" || artifact.type === "svg";
-	const effectiveTab = !isPreviewable ? "code" : activeTab;
-
-	const handleCopy = async () => {
-		await navigator.clipboard.writeText(artifact.content);
-		setCopied(true);
-		toast.success(t("chat.copied"));
-		setTimeout(() => setCopied(false), 2000);
 	};
 
 	const handleOpenNewTab = () => {
@@ -81,26 +71,74 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 	};
 
 	return (
-		<div className="flex h-full w-full flex-col border-l border-line bg-white shadow-lg lg:w-[480px] xl:w-[560px]">
-			{/* Top Bar */}
-			<div className="flex items-center justify-between border-b border-line bg-paper px-4 py-3">
-				<div className="flex items-center gap-2 overflow-hidden">
-					<span className="font-semibold text-sm text-ink truncate">{artifact.title}</span>
-					<span className="rounded bg-white px-1.5 py-0.5 font-mono text-[10px] text-ink-2 uppercase border border-line">
-						{artifact.type}
+		<div className="flex h-full w-full flex-col overflow-hidden bg-white select-text">
+			{/* Unified Sleek Header Bar */}
+			<div className="flex min-h-[42px] items-center justify-between border-b border-line bg-white px-3 py-1.5 text-xs shrink-0">
+				{/* Left Info: Icon, Title, Type, TTL */}
+				<div className="flex items-center gap-2 overflow-hidden mr-2">
+					<div className="flex size-6 items-center justify-center rounded-md bg-paper-2 border border-line text-accent shrink-0">
+						{effectiveTab === "preview" ? <Eye className="size-3.5" /> : <FileCode className="size-3.5" />}
+					</div>
+					<span className="font-semibold text-xs text-ink truncate max-w-[160px] sm:max-w-xs" title={artifact.title}>
+						{artifact.title}
 					</span>
+					<span className="rounded bg-paper-2 px-1.5 py-0.2 font-mono text-[9.5px] text-ink-2 uppercase border border-line shrink-0">
+						{artifact.language || artifact.type}
+					</span>
+					<div className="hidden sm:flex items-center gap-1 rounded bg-[#f4faf5] border border-[#bcd9c0] px-1.5 py-0.2 text-[9.5px] font-mono text-[#1d7a33] shrink-0">
+						<Clock className="size-2.5" />
+						<span>24h</span>
+					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5">
-					<div className="flex items-center gap-1 rounded bg-[#f4faf5] border border-[#bcd9c0] px-2 py-0.5 text-[10.5px] font-mono text-[#1d7a33]">
-						<Clock className="size-3" />
-						<span>24h TTL</span>
-					</div>
+				{/* Right Actions: View tabs, Print, Copy, Close */}
+				<div className="flex items-center gap-1 shrink-0">
+					{isPreviewable && (
+						<div className="flex items-center rounded-md border border-line bg-paper p-0.5 mr-1">
+							<button
+								type="button"
+								onClick={() => setActiveTab("preview")}
+								className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition ${
+									effectiveTab === "preview" ? "bg-accent text-white font-medium shadow-2xs" : "text-ink-2 hover:text-ink"
+								}`}
+							>
+								<Eye className="size-3" />
+								<span>{t("chat.tabPreview")}</span>
+							</button>
+							<button
+								type="button"
+								onClick={() => setActiveTab("code")}
+								className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono cursor-pointer transition ${
+									effectiveTab === "code" ? "bg-accent text-white font-medium shadow-2xs" : "text-ink-2 hover:text-ink"
+								}`}
+							>
+								<Code2 className="size-3" />
+								<span>{t("chat.tabCode")}</span>
+							</button>
+						</div>
+					)}
+
+					{isPreviewable && (
+						<>
+							<Button size="sm" variant="outline" className="h-6 gap-1 text-[11px] font-mono px-2" onClick={handlePrint} title="In / PDF">
+								<Printer className="size-3 text-accent" />
+								<span className="hidden md:inline">PDF</span>
+							</Button>
+							<Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-ink-2 hover:text-ink" onClick={handleOpenNewTab} title={t("chat.openInNewTab")}>
+								<ExternalLink className="size-3.5" />
+							</Button>
+						</>
+					)}
+
+					<Button size="sm" variant="outline" className="h-6 gap-1 text-[11px] font-mono px-2" onClick={handleCopy}>
+						{copied ? <Check className="size-3 text-[#1d7a33]" /> : <Copy className="size-3 text-ink-2" />}
+						<span>{copied ? t("chat.copied") : t("chat.copyCode")}</span>
+					</Button>
 
 					<button
 						type="button"
 						onClick={onClose}
-						className="rounded p-1 text-ink-2 hover:bg-paper-2 hover:text-ink cursor-pointer transition"
+						className="size-6 flex items-center justify-center rounded p-1 text-ink-2 hover:bg-paper-2 hover:text-ink cursor-pointer transition ml-0.5"
 						title={t("common.close")}
 					>
 						<X className="size-4" />
@@ -108,55 +146,8 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 				</div>
 			</div>
 
-			{/* Subheader: Tabs & Action Buttons */}
-			<div className="flex items-center justify-between border-b border-line bg-white px-4 py-2">
-				<div className="flex items-center gap-1">
-					{isPreviewable && (
-						<button
-							type="button"
-							onClick={() => setActiveTab("preview")}
-							className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono transition cursor-pointer ${
-								effectiveTab === "preview" ? "bg-accent text-white font-medium" : "text-ink-2 hover:text-ink hover:bg-paper-2"
-							}`}
-						>
-							<Eye className="size-3" />
-							<span>{t("chat.tabPreview")}</span>
-						</button>
-					)}
-					<button
-						type="button"
-						onClick={() => setActiveTab("code")}
-						className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-mono transition cursor-pointer ${
-							effectiveTab === "code" ? "bg-accent text-white font-medium" : "text-ink-2 hover:text-ink hover:bg-paper-2"
-						}`}
-					>
-						<Code className="size-3" />
-						<span>{t("chat.tabCode")}</span>
-					</button>
-				</div>
-
-				<div className="flex items-center gap-1">
-					{isPreviewable && (
-						<>
-							<Button size="sm" variant="outline" className="h-7 gap-1 text-xs font-mono" onClick={handlePrint} title="In tài liệu / Xuất file PDF">
-								<Printer className="size-3 text-accent" />
-								<span className="hidden sm:inline">In / PDF</span>
-							</Button>
-							<Button size="sm" variant="ghost" className="h-7 gap-1 text-xs font-mono" onClick={handleOpenNewTab}>
-								<ExternalLink className="size-3" />
-								<span className="hidden sm:inline">{t("chat.openInNewTab")}</span>
-							</Button>
-						</>
-					)}
-					<Button size="sm" variant="outline" className="h-7 gap-1 text-xs font-mono" onClick={handleCopy}>
-						{copied ? <Check className="size-3 text-[#1d7a33]" /> : <Copy className="size-3" />}
-						<span>{copied ? t("chat.copied") : t("chat.copyCode")}</span>
-					</Button>
-				</div>
-			</div>
-
-			{/* Content Body */}
-			<div className="flex-1 overflow-auto bg-[#fafafa]">
+			{/* Full-Bleed Content Area */}
+			<div className="flex-1 w-full h-full overflow-hidden bg-[#0d1117]">
 				{effectiveTab === "preview" ? (
 					<iframe
 						ref={iframeRef}
@@ -166,10 +157,25 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 						className="h-full w-full border-none bg-white"
 					/>
 				) : (
-					<div className="p-4 font-mono text-xs leading-relaxed text-[#0b0b26]">
-						<pre className="overflow-x-auto whitespace-pre rounded-md bg-[#0b0b26] p-4 text-[#f0f0f5]">
-							<code>{artifact.content}</code>
-						</pre>
+					<div className="flex h-full w-full overflow-auto text-xs font-mono leading-relaxed select-text">
+						{/* Line numbers gutter */}
+						<div className="sticky left-0 top-0 flex flex-col py-3 px-2.5 select-none text-right bg-[#0d1117] border-r border-[#30363d] text-[#6e7681] text-[11px] tabular-nums shrink-0">
+							{Array.from({ length: lineCount }, (_, i) => (
+								<span key={i + 1} className="leading-5">
+									{i + 1}
+								</span>
+							))}
+						</div>
+
+						{/* Code text with full syntax highlighting */}
+						<div className="flex-1 py-3 px-3.5 overflow-x-auto">
+							<pre className="!bg-transparent !p-0 !m-0 overflow-visible">
+								<code
+									className={`hljs !bg-transparent !p-0 text-[12px] leading-5 font-mono ${artifact.language || ""}`}
+									dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+								/>
+							</pre>
+						</div>
 					</div>
 				)}
 			</div>

@@ -1,6 +1,18 @@
 import { useMemo } from "react";
 import { marked } from "marked";
+import hljs from "highlight.js";
 
+marked.use({
+	renderer: {
+		code({ text, lang }: { text: string; lang?: string }) {
+			const validLang = lang && hljs.getLanguage(lang) ? lang : undefined;
+			const highlighted = validLang
+				? hljs.highlight(text, { language: validLang }).value
+				: hljs.highlightAuto(text).value;
+			return `<pre><code class="hljs ${validLang || ""}">${highlighted}</code></pre>`;
+		},
+	},
+});
 interface MarkdownProps {
 	content: string;
 	className?: string;
