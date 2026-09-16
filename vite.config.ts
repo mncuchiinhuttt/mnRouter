@@ -17,6 +17,14 @@ export default defineConfig({
 		proxy: {
 			"/api": "http://127.0.0.1:8787",
 			"/v1": "http://127.0.0.1:8787",
+			"/setup.sh": "http://127.0.0.1:8787",
+			"/reset.sh": "http://127.0.0.1:8787",
+			"/setup.ps1": "http://127.0.0.1:8787",
+			"/reset.ps1": "http://127.0.0.1:8787",
+			"/mitm-setup.sh": "http://127.0.0.1:8787",
+			"/mitm-reset.sh": "http://127.0.0.1:8787",
+			"/mitm-setup.ps1": "http://127.0.0.1:8787",
+			"/mitm-reset.ps1": "http://127.0.0.1:8787",
 		},
 	},
 	build: {

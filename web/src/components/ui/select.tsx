@@ -4,6 +4,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@web/lib/utils";
 
 const Select = SelectPrimitive.Root;
+const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
 function SelectTrigger({ className, children, ...props }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
@@ -44,12 +45,12 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
 	return (
 		<SelectPrimitive.Item
 			className={cn(
-				"relative flex w-full cursor-pointer select-none items-center rounded-xs py-1.5 pl-7 pr-2 text-sm outline-none data-[highlighted]:bg-paper-2 data-[disabled]:opacity-50",
+				"relative flex w-full cursor-pointer select-none items-start rounded-xs py-2 pl-8 pr-2.5 text-sm outline-none data-[highlighted]:bg-paper-2 data-[disabled]:opacity-50",
 				className,
 			)}
 			{...props}
 		>
-			<span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+			<span className="absolute left-2.5 top-2.5 flex h-4 w-4 items-center justify-center">
 				<SelectPrimitive.ItemIndicator>
 					<Check className="h-3.5 w-3.5 text-accent" />
 				</SelectPrimitive.ItemIndicator>
@@ -59,4 +60,17 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
 	);
 }
 
-export { Select, SelectValue, SelectTrigger, SelectContent, SelectItem };
+function SelectLabel({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Label>) {
+	return (
+		<SelectPrimitive.Label
+			className={cn("px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-ink uppercase bg-[#ededf2] border-y border-line/60 my-1 first:mt-0 sticky top-0 z-30 shadow-2xs", className)}
+			{...props}
+		/>
+	);
+}
+
+function SelectSeparator({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Separator>) {
+	return <SelectPrimitive.Separator className={cn("-mx-1 my-1 h-px bg-line", className)} {...props} />;
+}
+
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem, SelectLabel, SelectSeparator };

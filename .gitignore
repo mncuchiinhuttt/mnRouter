@@ -6,3 +6,7 @@ web-dist/
 *.local
 .DS_Store
 coverage/
+data/
+*.db
+*.db-wal
+*.db-shm

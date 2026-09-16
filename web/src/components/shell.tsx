@@ -1,20 +1,26 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { BarChart3, ScrollText, KeyRound, LayoutGrid, Users, Plug, Settings, LogOut, SlidersHorizontal, Menu, X } from "lucide-react";
+import { Activity, BarChart3, Boxes, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@web/lib/utils";
-import { api } from "@web/lib/api";
 import { setLang } from "@web/i18n";
+import { WeeklyCreditsCard } from "./weekly-credits-card";
+import { UserMenu } from "./user-menu";
+import { OnboardingDialog } from "./onboarding/onboarding-dialog";
 
 export interface Me {
 	id: string;
 	email: string;
 	role: "admin" | "user";
 	displayName: string | null;
+	username?: string | null;
+	department?: string | null;
+	avatarUrl?: string | null;
+	packageName: string | null;
 	monthlyTokenBudget: number | null;
+	onboardedAt?: number | string | null;
 }
-
 function NavItem({ to, icon, label, onNavigate }: { to: string; icon: ReactNode; label: string; onNavigate?: () => void }) {
 	return (
 		<NavLink
@@ -22,16 +28,20 @@ function NavItem({ to, icon, label, onNavigate }: { to: string; icon: ReactNode;
 			onClick={onNavigate}
 			className={({ isActive }) =>
 				cn(
-					"group relative flex items-center gap-2.5 px-5 py-[7px] font-mono text-[11px] uppercase tracking-[0.16em] transition-colors",
-					isActive ? "text-white" : "text-[#8f8fb8] hover:text-white",
+					"group relative mx-3 flex items-center gap-2.5 rounded-md px-3 py-2 font-mono text-[11px] uppercase tracking-[0.14em] transition-all",
+					isActive
+						? "bg-white/15 text-white font-medium shadow-xs"
+						: "text-[#8f8fb8] hover:bg-white/10 hover:text-white",
 				)
 			}
 		>
 			{({ isActive }) => (
 				<>
-					<span className={cn("absolute left-0 top-1/2 h-[16px] w-[2px] -translate-y-1/2 bg-accent-bright transition-opacity", isActive ? "opacity-100" : "opacity-0")} />
-					{icon}
-					<span className="border-b border-dotted border-[#3a3a5c] pb-[2px] group-hover:border-[#6a6a96]">{label}</span>
+					<span className={cn("shrink-0 text-accent-bright transition-opacity", isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100")}>
+						{icon}
+					</span>
+					<span className="truncate">{label}</span>
+					<span className="ml-auto hidden min-w-8 flex-1 border-b border-dotted border-white/20 sm:block group-hover:border-white/40" />
 				</>
 			)}
 		</NavLink>
@@ -46,7 +56,7 @@ function SectionLabel({ children }: { children: string }) {
 	);
 }
 
-function LangToggle() {
+export function LangToggle() {
 	const { i18n } = useTranslation();
 	const lang = i18n.language?.startsWith("en") ? "en" : "vi";
 	return (
@@ -65,11 +75,6 @@ function LangToggle() {
 }
 
 function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void; t: (k: string) => string }) {
-	const navigate = useNavigate();
-	const logout = async () => {
-		await api("/api/auth/logout", { method: "POST" }).catch(() => {});
-		navigate("/login");
-	};
 	return (
 		<>
 			<div className="flex items-center gap-3 px-5 pb-6 pt-6">
@@ -85,11 +90,17 @@ function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void
 				</div>
 			</div>
 
+			<WeeklyCreditsCard packageName={me.packageName} role={me.role} />
+
 			<SectionLabel>{t("nav.account")}</SectionLabel>
 			<nav className="flex flex-col gap-0.5">
 				<NavItem to="/" icon={<LayoutGrid className="h-3.5 w-3.5" />} label={t("nav.overview")} onNavigate={onNavigate} />
 				<NavItem to="/usage" icon={<BarChart3 className="h-3.5 w-3.5" />} label={t("nav.usage")} onNavigate={onNavigate} />
+				<NavItem to="/leaderboard" icon={<Trophy className="h-3.5 w-3.5" />} label={t("nav.leaderboard")} onNavigate={onNavigate} />
 				<NavItem to="/keys" icon={<KeyRound className="h-3.5 w-3.5" />} label={t("nav.apiKeys")} onNavigate={onNavigate} />
+				<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} />
+				<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} />
+				<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} />
 			</nav>
 
 			{me.role === "admin" && (
@@ -99,25 +110,18 @@ function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void
 						<NavItem to="/admin/users" icon={<Users className="h-3.5 w-3.5" />} label={t("nav.users")} onNavigate={onNavigate} />
 						<NavItem to="/admin/connections" icon={<Plug className="h-3.5 w-3.5" />} label={t("nav.connections")} onNavigate={onNavigate} />
 						<NavItem to="/admin/models" icon={<SlidersHorizontal className="h-3.5 w-3.5" />} label={t("nav.models")} onNavigate={onNavigate} />
+						<NavItem to="/admin/quotas" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.quotas")} onNavigate={onNavigate} />
+						<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} />
 						<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} />
+						<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} />
+						<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} />
 						<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} />
 					</nav>
 				</>
 			)}
 
-			<div className="mt-auto border-t border-[#26264a] px-4 py-4">
-				<div className="flex items-center gap-2.5">
-					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-[11px] font-semibold text-white">
-						{me.email.slice(0, 2).toUpperCase()}
-					</div>
-					<div className="min-w-0 flex-1">
-						<div className="truncate font-mono text-[11px] uppercase tracking-wider text-white">{me.displayName ?? me.email.split("@")[0]}</div>
-						<div className="truncate font-mono text-[10px] text-[#8f8fb8]">{me.role}</div>
-					</div>
-					<button onClick={logout} className="rounded-xs p-1.5 text-[#8f8fb8] transition hover:bg-navy-3 hover:text-white cursor-pointer" title={t("nav.logout")}>
-						<LogOut className="h-3.5 w-3.5" />
-					</button>
-				</div>
+			<div className="mt-auto border-t border-[#26264a] px-3 py-3">
+				<UserMenu me={me} onNavigate={onNavigate} />
 			</div>
 		</>
 	);
@@ -127,10 +131,14 @@ export function Shell({ me }: { me: Me }) {
 	const { t } = useTranslation();
 	const location = useLocation();
 	const [menuOpen, setMenuOpen] = useState(false);
+	const needsOnboarding = !me.onboardedAt;
+	const [onboardingOpen, setOnboardingOpen] = useState(needsOnboarding);
+	const isChat = location.pathname.startsWith("/chat");
 	const section = location.pathname.split("/").filter(Boolean)[0]?.toUpperCase() ?? "OVERVIEW";
 
 	return (
 		<div className="flex min-h-[100dvh] flex-col lg:flex-row">
+			<OnboardingDialog me={me} open={onboardingOpen} onComplete={() => setOnboardingOpen(false)} />
 			{/* mobile topbar */}
 			<header className="halftone sticky top-0 z-40 flex h-14 items-center justify-between bg-navy px-4 lg:hidden">
 				<div className="flex items-center gap-2.5">
@@ -143,7 +151,7 @@ export function Shell({ me }: { me: Me }) {
 				</div>
 				<div className="flex items-center gap-2">
 					<LangToggle />
-					<button onClick={() => setMenuOpen(true)} className="rounded-xs p-2 text-white cursor-pointer" aria-label="Menu">
+					<button onClick={() => setMenuOpen(true)} className="rounded-xs p-2 text-white cursor-pointer" aria-label={t("common.menu")}>
 						<Menu className="h-5 w-5" />
 					</button>
 				</div>
@@ -157,7 +165,7 @@ export function Shell({ me }: { me: Me }) {
 					menuOpen ? "translate-x-0" : "translate-x-full",
 				)}
 			>
-				<button onClick={() => setMenuOpen(false)} className="absolute right-3 top-3 rounded-xs p-1.5 text-[#8f8fb8] hover:text-white cursor-pointer" aria-label={t("common.cancel")}>
+				<button onClick={() => setMenuOpen(false)} className="absolute right-3 top-3 rounded-xs p-1.5 text-[#8f8fb8] hover:text-white cursor-pointer" aria-label={t("common.close")}>
 					<X className="h-4 w-4" />
 				</button>
 				<SidebarContent me={me} onNavigate={() => setMenuOpen(false)} t={t} />
@@ -168,14 +176,14 @@ export function Shell({ me }: { me: Me }) {
 				<SidebarContent me={me} t={t} />
 			</aside>
 
-			<main className="min-w-0 flex-1">
-				<div className="hidden items-center justify-between border-b border-line bg-paper px-10 py-5 lg:flex">
+			<main className={cn("min-w-0 flex-1 flex flex-col", isChat ? "h-[100dvh] overflow-hidden" : "")}>
+				<div className="hidden shrink-0 items-center justify-between border-b border-line bg-paper px-8 py-3.5 lg:flex">
 					<div className="label-mono text-ink-2">
 						<span className="text-accent">//</span>&nbsp; {section}
 					</div>
 					<LangToggle />
 				</div>
-				<div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-8 lg:px-10 lg:py-10">
+				<div className={cn("flex-1", isChat ? "h-full w-full overflow-hidden p-0" : "w-full overflow-auto px-4 py-6 sm:px-8 lg:px-10 lg:py-10")}>
 					<Outlet context={me} />
 				</div>
 			</main>
