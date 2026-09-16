@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api, apiJson } from "@web/lib/api";
 import { Button } from "@web/components/ui/button";
 import { Input, Label, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
 
 interface SettingsResp {
 	settings: {
@@ -49,10 +50,15 @@ export default function AdminSettings() {
 					<div className="space-y-3">
 						<div>
 							<Label>{t("adminSettings.strategy")}</Label>
-							<select value={routing.strategy} onChange={(e) => setRouting({ ...routing, strategy: e.target.value })} className="h-9 w-full rounded-sm border border-line bg-white px-3 text-sm">
-								<option value="fill-first">{t("adminSettings.fillFirst")}</option>
-								<option value="round-robin">{t("adminSettings.roundRobin")}</option>
-							</select>
+							<Select value={routing.strategy} onValueChange={(strategy) => setRouting({ ...routing, strategy })}>
+								<SelectTrigger aria-label={t("adminSettings.strategy")}>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="fill-first">{t("adminSettings.fillFirst")}</SelectItem>
+									<SelectItem value="round-robin">{t("adminSettings.roundRobin")}</SelectItem>
+								</SelectContent>
+							</Select>
 						</div>
 						<div>
 							<Label>{t("adminSettings.maxAttempts")}</Label>
@@ -74,8 +80,8 @@ export default function AdminSettings() {
 						<THead>
 							<TR>
 								<TH>{t("common.provider")}</TH>
-								<TH>Format</TH>
-								<TH>OAuth</TH>
+								<TH>{t("adminSettings.format")}</TH>
+								<TH>{t("adminSettings.auth")}</TH>
 								<TH>{t("common.baseUrl")}</TH>
 							</TR>
 						</THead>

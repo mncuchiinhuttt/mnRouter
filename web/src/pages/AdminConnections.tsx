@@ -9,6 +9,8 @@ import { Button } from "@web/components/ui/button";
 import { Badge, Input, Label, Textarea, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@web/components/ui/dialog";
 import { Switch } from "@web/components/ui/tabs-switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@web/components/ui/dropdown-menu";
 
 interface ConnectionsResp {
 	connections: {
@@ -69,7 +71,7 @@ export default function AdminConnections() {
 
 	const test = useMutation({
 		mutationFn: (id: string) => apiJson<{ ok: boolean; error?: string }>(`/api/admin/connections/${id}/test`, "POST", {}),
-		onSuccess: (res) => (res.ok ? toast.success("Token OK (refreshed)") : toast.error("Test fail: " + res.error)),
+		onSuccess: (res) => (res.ok ? toast.success(t("adminConnections.testOk")) : toast.error(`${t("adminConnections.testFailed")}${res.error ? `: ${res.error}` : ""}`)),
 		onError: (e) => toast.error((e as Error).message),
 	});
 
@@ -106,20 +108,19 @@ export default function AdminConnections() {
 					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("adminConnections.title")}</h1>
 					<p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">{t("adminConnections.desc")}</p>
 				</div>
-				<div className="flex flex-wrap gap-2">
-					<Button variant="outline" onClick={() => startOauth("claude")} disabled={oauthBusy !== null} className="flex-1 sm:flex-none">
-						<Link2 /> {t("adminConnections.oauthClaude")}
-					</Button>
-					<Button variant="outline" onClick={() => startOauth("kiro")} disabled={oauthBusy !== null} className="flex-1 sm:flex-none">
-						<Link2 /> {t("adminConnections.oauthKiro")}
-					</Button>
-					<Button variant="outline" onClick={() => startOauth("grok")} disabled={oauthBusy !== null} className="flex-1 sm:flex-none">
-						<Link2 /> {t("adminConnections.oauthGrok")}
-					</Button>
-					<Button onClick={() => setImportOpen(true)} className="flex-1 sm:flex-none">
-						<Plus /> {t("adminConnections.importTokens")}
-					</Button>
-				</div>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button disabled={oauthBusy !== null} className="min-w-[132px]">
+							<Link2 /> {t("adminConnections.connect")}
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="w-64">
+						<DropdownMenuLabel>{t("adminConnections.connectWith")}</DropdownMenuLabel>
+						<DropdownMenuItem onSelect={() => void startOauth("claude")}><Link2 /> {t("adminConnections.oauthClaude")}</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem onSelect={() => setImportOpen(true)}><Plus /> {t("adminConnections.importTokens")}</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</header>
 
 			<div className="rounded-lg border border-line bg-white">
@@ -214,12 +215,16 @@ export default function AdminConnections() {
 						<div className="grid gap-3 sm:grid-cols-3">
 							<div>
 								<Label>{t("common.provider")}</Label>
-								<select value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} className="h-9 w-full rounded-sm border border-line bg-white px-3 text-sm">
-									<option value="claude">claude</option>
-									<option value="codex">codex</option>
-									<option value="antigravity">antigravity</option>
-									<option value="kiro">kiro</option>
-								</select>
+								<Select value={form.provider} onValueChange={(provider) => setForm({ ...form, provider })}>
+									<SelectTrigger aria-label={t("common.provider")}>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="claude">Claude</SelectItem>
+										<SelectItem value="codex">Codex</SelectItem>
+										<SelectItem value="antigravity">Antigravity</SelectItem>
+									</SelectContent>
+								</Select>
 							</div>
 							<div>
 								<Label>{t("common.label")}</Label>
