@@ -10,12 +10,14 @@ import { McpServerList, type McpServerItem } from "@web/components/mcp/mcp-serve
 import { McpAddDialog } from "@web/components/mcp/mcp-add-dialog";
 import { CustomSkillsList, type CustomSkillItem } from "@web/components/mcp/custom-skills-list";
 import { AddSkillDialog } from "@web/components/mcp/add-skill-dialog";
+import { BuiltInSkillsList } from "@web/components/mcp/built-in-skills-list";
+import { HARNESS_SKILLS } from "@shared/skills";
 import type { McpTemplate } from "../../../src/server/services/mcp.service";
 
 export default function McpSkillsPage() {
 	const { t } = useTranslation();
 	const qc = useQueryClient();
-	const [activeTab, setActiveTab] = useState<"mcp" | "skills">("mcp");
+	const [activeTab, setActiveTab] = useState<"mcp" | "skills" | "builtin">("mcp");
 	const [addMcpOpen, setAddMcpOpen] = useState(false);
 	const [selectedTemplate, setSelectedTemplate] = useState<McpTemplate | null>(null);
 	const [addSkillOpen, setAddSkillOpen] = useState(false);
@@ -32,7 +34,8 @@ export default function McpSkillsPage() {
 	});
 
 	const servers = mcpData?.servers ?? [], templates = mcpData?.templates ?? [], customSkills = skillsData?.customSkills ?? [];
-
+	const builtInSkills = skillsData?.builtInSkills ?? HARNESS_SKILLS;
+	const builtInCount = builtInSkills.length;
 	const createMcp = useMutation({
 		mutationFn: (body: any) => apiJson("/api/mcp/servers", "POST", body),
 		onSuccess: () => { qc.invalidateQueries({ queryKey: ["mcp-servers"] }); setAddMcpOpen(false); toast.success(t("mcp.serverAdded")); },
@@ -112,7 +115,8 @@ export default function McpSkillsPage() {
 				totalTools={totalTools}
 				customSkillsCount={customSkills.length}
 				activeCustomSkillsCount={customSkills.filter((s) => s.enabled).length}
-				builtInCount={12}
+				builtInCount={builtInCount}
+				onSelectTab={(tab) => setActiveTab(tab)}
 			/>
 
 			{/* Main Tabs Navigation */}
@@ -123,8 +127,10 @@ export default function McpSkillsPage() {
 				<button type="button" onClick={() => setActiveTab("skills")} className={`border-b-2 px-4 py-2 font-mono text-xs uppercase tracking-wider transition cursor-pointer ${activeTab === "skills" ? "border-accent text-accent font-semibold" : "border-transparent text-ink-2 hover:text-ink"}`}>
 					{t("mcp.tabSkills")} ({customSkills.length})
 				</button>
+				<button type="button" onClick={() => setActiveTab("builtin")} className={`border-b-2 px-4 py-2 font-mono text-xs uppercase tracking-wider transition cursor-pointer ${activeTab === "builtin" ? "border-accent text-accent font-semibold" : "border-transparent text-ink-2 hover:text-ink"}`}>
+					{t("mcp.tabBuiltIn")} ({builtInCount})
+				</button>
 			</div>
-
 			{/* Tab Content */}
 			{activeTab === "mcp" ? (
 				<McpServerList
@@ -137,15 +143,16 @@ export default function McpSkillsPage() {
 					onOpenAdd={() => { setSelectedTemplate(null); setAddMcpOpen(true); }}
 					pingingId={pingingId}
 				/>
-			) : (
+			) : activeTab === "skills" ? (
 				<CustomSkillsList
 					skills={customSkills}
 					onToggle={(id, enabled) => toggleSkill.mutate({ id, enabled })}
 					onDelete={(id) => deleteSkill.mutate(id)}
 					onOpenAdd={() => setAddSkillOpen(true)}
 				/>
+			) : (
+				<BuiltInSkillsList skills={builtInSkills} />
 			)}
-
 			<McpAddDialog open={addMcpOpen} onOpenChange={setAddMcpOpen} template={selectedTemplate} onSubmit={(data) => createMcp.mutate(data)} loading={createMcp.isPending} />
 			<AddSkillDialog open={addSkillOpen} onOpenChange={setAddSkillOpen} onSubmit={(data) => createSkill.mutate(data)} loading={createSkill.isPending} />
 		</div>

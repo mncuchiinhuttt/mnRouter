@@ -581,6 +581,7 @@ const en: Dict = {
 		addDesc: "Model Context Protocol allows AI agents to call tools and read resources from this server.",
 		tabServers: "MCP Servers",
 		tabSkills: "Custom Skills (.md)",
+		tabBuiltIn: "System Skills",
 		metricServers: "MCP Servers",
 		metricActiveServers: "Active",
 		metricTools: "Active Tools",

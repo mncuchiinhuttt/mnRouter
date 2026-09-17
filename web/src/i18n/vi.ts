@@ -579,6 +579,7 @@ const vi = {
 		addDesc: "Model Context Protocol cho phép AI agent gọi các công cụ và đọc tài nguyên từ server này.",
 		tabServers: "MCP Servers",
 		tabSkills: "Custom Skills (.md)",
+		tabBuiltIn: "Kỹ năng Hệ thống",
 		metricServers: "MCP Servers",
 		metricActiveServers: "Đang hoạt động",
 		metricTools: "Active Tools",

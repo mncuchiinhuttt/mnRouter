@@ -8,6 +8,7 @@ interface McpSummaryCardsProps {
 	customSkillsCount: number;
 	activeCustomSkillsCount: number;
 	builtInCount: number;
+	onSelectTab?: (tab: "mcp" | "skills" | "builtin") => void;
 }
 
 export function McpSummaryCards({
@@ -17,12 +18,17 @@ export function McpSummaryCards({
 	customSkillsCount,
 	activeCustomSkillsCount,
 	builtInCount,
+	onSelectTab,
 }: McpSummaryCardsProps) {
 	const { t } = useTranslation();
 
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-			<div className="rounded-xl border border-line bg-white p-4 shadow-2xs">
+			{/* Servers Card */}
+			<div
+				onClick={() => onSelectTab?.("mcp")}
+				className="rounded-xl border border-line bg-white p-4 shadow-2xs hover:border-accent transition cursor-pointer"
+			>
 				<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase tracking-wider">
 					<span>{t("mcp.metricServers")}</span>
 					<Server className="size-4 text-accent" />
@@ -34,7 +40,11 @@ export function McpSummaryCards({
 				<p className="mt-1 text-[11px] text-ink-2 font-mono">{t("mcp.metricActiveServers")}</p>
 			</div>
 
-			<div className="rounded-xl border border-line bg-white p-4 shadow-2xs">
+			{/* Tools Card */}
+			<div
+				onClick={() => onSelectTab?.("mcp")}
+				className="rounded-xl border border-line bg-white p-4 shadow-2xs hover:border-accent transition cursor-pointer"
+			>
 				<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase tracking-wider">
 					<span>{t("mcp.metricTools")}</span>
 					<Wrench className="size-4 text-emerald-600" />
@@ -46,7 +56,11 @@ export function McpSummaryCards({
 				<p className="mt-1 text-[11px] text-ink-2 font-mono">{t("mcp.metricToolsDesc")}</p>
 			</div>
 
-			<div className="rounded-xl border border-line bg-white p-4 shadow-2xs">
+			{/* Custom Skills Card */}
+			<div
+				onClick={() => onSelectTab?.("skills")}
+				className="rounded-xl border border-line bg-white p-4 shadow-2xs hover:border-accent transition cursor-pointer"
+			>
 				<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase tracking-wider">
 					<span>{t("mcp.metricCustom")}</span>
 					<FileCode className="size-4 text-accent" />
@@ -58,7 +72,11 @@ export function McpSummaryCards({
 				<p className="mt-1 text-[11px] text-ink-2 font-mono">{t("mcp.metricCustomDesc")}</p>
 			</div>
 
-			<div className="rounded-xl border border-line bg-white p-4 shadow-2xs">
+			{/* Built-in Skills Card */}
+			<div
+				onClick={() => onSelectTab?.("builtin")}
+				className="rounded-xl border border-line bg-white p-4 shadow-2xs hover:border-accent transition cursor-pointer"
+			>
 				<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase tracking-wider">
 					<span>{t("mcp.metricBuiltIn")}</span>
 					<Sparkles className="size-4 text-accent" />
