@@ -130,55 +130,75 @@ export function gatewayRoutes() {
 		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
 		const nextMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000 - Date.now()) / 1000);
 
+		const rateLimitList = [
+			{ limit_name: "5h window", limitName: "5h window", window_minutes: 300, windowMinutes: 300, used_percent: 0, usedPercent: 0 },
+			{ limit_name: "Weekly quota", limitName: "Weekly quota", window_minutes: 10080, windowMinutes: 10080, used_percent: usedPercent, usedPercent },
+		];
+
 		return c.json({
 			plan_type: "pro",
+			planType: "pro",
+			account_id: user.id,
+			accountId: user.id,
 			allowed: true,
 			limit_reached: false,
+			limitReached: false,
+			ordinary_usage_allowed: true,
+			ordinaryUsageAllowed: true,
+			feature_enabled: true,
+			featureEnabled: true,
 			rate_limit: {
-				primary_window: {
-					limit_window_seconds: 18000,
-					used_percent: 0,
-					reset_after_seconds: 18000,
-				},
-				secondary_window: {
-					limit_window_seconds: 604800,
-					used_percent: usedPercent,
-					reset_after_seconds: Math.max(0, nextMonSec),
-				},
+				primary_window: { limit_window_seconds: 18000, used_percent: 0, reset_after_seconds: 18000 },
+				secondary_window: { limit_window_seconds: 604800, used_percent: usedPercent, reset_after_seconds: Math.max(0, nextMonSec) },
 			},
-			primary: {
-				limit_window_seconds: 18000,
-				used_percent: 0,
-				reset_after_seconds: 18000,
+			rateLimit: {
+				primaryWindow: { limitWindowSeconds: 18000, usedPercent: 0, resetAfterSeconds: 18000 },
+				secondaryWindow: { limitWindowSeconds: 604800, usedPercent: usedPercent, resetAfterSeconds: Math.max(0, nextMonSec) },
 			},
-			secondary: {
-				limit_window_seconds: 604800,
-				used_percent: usedPercent,
-				reset_after_seconds: Math.max(0, nextMonSec),
-			},
-			spend_control: {
-				reached: false,
-				limit: creditBudget,
-				remaining: remainingCredits,
-				remaining_percent: Math.max(0, 100 - usedPercent),
-			},
-			rate_limit_reset_credits: {
-				available_count: 0,
-				credits: [],
-			},
-			rate_limits: [
-				{ limit_name: "5h window", window_minutes: 300, used_percent: 0 },
-				{ limit_name: "Weekly window", window_minutes: 10080, used_percent: usedPercent },
-			],
+			primary: { limit_window_seconds: 18000, used_percent: 0, reset_after_seconds: 18000 },
+			secondary: { limit_window_seconds: 604800, used_percent: usedPercent, reset_after_seconds: Math.max(0, nextMonSec) },
+			spend_control: { reached: false, limit: creditBudget, remaining: remainingCredits, remaining_percent: Math.max(0, 100 - usedPercent) },
+			spendControl: { reached: false, limit: creditBudget, remaining: remainingCredits, remainingPercent: Math.max(0, 100 - usedPercent) },
+			rate_limit_reset_credits: { available_count: 0, availableCount: 0, credits: [] },
+			rateLimitResetCredits: { available_count: 0, availableCount: 0, credits: [] },
+			rate_limits: rateLimitList,
+			rateLimits: rateLimitList,
+			rate_limits_by_limit_id: {},
+			rateLimitsByLimitId: {},
+			rate_limit_upsell: null,
+			rateLimitUpsell: null,
+			daily_usage_buckets: [],
+			dailyUsageBuckets: [],
+			thread_usage: { tokens: 0, cost: 0 },
+			threadUsage: { tokens: 0, cost: 0 },
 		});
 	};
 
-	app.get("/wham/usage", handleCodexUsage);
-	app.get("/v1/wham/usage", handleCodexUsage);
-	app.get("/backend-api/wham/usage", handleCodexUsage);
-	app.get("/backend-api/wham/rate_limits", handleCodexUsage);
-	app.get("/backend-api/account/rateLimits/read", handleCodexUsage);
-	app.get("/backend-api/rate_limits", handleCodexUsage);
+	const codexUsagePaths = [
+		"/wham/usage",
+		"/v1/wham/usage",
+		"/backend-api/wham/usage",
+		"/backend-api/wham/rate_limits",
+		"/backend-api/account/rateLimits/read",
+		"/backend-api/rate_limits",
+		"/api/codex/usage",
+		"/backend-api/api/codex/usage",
+		"/api/codex/usage/thread_usage/query",
+		"/backend-api/api/codex/usage/thread_usage/query",
+		"/wham/usage/thread_usage/query",
+		"/backend-api/wham/usage/thread_usage/query",
+		"/api/codex/usage/thread-estimates/query",
+		"/backend-api/api/codex/usage/thread-estimates/query",
+		"/wham/usage/thread-estimates/query",
+		"/backend-api/wham/usage/thread-estimates/query",
+		"/wham/rate-limit-reset-credits",
+		"/backend-api/wham/rate-limit-reset-credits",
+		"/api/codex/rate-limit-reset-credits",
+		"/backend-api/api/codex/rate-limit-reset-credits",
+	];
 
+	for (const path of codexUsagePaths) {
+		app.all(path, handleCodexUsage);
+	}
 	return app;
 }
