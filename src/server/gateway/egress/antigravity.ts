@@ -54,6 +54,39 @@ function buildEnvelope(model: string) {
 	};
 	return { sessionId, requestId, labels };
 }
+export function resolveAntigravityWireModel(model: string, reasoningEffort?: string): string {
+	const m = model.toLowerCase();
+	const effort = (reasoningEffort || "low").toLowerCase();
+	if (m.includes("gemini-3.8-flash")) {
+		if (effort === "high" || effort === "xhigh" || effort === "max") return "gemini-3.8-flash-high";
+		if (effort === "medium") return "gemini-3.8-flash-medium";
+		return "gemini-3.8-flash-low";
+	}
+	if (m.includes("gemini-3.7-flash")) {
+		if (effort === "high" || effort === "xhigh" || effort === "max") return "gemini-3.7-flash-high";
+		if (effort === "medium") return "gemini-3.7-flash-medium";
+		return "gemini-3.7-flash-low";
+	}
+	if (m.includes("gemini-3.6-flash")) {
+		if (effort === "high" || effort === "xhigh" || effort === "max") return "gemini-3.6-flash-high";
+		if (effort === "medium") return "gemini-3.6-flash-medium";
+		return "gemini-3.6-flash-low";
+	}
+	if (m.includes("gemini-3.5-flash") || m.includes("gemini-3-flash")) {
+		if (effort === "high" || effort === "xhigh" || effort === "max") return "gemini-3-flash-agent";
+		if (effort === "medium") return "gemini-3.5-flash-low";
+		return "gemini-3.5-flash-extra-low";
+	}
+	if (m.includes("gemini-3.1-pro") || m.includes("gemini-3-pro")) {
+		if (effort === "high" || effort === "xhigh" || effort === "max") return "gemini-pro-agent";
+		return "gemini-3.1-pro-low";
+	}
+	if (m.includes("claude-opus-4-6")) return "claude-opus-4-6-thinking";
+	if (m.includes("claude-sonnet-4-6")) return "claude-sonnet-4-6";
+	if (m.includes("claude-opus-4-5")) return "claude-opus-4-5-thinking";
+	if (m.includes("claude-sonnet-4-5")) return "claude-sonnet-4-5";
+	return model;
+}
 
 export function buildAntigravityRequest(cfg: ProviderConfig, req: CanonicalRequest, token: string, projectId: string) {
 	const request: Record<string, unknown> = { contents: toContents(req.messages) };
@@ -91,17 +124,17 @@ export function buildAntigravityRequest(cfg: ProviderConfig, req: CanonicalReque
 	if (req.webSearch) toolsList.push({ googleSearch: {} });
 	if (toolsList.length > 0) request.tools = toolsList;
 
-	const envelope = buildEnvelope(req.upstreamModel);
+	const wireModel = resolveAntigravityWireModel(req.upstreamModel, req.reasoningEffort as string);
+	const envelope = buildEnvelope(wireModel);
 	request.labels = envelope.labels;
 	request.sessionId = envelope.sessionId;
 
 	const body = {
 		project: projectId,
-		model: req.upstreamModel,
+		model: wireModel,
 		requestId: envelope.requestId,
 		request,
 		userAgent: "antigravity",
-		requestType: "agent",
 	};
 	const url = `${cfg.baseUrls[0]}/v1internal:streamGenerateContent?alt=sse`;
 	const headers: Record<string, string> = {

@@ -70,8 +70,9 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 		id: "antigravity",
 		display: "Google Antigravity (OAuth)",
 		baseUrls: [
-			"https://cloudcode-pa.googleapis.com",
 			"https://daily-cloudcode-pa.googleapis.com",
+			"https://daily-cloudcode-pa.sandbox.googleapis.com",
+			"https://cloudcode-pa.googleapis.com",
 		],
 		format: "antigravity",
 		oauth: {
