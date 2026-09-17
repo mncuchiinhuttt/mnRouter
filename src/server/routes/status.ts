@@ -65,7 +65,7 @@ export function statusRoutes() {
 			},
 			{
 				id: "database",
-				name: "PostgreSQL / SQLite Storage",
+				name: "Database",
 				description: "Session Storage, Usage Telemetry & Credits Accounting",
 				status: "operational",
 				uptime: 100.0,
