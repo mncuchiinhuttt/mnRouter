@@ -5,6 +5,7 @@ import { api } from "@web/lib/api";
 import { Bot, Brain, Sparkles, Zap, X } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@web/components/ui/select";
 import { SkillsDialog, SkillIcon } from "./skills-dialog";
+import { ContextPillPopover } from "./context-popover";
 import { HARNESS_SKILLS, THINKING_LEVELS, getModelThinkingLevels, type ThinkingLevel, type ThinkingOption, type HarnessSkill } from "@shared/skills";
 import type { ModelItem } from "./thread-sidebar";
 import type { ThreadTokensInfo } from "@web/lib/chat-tokens";
@@ -34,7 +35,7 @@ export function ChatToolbar({
 	tokensInfo,
 	onOpenCompact,
 }: ChatToolbarProps) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [skillsOpen, setSkillsOpen] = useState(false);
 
 	// Exclude Kiro models completely per user directive
@@ -83,18 +84,11 @@ export function ChatToolbar({
 				</div>
 				<div className="flex items-center gap-3">
 					{tokensInfo && (
-						<button
-							type="button"
-							onClick={onOpenCompact}
-							title="Context Window & Compactor"
-							className={`flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-[10.5px] transition cursor-pointer shadow-2xs ${tokensInfo.percent >= 80 ? "border-[#c6293b] bg-[#c6293b]/10 text-[#c6293b] font-bold animate-pulse" : tokensInfo.percent >= 50 ? "border-[#9a6b0a] bg-[#9a6b0a]/10 text-[#9a6b0a] font-medium" : "border-line bg-paper-2 text-ink-2 hover:border-accent hover:text-ink"}`}
-						>
-							<Brain className="size-3 text-accent shrink-0" />
-							<span className="text-[9.5px] uppercase tracking-wider text-ink-2/70 font-semibold">Context:</span>
-							<span className="font-semibold text-ink">{fmtCompact(tokensInfo.usedTokens)} / {fmtCompact(tokensInfo.contextWindow)}</span>
-							<span className="opacity-70">({tokensInfo.percent}%)</span>
-							{tokensInfo.percent >= 60 && <span className="rounded bg-[#c6293b] px-1 py-0.2 text-[8.5px] font-bold text-white uppercase">Compact</span>}
-						</button>
+						<ContextPillPopover
+							tokensInfo={tokensInfo}
+							onOpenCompact={onOpenCompact}
+							isVi={i18n.language?.startsWith("vi")}
+						/>
 					)}
 					{budget != null && <span className="text-[10px] text-ink-2/60">{t("chat.resetCountdown", { days: daysToReset })}</span>}
 				</div>
