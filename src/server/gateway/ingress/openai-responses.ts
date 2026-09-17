@@ -250,12 +250,26 @@ export class OpenAiResponsesFormatter {
 					role: "assistant",
 					content: [{ type: "output_text", text: this.fullText, annotations: [] }]
 				});
+				const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + (((1 - new Date().getDay() + 7) % 7) || 7) * 24 * 3600 * 1000) / 1000);
+				const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
+				const rateLimitsPayload = {
+					rate_limits: {
+						primary: { used_percent: 0.0, window_minutes: 300, resets_at: reset5hSec },
+						secondary: { used_percent: 0.0, window_minutes: 10080, resets_at: resetMonSec },
+					},
+					credits: { has_credits: true, unlimited: false, balance: 50000.0 },
+					limit_name: "mnRouter AI Credits",
+					plan_type: "pro",
+				};
+				out.push(this.ev("rate_limits", rateLimitsPayload));
+				out.push(this.ev("response.rate_limits", rateLimitsPayload));
 				out.push(
 					this.ev("response.completed", {
 						type: "response.completed",
 						response: this.responseBase({
 							status: "completed",
 							output: finalOutput,
+							rate_limits: rateLimitsPayload,
 							usage: {
 								input_tokens: ev.usage.promptTokens,
 								output_tokens: ev.usage.completionTokens,
@@ -286,6 +300,17 @@ export class OpenAiResponsesFormatter {
 				output.push({ type: "function_call", id: randomId("fc"), call_id: block.id, name: block.name, arguments: JSON.stringify(block.arguments ?? {}), status: "completed" });
 			}
 		}
+		const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + (((1 - new Date().getDay() + 7) % 7) || 7) * 24 * 3600 * 1000) / 1000);
+		const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
+		const rateLimitsPayload = {
+			rate_limits: {
+				primary: { used_percent: 0.0, window_minutes: 300, resets_at: reset5hSec },
+				secondary: { used_percent: 0.0, window_minutes: 10080, resets_at: resetMonSec },
+			},
+			credits: { has_credits: true, unlimited: false, balance: 50000.0 },
+			limit_name: "mnRouter AI Credits",
+			plan_type: "pro",
+		};
 		return {
 			id: this.responseId,
 			object: "response",
@@ -293,10 +318,10 @@ export class OpenAiResponsesFormatter {
 			status: "completed",
 			model,
 			output,
+			rate_limits: rateLimitsPayload,
 			usage: usageToOpenAi(result.usage),
 		};
 	}
-
 	errorPayload(code: string, message: string): Record<string, unknown> {
 		return { error: { code, message, param: null } };
 	}
