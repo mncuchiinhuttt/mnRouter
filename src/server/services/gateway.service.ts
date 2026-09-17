@@ -143,6 +143,11 @@ export class GatewayService {
 			},
 		});
 
+		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
+		const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000) / 1000);
+		const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
+		const creditBudget = auth?.user?.monthlyCreditBudget ?? 50_000;
+
 		const rateHeaders: Record<string, string> = {
 			"content-type": kind === "anthropic" ? "text/event-stream" : "text/event-stream; charset=utf-8",
 			"cache-control": "no-cache",
@@ -153,6 +158,17 @@ export class GatewayService {
 			"x-ratelimit-limit-tokens": "10000000",
 			"x-ratelimit-remaining-tokens": "9999000",
 			"x-ratelimit-reset-tokens": "1s",
+			"x-codex-primary-used-percent": "0.0",
+			"x-codex-primary-window-minutes": "300",
+			"x-codex-primary-reset-at": String(reset5hSec),
+			"x-codex-secondary-used-percent": "0.0",
+			"x-codex-secondary-window-minutes": "10080",
+			"x-codex-secondary-reset-at": String(resetMonSec),
+			"x-codex-limit-name": "mnRouter AI Credits",
+			"x-codex-credits-has-credits": "true",
+			"x-codex-credits-unlimited": "false",
+			"x-codex-credits-balance": String(creditBudget),
+			"x-codex-active-limit": "5h",
 		};
 		return new Response(stream, { status: 200, headers: rateHeaders });
 	}
@@ -176,6 +192,11 @@ export class GatewayService {
 				endpoint: kind, status: "ok", usage: finalUsage, credits: computeCredits(resolved.priceIn, resolved.priceOut, finalUsage, resolved.priceCacheRead, resolved.priceCacheWrite),
 				latencyMs: Date.now() - startedAt, ttftMs: ttftTracker.value, meta: { connection: upstream.connectionLabel, streaming: false },
 			});
+			const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
+			const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000) / 1000);
+			const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
+			const creditBudget = auth?.user?.monthlyCreditBudget ?? 50_000;
+
 			const nonStreamHeaders: Record<string, string> = {
 				"content-type": "application/json",
 				"x-ratelimit-limit-requests": "10000",
@@ -184,6 +205,17 @@ export class GatewayService {
 				"x-ratelimit-limit-tokens": "10000000",
 				"x-ratelimit-remaining-tokens": "9999000",
 				"x-ratelimit-reset-tokens": "1s",
+				"x-codex-primary-used-percent": "0.0",
+				"x-codex-primary-window-minutes": "300",
+				"x-codex-primary-reset-at": String(reset5hSec),
+				"x-codex-secondary-used-percent": "0.0",
+				"x-codex-secondary-window-minutes": "10080",
+				"x-codex-secondary-reset-at": String(resetMonSec),
+				"x-codex-limit-name": "mnRouter AI Credits",
+				"x-codex-credits-has-credits": "true",
+				"x-codex-credits-unlimited": "false",
+				"x-codex-credits-balance": String(creditBudget),
+				"x-codex-active-limit": "5h",
 			};
 			return new Response(JSON.stringify(formatter.formatNonStream(result, resolved.id)), { status: 200, headers: nonStreamHeaders });
 		} catch (err) {
