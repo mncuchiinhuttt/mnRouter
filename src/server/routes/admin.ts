@@ -260,6 +260,7 @@ export function adminRoutes() {
 		try {
 			const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
 			const data = (await res.json()) as any;
+			await telegramService.registerCommands();
 			return c.json(data);
 		} catch (e) {
 			return c.json({ ok: false, error: (e as Error).message }, 500);

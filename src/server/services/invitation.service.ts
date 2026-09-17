@@ -57,7 +57,7 @@ export class InvitationService {
 		}
 
 		await auditRepo.record(invitedBy, "invitation.create", row.id, { email, packageName: row.packageName });
-		return { id: row.id, email, packageName: row.packageName, expiresAt };
+		return { id: row.id, email, packageName: row.packageName, expiresAt, inviteUrl: url };
 	}
 
 	async consumeInvitation(
