@@ -121,6 +121,8 @@ export function getToolDefs(
 			files: [
 				{ path: `${H}.pi${S}agent${S}models.json`, content: `{\n  "providers": {\n    "mnrouter": {\n      "baseUrl": "${v1}",\n      "apiKey": "${key}",\n      "api": "openai-completions",\n      "models": [\n${piModels}\n      ]\n    }\n  }\n}` },
 				{ path: `${H}.pi${S}models.json`, content: `{\n  "providers": {\n    "mnrouter": {\n      "baseUrl": "${v1}",\n      "apiKey": "${key}",\n      "api": "openai-completions",\n      "models": [\n${piModels}\n      ]\n    }\n  }\n}` },
+				{ path: `${H}.pi${S}agent${S}extensions${S}mnrouter.ts`, content: `export default function (pi: any) {\n  pi.registerProvider("mnrouter", {\n    baseUrl: "${v1}",\n    apiKey: "${key}",\n    api: "openai-completions",\n    usage: {\n      id: "mnrouter",\n      async fetchUsage(params: any, ctx: any) {\n        try {\n          const fetchFn = ctx?.fetch || fetch;\n          const res = await fetchFn("${v1}/usage", { headers: { authorization: "Bearer ${key}" } });\n          if (!res.ok) return null;\n          const data = await res.json();\n          return data.reports?.[0] || null;\n        } catch { return null; }\n      }\n    }\n  });\n}` },
+				{ path: `${H}.pi${S}agent${S}config.yml`, content: `extensions:\n  - "${H}.pi${S}agent${S}extensions${S}mnrouter.ts"\n` },
 			],
 		},
 		omp: {
@@ -138,6 +140,7 @@ export function getToolDefs(
 				{ path: `${H}.omp${S}agent${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 				{ path: `${H}.omp${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 				{ path: `${H}.omp${S}agent${S}extensions${S}mnrouter.ts`, content: `export default function (pi: any) {\n  pi.registerProvider("mnrouter", {\n    baseUrl: "${v1}",\n    apiKey: "${key}",\n    api: "openai-completions",\n    usage: {\n      id: "mnrouter",\n      async fetchUsage(params: any, ctx: any) {\n        try {\n          const fetchFn = ctx?.fetch || fetch;\n          const res = await fetchFn("${v1}/usage", { headers: { authorization: "Bearer ${key}" } });\n          if (!res.ok) return null;\n          const data = await res.json();\n          return data.reports?.[0] || null;\n        } catch { return null; }\n      }\n    }\n  });\n}` },
+				{ path: `${H}.omp${S}agent${S}config.yml`, content: `extensions:\n  - "${H}.omp${S}agent${S}extensions${S}mnrouter.ts"\n` },
 			],
 		},
 		zcode: {
