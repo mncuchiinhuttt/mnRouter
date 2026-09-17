@@ -247,6 +247,11 @@ export function adminRoutes() {
 		return c.json(res);
 	});
 
+	app.post("/api/admin/telegram/detect-chat-id", async (c) => {
+		const body = await c.req.json().catch(() => ({}));
+		const res = await telegramService.detectChatId(body.botToken);
+		return c.json(res);
+	});
 	app.post("/api/admin/telegram/webhook/set", async (c) => {
 		const cfg = await telegramService.getConfig();
 		if (!cfg.botToken) return c.json({ ok: false, error: "Missing Bot Token" }, 400);

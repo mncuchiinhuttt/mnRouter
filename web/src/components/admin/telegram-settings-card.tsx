@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Send, CheckCircle2, AlertCircle, Bot, Link, Bell } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle, Bot, Link, Bell, Sparkles } from "lucide-react";
 import { api, apiJson } from "@web/lib/api";
 import { Button } from "@web/components/ui/button";
 import { Input, Label, Badge } from "@web/components/ui/primitives";
@@ -86,6 +86,20 @@ export function TelegramSettingsCard() {
 		onError: (err) => toast.error((err as Error).message),
 	});
 
+	const detectMutation = useMutation({
+		mutationFn: () => apiJson<{ ok: boolean; chatId?: string; name?: string; username?: string; error?: string }>("/api/admin/telegram/detect-chat-id", "POST", {
+			botToken: form.botToken,
+		}),
+		onSuccess: (res) => {
+			if (res.ok && res.chatId) {
+				setForm((prev) => ({ ...prev, chatId: res.chatId! }));
+				toast.success(`Found Chat ID: ${res.chatId} (${res.name || res.username || "from your message"})`);
+			} else {
+				toast.error(res.error || "No messages found. Please send /start to your bot first!");
+			}
+		},
+		onError: (err) => toast.error((err as Error).message),
+	});
 	return (
 		<div className="rounded-lg border border-line bg-white p-5 shadow-xs space-y-5">
 			<div className="flex items-start justify-between gap-4">
@@ -135,9 +149,21 @@ export function TelegramSettingsCard() {
 				</div>
 
 				<div className="space-y-1.5">
-					<Label htmlFor="telegram-chat-id">
-						{t("adminSettings.telegramChatId", "Your Chat ID")}
-					</Label>
+					<div className="flex items-center justify-between">
+						<Label htmlFor="telegram-chat-id">
+							{t("adminSettings.telegramChatId", "Your Chat ID")}
+						</Label>
+						<button
+							type="button"
+							onClick={() => detectMutation.mutate()}
+							disabled={detectMutation.isPending || !form.botToken}
+							className="text-[11px] font-mono text-accent hover:underline cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+							title="Reads recent /start message from your bot to get your Chat ID automatically"
+						>
+							<Sparkles className="size-3" />
+							{detectMutation.isPending ? "Detecting..." : "Auto-detect"}
+						</button>
+					</div>
 					<Input
 						id="telegram-chat-id"
 						value={form.chatId}

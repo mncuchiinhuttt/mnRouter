@@ -76,6 +76,38 @@ export class TelegramService {
 		return this.sendMessage(text, token, chatId);
 	}
 
+	async detectChatId(token: string): Promise<{ ok: boolean; chatId?: string; username?: string; name?: string; error?: string }> {
+		const cleanToken = token.trim();
+		if (!cleanToken) return { ok: false, error: "Bot Token is required." };
+
+		try {
+			const res = await fetch(`https://api.telegram.org/bot${cleanToken}/getUpdates?limit=10`);
+			const data = (await res.json()) as any;
+			if (!res.ok || !data.ok) {
+				return { ok: false, error: data.description || `HTTP ${res.status}` };
+			}
+			const updates = data.result || [];
+			for (let i = updates.length - 1; i >= 0; i--) {
+				const msg = updates[i].message || updates[i].channel_post || updates[i].my_chat_member;
+				const chat = msg?.chat || msg?.from;
+				if (chat?.id) {
+					return {
+						ok: true,
+						chatId: String(chat.id),
+						username: chat.username,
+						name: [chat.first_name, chat.last_name].filter(Boolean).join(" ") || chat.title || chat.username,
+					};
+				}
+			}
+			return {
+				ok: false,
+				error: "No recent messages found. Please send /start or any message to your bot on Telegram first, then try again!",
+			};
+		} catch (err) {
+			return { ok: false, error: (err as Error).message };
+		}
+	}
+
 	async notifyCooldown(provider: string, label: string, errorMsg: string): Promise<void> {
 		const cfg = await this.getConfig();
 		if (!cfg.enabled || !cfg.notifyCooldown) return;
