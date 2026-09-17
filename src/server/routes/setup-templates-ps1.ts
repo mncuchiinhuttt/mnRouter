@@ -56,7 +56,7 @@ function Save-ConfigWithBackup($path, $content) {
     }
     Set-Content -Path $resolved -Value $content -Encoding UTF8 -Force
 
-    if ($resolved -like "*\\.codex\\models_cache.json" -and (Test-Path "$resolved.mnrouter.bak")) {
+    if ($resolved -like "*models_cache.json*" -and (Test-Path "$resolved.mnrouter.bak")) {
         try {
             $oldJson = Get-Content "$resolved.mnrouter.bak" -Raw | ConvertFrom-Json
             $newJson = Get-Content $resolved -Raw | ConvertFrom-Json
@@ -69,7 +69,7 @@ function Save-ConfigWithBackup($path, $content) {
     }
 
     Write-Host "  ✓ Configured $resolved" -ForegroundColor Green
-
+}
 ${fileWrites}
 
 Write-Host "\`n[mnRouter] ${label} successfully configured!" -ForegroundColor Green
