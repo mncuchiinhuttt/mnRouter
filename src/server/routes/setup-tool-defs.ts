@@ -212,16 +212,12 @@ export function getToolDefs(
 			vars: [
 				["OMP_BASE_URL", v1],
 				["OMP_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-				["ANTHROPIC_BASE_URL", base],
-				["ANTHROPIC_API_KEY", key],
 			],
 			files: [
 				{ path: `${H}.omp${S}agent${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 				{ path: `${H}.omp${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 				{ path: `${H}.omp${S}agent${S}extensions${S}mnrouter.ts`, content: `export default function (pi: any) {\n  pi.registerProvider("mnrouter", {\n    baseUrl: "${v1}",\n    apiKey: "${key}",\n    api: "openai-completions",\n    usage: {\n      id: "mnrouter",\n      async fetchUsage(params: any, ctx: any) {\n        try {\n          const fetchFn = ctx?.fetch || fetch;\n          const res = await fetchFn("${v1}/usage", { headers: { authorization: "Bearer ${key}" } });\n          if (!res.ok) return null;\n          const data = await res.json();\n          return data.reports?.[0] || null;\n        } catch { return null; }\n      }\n    }\n  });\n}` },
-				{ path: `${H}.omp${S}agent${S}config.yml`, content: `extensions:\n  - "${H}.omp${S}agent${S}extensions${S}mnrouter.ts"\n` },
+				{ path: `${H}.omp${S}agent${S}config.yml`, content: `extensions:\n  - "${isWindows ? "$userProfile/.omp/agent/extensions/mnrouter.ts" : "$HOME/.omp/agent/extensions/mnrouter.ts"}"\n` },
 			],
 		},
 		zcode: {
