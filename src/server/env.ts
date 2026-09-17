@@ -12,6 +12,7 @@ const schema = z.object({
 	SMTP_PASS: z.string().optional(),
 	MAIL_FROM: z.string().default("MNRouter <system@mncuchiinhuttt.dev>"),
 	ADMIN_EMAIL: z.string().optional(),
+	OPENCODE_ZEN_TOKEN: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

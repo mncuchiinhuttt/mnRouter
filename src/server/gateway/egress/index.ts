@@ -60,7 +60,7 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 		case "grok":
 		case "opencode": {
 			if (conn.provider === "opencode" && req.upstreamModel.includes("muse-spark")) {
-				const token = conn.accessToken || "OPENCODE_ZEN_TOKEN_REMOVED";
+				const token = conn.accessToken || process.env.OPENCODE_ZEN_TOKEN || "";
 				const { body } = buildCodexRequest({ ...cfg, baseUrls: [base] }, req, token);
 				const parser = new CodexStreamParser();
 				return {
