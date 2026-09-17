@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Globe } from "lucide-react";
@@ -13,6 +13,15 @@ import type { ModelItem } from "@web/components/chat/thread-sidebar";
 interface KeysResp {
 	keys: { id: string; name: string; prefix: string; active: boolean }[];
 }
+function detectUserOS(): "mac" | "win" {
+	if (typeof window === "undefined" || typeof navigator === "undefined") return "mac";
+	const platform = (navigator as any).userAgentData?.platform || navigator.platform || "";
+	const ua = navigator.userAgent || "";
+	if (/win/i.test(platform) || /windows/i.test(ua)) {
+		return "win";
+	}
+	return "mac";
+}
 
 export default function AiConfig() {
 	const { t, i18n } = useTranslation();
@@ -20,7 +29,11 @@ export default function AiConfig() {
 
 	const baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:8787";
 	const [apiKey, setApiKey] = useState("");
-	const [os, setOs] = useState<"mac" | "win">("mac");
+	const [os, setOs] = useState<"mac" | "win">(() => detectUserOS());
+
+	useEffect(() => {
+		setOs(detectUserOS());
+	}, []);
 	const [selectedHarnessId, setSelectedHarnessId] = useState("claude-code");
 	const [activeTab, setActiveTab] = useState<"tools" | "models">("tools");
 	const { data: modelsData } = useQuery({ queryKey: ["chat-models"], queryFn: () => api<{ models: ModelItem[] }>("/api/chat/models") });
