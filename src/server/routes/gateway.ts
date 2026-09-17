@@ -32,7 +32,7 @@ export function gatewayRoutes() {
 		});
 	});
 
-	app.get("/v1/usage", async (c) => {
+	const handleBillingUsage = async (c: any) => {
 		const authHeader = c.req.header("authorization") || (c.req.header("x-api-key") ? `Bearer ${c.req.header("x-api-key")}` : undefined);
 		const auth = await authService.authenticateApiKey(authHeader);
 		const user = auth?.user ?? c.get("user");
@@ -87,15 +87,35 @@ export function gatewayRoutes() {
 
 		return c.json({
 			generatedAt: now,
-			reports: [
-				{
-					provider: "mnrouter",
-					fetchedAt: now,
-					limits,
-				},
-			],
+			reports: [{ provider: "mnrouter", fetchedAt: now, limits }],
+			object: "list",
+			total_usage: Math.round(usedCredits * 100) / 100,
+			total_granted: creditBudget,
+			total_used: Math.round(usedCredits * 100) / 100,
+			total_available: Math.round(remainingCredits * 100) / 100,
+			total_credits: creditBudget,
+			used_credits: Math.round(usedCredits * 100) / 100,
+			remaining_credits: Math.round(remainingCredits * 100) / 100,
+			hard_limit_usd: creditBudget / 100,
+			soft_limit_usd: creditBudget / 100,
+			system_hard_limit_usd: creditBudget / 100,
+			quota: {
+				total: creditBudget,
+				used: Math.round(usedCredits * 100) / 100,
+				remaining: Math.round(remainingCredits * 100) / 100,
+				unit: "credits",
+				resetsAt: nextMonMs,
+			},
 		});
-	});
+	};
+
+	app.get("/v1/usage", handleBillingUsage);
+	app.get("/dashboard/billing/usage", handleBillingUsage);
+	app.get("/v1/dashboard/billing/usage", handleBillingUsage);
+	app.get("/dashboard/billing/subscription", handleBillingUsage);
+	app.get("/v1/dashboard/billing/subscription", handleBillingUsage);
+	app.get("/dashboard/billing/credit_grants", handleBillingUsage);
+	app.get("/v1/dashboard/billing/credit_grants", handleBillingUsage);
 
 	return app;
 }

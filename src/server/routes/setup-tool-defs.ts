@@ -150,8 +150,8 @@ export function getToolDefs(
 				["ANTHROPIC_API_KEY", key],
 			],
 			files: [
-				{ path: `${H}.omp${S}agent${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    models:\n${ompModels}` },
-				{ path: `${H}.omp${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    models:\n${ompModels}` },
+				{ path: `${H}.omp${S}agent${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
+				{ path: `${H}.omp${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 			],
 		},
 		zcode: {
