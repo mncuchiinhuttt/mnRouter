@@ -7,6 +7,8 @@ import { api, apiJson } from "@web/lib/api";
 import { fmtCompact, fmtDate } from "@web/lib/utils";
 import { Button } from "@web/components/ui/button";
 import { Badge, Input, Label, TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
+import { EmailTagsInput } from "@web/components/admin/email-tags-input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@web/components/ui/dialog";
 import { Switch } from "@web/components/ui/tabs-switch";
 import { ModelPicker } from "@web/components/admin/model-picker";
@@ -81,7 +83,7 @@ interface AccessResp {
 }
 
 const EMPTY_INVITE = {
-	email: "",
+	emails: [] as string[],
 	packageName: "",
 	maxApiKeys: 1,
 	weeklyCreditBudget: "",
@@ -135,23 +137,29 @@ export default function AdminUsers() {
 
 	const invite = useMutation({
 		mutationFn: () =>
-			apiJson("/api/admin/invitations", "POST", {
-				email: inviteForm.email,
+			apiJson<{ count?: number; created?: any[]; failed?: any[]; message?: string }>("/api/admin/invitations", "POST", {
+				emails: inviteForm.emails,
 				packageName: inviteForm.packageName || undefined,
 				maxApiKeys: Number(inviteForm.maxApiKeys),
 				weeklyCreditBudget: inviteForm.unlimitedBudget ? null : optionalNumber(inviteForm.weeklyCreditBudget),
 				allModels: inviteForm.allModels,
 				allowedModels: inviteForm.allModels ? [] : inviteForm.modelIds,
 			}),
-		onSuccess: () => {
+		onSuccess: (res) => {
 			qc.invalidateQueries({ queryKey: ["admin-invitations"] });
 			setInviteOpen(false);
 			setInviteForm({ ...EMPTY_INVITE, modelIds: [] });
-			toast.success(t("adminUsers.inviteSent"));
+			if (res.count && res.count > 1) {
+				toast.success(`Successfully sent ${res.count} invitations!`);
+			} else {
+				toast.success(t("adminUsers.inviteSent"));
+			}
+			if (res.failed && res.failed.length > 0) {
+				toast.error(`Skipped ${res.failed.length} email(s): ${res.failed.map((f: any) => `${f.email} (${f.reason})`).join(", ")}`);
+			}
 		},
 		onError: (error) => toast.error((error as Error).message),
 	});
-
 	const revokeKey = useMutation({
 		mutationFn: (keyId: string) => apiJson(`/api/admin/keys/${keyId}`, "DELETE", {}),
 		onSuccess: () => {
@@ -342,17 +350,28 @@ export default function AdminUsers() {
 						<DialogDescription>{t("adminUsers.inviteDesc")}</DialogDescription>
 					</DialogHeader>
 					<form className="space-y-4" onSubmit={(event) => { event.preventDefault(); invite.mutate(); }}>
-						<div className="grid gap-3 sm:grid-cols-2">
-							<div className="flex flex-col gap-1.5">
-								<Label htmlFor="invite-email" className="truncate">{t("adminUsers.inviteEmail")}</Label>
-								<Input id="invite-email" type="email" required value={inviteForm.email} onChange={(event) => setInviteForm({ ...inviteForm, email: event.target.value })} placeholder="user@example.com" />
+						<div className="flex flex-col gap-1.5">
+							<div className="flex items-center justify-between">
+								<Label htmlFor="invite-emails">{t("adminUsers.inviteEmail")}</Label>
+								{inviteForm.emails.length > 0 && (
+									<span className="font-mono text-[11px] font-semibold text-[#1d7a33] bg-[#f4faf5] border border-[#bcd9c0] px-2 py-0.5 rounded">
+										{inviteForm.emails.length} {inviteForm.emails.length > 1 ? "recipients" : "recipient"}
+									</span>
+								)}
 							</div>
+							<EmailTagsInput
+								id="invite-emails"
+								emails={inviteForm.emails}
+								onChange={(emails) => setInviteForm({ ...inviteForm, emails })}
+								placeholder="user@example.com (Press Enter to add, or paste multiple)"
+							/>
+						</div>
+
+						<div className="grid gap-3 sm:grid-cols-3">
 							<div className="flex flex-col gap-1.5">
 								<Label htmlFor="invite-package" className="truncate">{t("adminUsers.packageName")}</Label>
 								<Input id="invite-package" value={inviteForm.packageName} onChange={(event) => setInviteForm({ ...inviteForm, packageName: event.target.value })} placeholder={t("adminUsers.packagePlaceholder")} />
 							</div>
-						</div>
-						<div className="grid gap-3 sm:grid-cols-2">
 							<div className="flex flex-col gap-1.5">
 								<Label htmlFor="invite-keys" className="truncate">{t("adminUsers.maxKeys")}</Label>
 								<Input id="invite-keys" type="number" min={0} max={50} value={inviteForm.maxApiKeys} onChange={(event) => setInviteForm({ ...inviteForm, maxApiKeys: Number(event.target.value) })} />
@@ -410,7 +429,12 @@ export default function AdminUsers() {
 						<ModelPicker models={models} allModels={inviteForm.allModels} modelIds={inviteForm.modelIds} onAllModelsChange={(value) => setInviteForm({ ...inviteForm, allModels: value })} onModelIdsChange={(value) => setInviteForm({ ...inviteForm, modelIds: value })} t={t} />
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={() => setInviteOpen(false)}>{t("common.cancel")}</Button>
-							<Button type="submit" disabled={invite.isPending || (!inviteForm.allModels && inviteForm.modelIds.length === 0)}><Send /> {t("adminUsers.invite")}</Button>
+							<Button type="submit" disabled={invite.isPending || inviteForm.emails.length === 0 || (!inviteForm.allModels && inviteForm.modelIds.length === 0)}>
+								<Send />
+								{inviteForm.emails.length > 1
+									? `Send ${inviteForm.emails.length} invitations`
+									: t("adminUsers.invite")}
+							</Button>
 						</DialogFooter>
 					</form>
 				</DialogContent>

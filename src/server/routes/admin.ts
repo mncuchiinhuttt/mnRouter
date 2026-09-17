@@ -90,7 +90,8 @@ export function adminRoutes() {
 
 	app.post("/api/admin/invitations", async (c) => {
 		const schema = z.object({
-			email: z.string().email(),
+			email: z.string().email().optional(),
+			emails: z.array(z.string().email()).optional(),
 			packageName: z.string().trim().max(80).optional(),
 			maxApiKeys: z.number().int().min(0).max(50).default(1),
 			weeklyCreditBudget: z.number().int().min(0).nullable().optional(),
@@ -100,13 +101,35 @@ export function adminRoutes() {
 		});
 		const parsed = schema.safeParse(await c.req.json().catch(() => ({})));
 		if (!parsed.success) return c.json({ error: "invalid_input", details: parsed.error.flatten() }, 400);
-		try {
-			const invitation = await invitationService.createInvitation(parsed.data, c.get("user").id);
-			return c.json({ invitation, message: "Invitation sent" }, 201);
-		} catch (err) {
-			const msg = (err as Error).message;
-			return c.json({ error: msg }, msg === "email_exists" || msg === "invitation_pending" ? 409 : 400);
+
+		const data = parsed.data;
+		const rawEmails = Array.from(new Set([
+			...(data.emails ?? []),
+			...(data.email ? [data.email] : []),
+		].map((e) => e.toLowerCase().trim()).filter(Boolean)));
+
+		if (rawEmails.length === 0) {
+			return c.json({ error: "At least one recipient email is required" }, 400);
 		}
+
+		if (rawEmails.length === 1) {
+			try {
+				const invitation = await invitationService.createInvitation({ ...data, email: rawEmails[0]! }, c.get("user").id);
+				return c.json({ invitation, message: "Invitation sent", count: 1 }, 201);
+			} catch (err) {
+				const msg = (err as Error).message;
+				return c.json({ error: msg }, msg === "email_exists" || msg === "invitation_pending" ? 409 : 400);
+			}
+		}
+
+		// Batch invitations
+		const res = await invitationService.createBatchInvitations({ ...data, emails: rawEmails }, c.get("user").id);
+		return c.json({
+			message: `Sent ${res.created.length} of ${rawEmails.length} invitation(s)`,
+			created: res.created,
+			failed: res.failed,
+			count: res.created.length,
+		}, 201);
 	});
 
 	app.delete("/api/admin/invitations/:id", async (c) => {

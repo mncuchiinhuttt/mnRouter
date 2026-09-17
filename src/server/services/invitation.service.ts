@@ -60,6 +60,28 @@ export class InvitationService {
 		return { id: row.id, email, packageName: row.packageName, expiresAt, inviteUrl: url };
 	}
 
+	async createBatchInvitations(
+		input: Omit<InvitationInput, "email"> & { emails: string[] },
+		invitedBy: string,
+	): Promise<{
+		created: Array<{ id: string; email: string; packageName?: string | null; expiresAt: Date; inviteUrl: string }>;
+		failed: Array<{ email: string; reason: string }>;
+	}> {
+		const created: Array<{ id: string; email: string; packageName?: string | null; expiresAt: Date; inviteUrl: string }> = [];
+		const failed: Array<{ email: string; reason: string }> = [];
+
+		const uniqueEmails = Array.from(new Set(input.emails.map((e) => e.toLowerCase().trim()).filter(Boolean)));
+		for (const email of uniqueEmails) {
+			try {
+				const res = await this.createInvitation({ ...input, email }, invitedBy);
+				created.push(res);
+			} catch (err) {
+				failed.push({ email, reason: (err as Error).message });
+			}
+		}
+
+		return { created, failed };
+	}
 	async consumeInvitation(
 		token: string,
 		displayName?: string,
