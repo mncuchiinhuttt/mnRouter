@@ -1,206 +1,636 @@
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { History, Sparkles, Wrench, Shield, Zap, GitCommit } from "lucide-react";
-import { Badge } from "@web/components/ui/primitives";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { 
+	History, 
+	Search, 
+	GitCommit, 
+	ChevronDown, 
+	ExternalLink, 
+	Sparkles, 
+	Wrench, 
+	Layers, 
+	Clock, 
+	FileCode2,
+	CheckCircle2,
+	X
+} from "lucide-react";
 
-interface ReleaseItem {
-	version: string;
+/* Reading this as: Internal platform changelog and commit timeline for developers and internal users, with a high-density Linear/terminal-inspired dark-navy aesthetic matching betteragy reference, leaning toward Tailwind utilities + motion/react accordion springs + zero em-dashes. */
+
+type UpdateType = "added" | "fixed" | "changed" | "core";
+
+interface ChangelogEntry {
+	id: string;
+	commit: string;
+	time: string;
 	date: string;
+	fullDateTime: string;
+	type: UpdateType;
+	scope: string;
 	title: string;
-	tag?: "latest" | "stable";
-	highlights: {
-		type: "feature" | "fix" | "perf" | "security";
-		title: string;
-		desc: string;
-	}[];
+	summary: string;
+	highlights: string[];
+	files?: string[];
 }
 
-const RELEASES: ReleaseItem[] = [
+const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
-		version: "v0.5.0",
+		id: "c5b9e49",
+		commit: "c5b9e49",
+		time: "01:54",
 		date: "2026-09-18",
-		title: "Telegram Server Monitoring Bot & Multi-Harness Sync",
-		tag: "latest",
+		fullDateTime: "18/09/2026 01:54 (GMT+7)",
+		type: "core",
+		scope: "status",
+		title: "chore: simplify database service name to Database",
+		summary: "Streamlined the service name on the Server Status page from verbose PostgreSQL / SQLite Storage to clean, concise Database indicator.",
 		highlights: [
-			{
-				type: "feature",
-				title: "Telegram Bot Server Monitoring & Alerts",
-				desc: "Real-time instant Telegram alerts for provider cooldowns, server errors, and new member invitations with smart 5-minute debounce.",
-			},
-			{
-				type: "feature",
-				title: "Complete Suite of 10+ Slash Commands",
-				desc: "Control and inspect mnRouter directly via Telegram with /status, /usage, /quotas, /logs, /users, /invite, and /announce.",
-			},
-			{
-				type: "feature",
-				title: "1-Click Telegram Chat ID Auto-Detection",
-				desc: "Automatically extracts and populates your Chat ID from your recent /start message to the bot without needing manual bots.",
-			},
-			{
-				type: "feature",
-				title: "Client OS Auto-Detection in Tools Config",
-				desc: "Tools Config dynamically detects Windows vs macOS/Linux and pre-selects the appropriate PowerShell or bash tabs.",
-			},
+			"Updated server status payload to return Database as the official service name",
+			"Maintained backward compatibility with existing telemetry logs",
+			"Verified live status API endpoint returns concise naming",
 		],
+		files: ["src/server/routes/status.ts"],
 	},
 	{
-		version: "v0.4.0",
+		id: "6b213e0",
+		commit: "6b213e0",
+		time: "01:53",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:53 (GMT+7)",
+		type: "fixed",
+		scope: "telegram",
+		title: "fix: enforce public HTTPS origin for webhook registration and fix nav.settings i18n",
+		summary: "Resolved Bad Request webhook error by enforcing public HTTPS domain through Cloudflare tunnel, and added missing settings translation keys.",
+		highlights: [
+			"Automatic HTTPS origin resolution prioritizing configured APP_URL",
+			"Eliminated internal 127.0.0.1:8787 HTTP URL rejection from Telegram setWebhook API",
+			"Added missing settings key in Vietnamese and English sidebar navigation",
+			"Passed custom bot token directly from UI state during immediate registration",
+		],
+		files: ["src/server/routes/admin.ts", "web/src/components/admin/telegram-settings-card.tsx", "web/src/i18n/vi.ts", "web/src/i18n/en.ts"],
+	},
+	{
+		id: "72bd482",
+		commit: "72bd482",
+		time: "01:49",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:49 (GMT+7)",
+		type: "added",
+		scope: "ui",
+		title: "feat: add scrollable sidebar navigation, system section, changelog, and live server status page",
+		summary: "Upgraded shell navigation with smooth slim scrolling and introduced dedicated SYSTEM section containing live Status and Changelog views.",
+		highlights: [
+			"Pinned top branding and bottom profile while enabling middle section scrolling",
+			"Integrated status.claude.com style 30-day uptime bars and services health monitors",
+			"Built reactive timeline view tracking platform deployments and protocol updates",
+			"Fully responsive layout supporting desktop and mobile drawer navigation",
+		],
+		files: ["web/src/components/shell.tsx", "web/src/App.tsx", "src/server/routes/status.ts", "web/src/pages/ServerStatusPage.tsx", "web/src/pages/ChangelogPage.tsx"],
+	},
+	{
+		id: "b5af981",
+		commit: "b5af981",
+		time: "01:45",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:45 (GMT+7)",
+		type: "added",
+		scope: "telegram",
+		title: "feat: add full slash command suite for monitoring, logs, quotas, invitations, and announcements",
+		summary: "Engineered interactive Telegram command suite allowing operators to query status, quotas, recent logs, invite users, and broadcast announcements.",
+		highlights: [
+			"Supported /status, /usage, /quotas, /cooldowns, and /logs commands",
+			"Added administrative /users, /invitations, /invite, and /announce actions",
+			"Automated command registration via setMyCommands for native client auto-complete",
+			"Enhanced member notification to reflect invitation acceptance workflow",
+		],
+		files: ["src/server/services/telegram-commands.ts", "src/server/services/telegram.service.ts", "src/server/services/invitation.service.ts"],
+	},
+	{
+		id: "04a317b",
+		commit: "04a317b",
+		time: "01:39",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:39 (GMT+7)",
+		type: "added",
+		scope: "telegram",
+		title: "feat: add auto-detect Chat ID feature using recent /start message from bot",
+		summary: "Introduced 1-click automatic Chat ID detection in Admin Settings by querying recent /start updates directly from the bot API.",
+		highlights: [
+			"Eliminated need for external userinfo bots to find Telegram Chat ID",
+			"Detects personal chats and group channels with sender display names",
+			"Pre-fills Chat ID input and saves directly to database settings",
+		],
+		files: ["src/server/services/telegram.service.ts", "src/server/routes/admin.ts", "web/src/components/admin/telegram-settings-card.tsx"],
+	},
+	{
+		id: "198dd26",
+		commit: "198dd26",
+		time: "01:34",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:34 (GMT+7)",
+		type: "added",
+		scope: "telegram",
+		title: "feat: add Telegram server monitoring bot with alerts and status commands",
+		summary: "Added automated background monitoring with Telegram alerts for account cooldowns, server errors, and member events.",
+		highlights: [
+			"Smart 5-minute cooldown debounce preventing message spam on flapping accounts",
+			"Instant critical error notifications with error stack traces and timestamps",
+			"Direct webhook event handler for asynchronous bot communication",
+		],
+		files: ["src/server/services/telegram.service.ts", "src/server/routes/admin.ts"],
+	},
+	{
+		id: "572cecb",
+		commit: "572cecb",
+		time: "01:28",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 01:28 (GMT+7)",
+		type: "added",
+		scope: "ui",
+		title: "feat: auto-detect client OS and preselect macOS/Linux or Windows PowerShell tab in Tools Config",
+		summary: "Dynamically inspects client userAgent to determine operating system and automatically pre-selects the appropriate command script tab.",
+		highlights: [
+			"Instant auto-selection between PowerShell (Windows) and Bash (macOS/Linux)",
+			"Smooth manual override tabs remaining available for cross-platform setups",
+			"Reduced user onboarding friction in Tools Config page",
+		],
+		files: ["web/src/pages/AiConfig.tsx"],
+	},
+	{
+		id: "774c1f0",
+		commit: "774c1f0",
+		time: "23:37",
 		date: "2026-09-17",
-		title: "Gemini 3.8 Tool Engine & Codex Rate Limit Streaming",
+		fullDateTime: "17/09/2026 23:37 (GMT+7)",
+		type: "fixed",
+		scope: "gateway",
+		title: "fix: stream toolcall_delta with full JSON arguments and set sawTool for finish_reason",
+		summary: "Fixed an issue where streaming tool call arguments arrived empty in OpenAI chat completions format by piping delta chunks and setting finish_reason.",
 		highlights: [
-			{
-				type: "fix",
-				title: "Gemini 3.8/3.7 Thought Signature Validation Bypass",
-				desc: "Automatically attaches skip_thought_signature_validator on multi-turn functionCall parts in Google Antigravity history.",
-			},
-			{
-				type: "fix",
-				title: "Deep Tool Parameter Schema Sanitization",
-				desc: "Recursively strips exclusiveMinimum and collapses array types to comply with Google Gemini strict protobuf schema.",
-			},
-			{
-				type: "fix",
-				title: "Real-time Streaming Toolcall Argument Deltas",
-				desc: "Fixed empty arguments bug by streaming JSON argument deltas and properly setting tool_calls finish reasons.",
-			},
-			{
-				type: "feature",
-				title: "Codex Full Text Retention & rate_limits SSE Streaming",
-				desc: "Accumulates streamed text to prevent output disappearance in Codex TUI and streams native rate_limits events.",
-			},
+			"Properly serialized function call arguments as JSON delta streams",
+			"Ensured finish_reason equals tool_calls when tools are invoked",
+			"Fixed tool calling integration in Cline and Roo Code harnesses",
 		],
+		files: ["src/server/gateway/ingress/openai-chat.ts"],
 	},
 	{
-		version: "v0.3.0",
+		id: "278f5fd",
+		commit: "278f5fd",
+		time: "23:31",
 		date: "2026-09-17",
-		title: "Weekly Budget Architecture & Zero-Downtime Migration",
+		fullDateTime: "17/09/2026 23:31 (GMT+7)",
+		type: "fixed",
+		scope: "antigravity",
+		title: "fix: supply skip_thought_signature_validator on functionCall parts in Gemini 3 history",
+		summary: "Fixed Google Gemini 3.8 and 3.7 thought signature validation errors by attaching skip_thought_signature_validator on multi-turn functionCall turns.",
 		highlights: [
-			{
-				type: "feature",
-				title: "Zero-Downtime Additive Database Migration",
-				desc: "Migrated database schema to weeklyCreditBudget while preserving 100% of existing user data and backward compatibility.",
-			},
-			{
-				type: "perf",
-				title: "Live Request Log Stack-Push & Glowing Pulse Animation",
-				desc: "Integrated motion/react for smooth top-of-stack entry animations and ambient green/red radar pulses on auto-reload.",
-			},
-			{
-				type: "feature",
-				title: "Compact Model Access Badges",
-				desc: "Replaced verbose descriptions in admin user management with clean badges: All Models or specific model counts.",
-			},
-			{
-				type: "fix",
-				title: "Windows OMP Environment Cleanup",
-				desc: "Removed redundant global environment variables and fixed YAML path escaping for Windows PowerShell setups.",
-			},
+			"Resolved Thought signature validation failed errors on Gemini models",
+			"Supported multi-turn agent tool loops in Antigravity wire",
+			"Preserved reasoning history across consecutive model interactions",
 		],
+		files: ["src/server/gateway/egress/antigravity.ts"],
 	},
 	{
-		version: "v0.2.0",
-		date: "2026-09-16",
-		title: "OpenCode Zen & OMP Integration",
+		id: "bec47e1",
+		commit: "bec47e1",
+		time: "23:28",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 23:28 (GMT+7)",
+		type: "fixed",
+		scope: "antigravity",
+		title: "fix: sanitize tool parameter JSON schemas to comply with Gemini protobuf requirements",
+		summary: "Sanitized tool parameters by recursively stripping unsupported keywords like exclusiveMinimum and normalizing array type definitions.",
 		highlights: [
-			{
-				type: "feature",
-				title: "OpenCode v2 CLI Header Emulation",
-				desc: "Full emulation of OpenCode CLI headers, project tokens, and session affinity for seamless free model execution.",
-			},
-			{
-				type: "feature",
-				title: "Antigravity Dynamic Wire Effort Routing",
-				desc: "Automatically resolves wire model tiers (-high, -medium, -low) based on client reasoning effort requests.",
-			},
-			{
-				type: "feature",
-				title: "Dedicated OMP & Pi Usage Extension",
-				desc: "Custom extension providing accurate live credit quota tracking and per-model pricing inside OMP and Pi.",
-			},
+			"Recursive schema cleaner stripping exclusiveMinimum, exclusiveMaximum, and invalid unions",
+			"Prevented 400 Invalid Argument schema errors from Google backend",
+			"Validated compliance against strict Gemini Protobuf specifications",
 		],
+		files: ["src/server/gateway/egress/antigravity.ts"],
 	},
 	{
-		version: "v0.1.0",
-		date: "2026-09-14",
-		title: "Initial Internal AI Gateway Release",
-		tag: "stable",
+		id: "35d3ddf",
+		commit: "35d3ddf",
+		time: "23:20",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 23:20 (GMT+7)",
+		type: "fixed",
+		scope: "omp",
+		title: "fix: clean up redundant global env vars in OMP setup and fix YAML path escaping on Windows",
+		summary: "Removed duplicate global environment variables in OMP setup scripts and ensured valid backslash escaping for Windows path strings in config.yml.",
 		highlights: [
-			{
-				type: "feature",
-				title: "Unified Multi-Provider Routing Engine",
-				desc: "Single unified API gateway bridging Claude, ChatGPT/Codex, Google Antigravity, AWS Kiro, Grok, and OpenCode.",
-			},
-			{
-				type: "perf",
-				title: "High-Performance Bun Runtime Architecture",
-				desc: "Single-process native TypeScript runtime designed for low-memory appliances with Neon PostgreSQL / SQLite backend.",
-			},
+			"Corrected double escaping in Windows PowerShell configuration generator",
+			"Ensured OMP agent configuration loads cleanly on Windows 11",
+			"Prevented duplicate provider definitions in models.yml",
 		],
+		files: ["src/server/routes/setup-scripts.ts"],
 	},
+	{
+		id: "8cd15eb",
+		commit: "8cd15eb",
+		time: "19:49",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 19:49 (GMT+7)",
+		type: "changed",
+		scope: "budget",
+		title: "refactor: migrate all budget fields to weeklyCreditBudget with zero-downtime database compatibility",
+		summary: "Migrated monthly token budget system to weekly credit budgets with rolling Monday synchronization and additive database schema.",
+		highlights: [
+			"Zero-downtime additive database migration preserving existing user balances",
+			"Rolling weekly reset aligned to Monday 00:00 local time",
+			"Unified credit accounting across Claude, OpenAI, and Google models",
+		],
+		files: ["src/server/db/schema.ts", "src/server/limits/index.ts", "src/server/services/user.service.ts"],
+	},
+	{
+		id: "848c4e4",
+		commit: "848c4e4",
+		time: "19:16",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 19:16 (GMT+7)",
+		type: "added",
+		scope: "ui",
+		title: "feat: add smooth stack push animation and glowing green/red pulse for newly arrived requests",
+		summary: "Enhanced Admin Request Logs with motion stack entry animations and glowing radar pulses to highlight newly arrived requests on auto-reload.",
+		highlights: [
+			"motion/react top-of-stack push animations with layout transition",
+			"Subtle green pulse for successful 200 requests and red pulse for 4xx/5xx errors",
+			"Performance-optimized animation rendering with strict hardware acceleration",
+		],
+		files: ["web/src/pages/AdminLogs.tsx"],
+	},
+	{
+		id: "bb79c5a",
+		commit: "bb79c5a",
+		time: "18:31",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 18:31 (GMT+7)",
+		type: "added",
+		scope: "claude",
+		title: "feat: add full anthropic-ratelimit-* headers for Claude Code quota and limit tracking",
+		summary: "Emulated native Anthropic rate limit headers allowing Claude Code CLI to accurately track 5-hour rolling quota windows and remaining limits.",
+		highlights: [
+			"Injected anthropic-ratelimit-unified-5h-* headers into streaming responses",
+			"Enabled proactive quota warning displays inside Claude Code TUI",
+			"Aligned token consumption tracking with server accounting",
+		],
+		files: ["src/server/gateway/egress/claude.ts", "src/server/gateway/ingress/anthropic.ts"],
+	},
+	{
+		id: "fe275a9",
+		commit: "fe275a9",
+		time: "16:56",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 16:56 (GMT+7)",
+		type: "added",
+		scope: "codex",
+		title: "feat: stream rate_limits events and embed rate_limits in response.completed",
+		summary: "Streamed OpenAI native rate_limits SSE events and embedded comprehensive rate limit metadata into response.completed payloads for Codex CLI.",
+		highlights: [
+			"Added rate_limits SSE event streaming for Codex client compatibility",
+			"Embedded primary and secondary limit windows into completed response bodies",
+			"Synced quota indicators inside Codex status line",
+		],
+		files: ["src/server/gateway/ingress/openai-responses.ts"],
+	},
+	{
+		id: "c806361",
+		commit: "c806361",
+		time: "16:33",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 16:33 (GMT+7)",
+		type: "fixed",
+		scope: "codex",
+		title: "fix: accumulate streamed text and reasoning to prevent output wiping on completion",
+		summary: "Fixed a bug where final text disappeared in Codex TUI by accumulating streamed text chunks into the final response.completed event.",
+		highlights: [
+			"Accumulated reasoning and text output buffers during streaming",
+			"Prevented empty text payload overwrite on completion in Codex",
+			"Maintained full multi-turn assistant answers in session context",
+		],
+		files: ["src/server/gateway/ingress/openai-responses.ts"],
+	},
+	{
+		id: "fd68e1a",
+		commit: "fd68e1a",
+		time: "16:24",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 16:24 (GMT+7)",
+		type: "fixed",
+		scope: "opencode",
+		title: "fix: add authentic OpenCode CLI headers and project/session tokens for muse-spark",
+		summary: "Emulated official OpenCode v2 CLI headers, project tokens, and session affinity for free execution of muse-spark models.",
+		highlights: [
+			"Configured authentic OpenCode user agent and client headers",
+			"Attached dynamic session and project affinity tokens",
+			"Enabled seamless routing to free community models",
+		],
+		files: ["src/server/gateway/egress/openai-chat.ts"],
+	},
+	{
+		id: "e96a66b",
+		commit: "e96a66b",
+		time: "16:02",
+		date: "2026-09-17",
+		fullDateTime: "17/09/2026 16:02 (GMT+7)",
+		type: "added",
+		scope: "setup",
+		title: "feat: auto-inject accessible models for Codex and support full smart reset for Codex and OMP",
+		summary: "Automatically fetches authorized models and generates customized config files for Codex and OMP with backup and reset support.",
+		highlights: [
+			"One-click smart configuration injection for Codex CLI and OMP",
+			"Automatic backup of existing config files before replacement",
+			"Included restore command script for quick rollback",
+		],
+		files: ["src/server/routes/setup-scripts.ts"],
+	},
+];
+
+const FILTER_TABS: { id: "all" | UpdateType; label: string }[] = [
+	{ id: "all", label: "ALL" },
+	{ id: "added", label: "ADDED" },
+	{ id: "fixed", label: "FIXED" },
+	{ id: "changed", label: "CHANGED" },
+	{ id: "core", label: "CORE" },
 ];
 
 export default function ChangelogPage() {
 	const { t } = useTranslation();
+	const [activeTab, setActiveTab] = useState<"all" | UpdateType>("all");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set([CHANGELOG_DATA[0]?.id || ""]));
+	const reduceMotion = useReducedMotion();
+
+	const toggleExpand = (id: string) => {
+		setExpandedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const filteredEntries = useMemo(() => {
+		return CHANGELOG_DATA.filter((entry) => {
+			const matchesTab = activeTab === "all" || entry.type === activeTab;
+			if (!matchesTab) return false;
+
+			if (!searchQuery.trim()) return true;
+			const q = searchQuery.toLowerCase().trim();
+			return (
+				entry.title.toLowerCase().includes(q) ||
+				entry.scope.toLowerCase().includes(q) ||
+				entry.commit.toLowerCase().includes(q) ||
+				entry.summary.toLowerCase().includes(q) ||
+				entry.highlights.some((h) => h.toLowerCase().includes(q))
+			);
+		});
+	}, [activeTab, searchQuery]);
+
+	// Counts per type
+	const counts = useMemo(() => {
+		const res: Record<string, number> = { all: CHANGELOG_DATA.length };
+		for (const item of CHANGELOG_DATA) {
+			res[item.type] = (res[item.type] || 0) + 1;
+		}
+		return res;
+	}, []);
 
 	return (
-		<div className="space-y-8 max-w-4xl mx-auto pb-12">
-			<header>
-				<div className="flex items-center gap-2 text-xs font-mono text-ink-2 uppercase tracking-wider mb-1">
-					<History className="size-3.5 text-accent" />
-					<span>Platform Evolution</span>
+		<div className="space-y-6 max-w-5xl mx-auto pb-16">
+			{/* Top Header */}
+			<header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-line pb-5">
+				<div>
+					<div className="flex items-center gap-2 text-xs font-mono text-ink-2 uppercase tracking-wider mb-1">
+						<History className="size-3.5 text-accent" />
+						<span>Project Changelog</span>
+					</div>
+					<h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+						{t("changelog.title", "Server Changelog")}
+					</h1>
+					<p className="mt-1 text-xs sm:text-sm text-ink-2">
+						{t("changelog.desc", "Real-time stream of platform updates, bug fixes, and protocol improvements.")}
+					</p>
 				</div>
-				<h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-					{t("changelog.title", "Server Changelog")}
-				</h1>
-				<p className="mt-1.5 text-sm text-ink-2">
-					{t("changelog.desc", "Release notes, platform enhancements, and protocol updates for mnRouter.")}
-				</p>
+
+				<div className="flex items-center gap-2">
+					<a
+						href="https://github.com/mncuchiinhuttt/mnRouter"
+						target="_blank"
+						rel="noreferrer"
+						className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 font-mono text-xs font-medium text-ink hover:border-accent hover:text-accent transition shadow-2xs cursor-pointer"
+					>
+						<GitCommit className="size-3.5" />
+						<span>GITHUB REPO</span>
+						<ExternalLink className="size-3 text-ink-2 ml-0.5" />
+					</a>
+				</div>
 			</header>
 
-			<div className="space-y-10 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-line/80">
-				{RELEASES.map((rel) => (
-					<div key={rel.version} className="relative flex items-start gap-5 group">
-						{/* Timeline Dot */}
-						<div className="relative mt-1.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-line bg-white shadow-2xs group-hover:border-accent transition">
-							{rel.tag === "latest" ? (
-								<Sparkles className="size-3.5 text-accent animate-pulse" />
-							) : (
-								<GitCommit className="size-3.5 text-ink-2 group-hover:text-accent transition" />
-							)}
-						</div>
+			{/* Filter Bar & Search */}
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				{/* Filter Tabs */}
+				<div className="flex flex-wrap items-center gap-1.5 p-1 rounded-lg border border-line bg-paper/40">
+					{FILTER_TABS.map((tab) => {
+						const isActive = activeTab === tab.id;
+						const count = counts[tab.id] || 0;
+						return (
+							<button
+								key={tab.id}
+								onClick={() => setActiveTab(tab.id)}
+								className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium transition cursor-pointer ${
+									isActive
+										? "bg-accent text-white shadow-2xs"
+										: "text-ink-2 hover:text-ink hover:bg-white/60"
+								}`}
+							>
+								<span>{tab.label}</span>
+								<span
+									className={`text-[10px] px-1 py-0.2 rounded ${
+										isActive ? "bg-white/20 text-white" : "bg-line/60 text-ink-2"
+									}`}
+								>
+									{count}
+								</span>
+							</button>
+						);
+					})}
+				</div>
 
-						{/* Release Card */}
-						<div className="flex-1 rounded-xl border border-line bg-white p-5 sm:p-6 shadow-2xs space-y-4">
-							<div className="flex flex-wrap items-center justify-between gap-2 border-b border-line/60 pb-3">
-								<div className="flex items-center gap-2.5">
-									<span className="font-mono text-base font-bold text-ink">{rel.version}</span>
-									<span className="text-sm font-medium text-ink-2">&middot; {rel.title}</span>
-								</div>
-								<div className="flex items-center gap-2">
-									{rel.tag === "latest" && (
-										<Badge className="border-[#bcd9c0] text-[#1d7a33] bg-[#f4faf5]">Latest Release</Badge>
-									)}
-									<span className="font-mono text-xs text-ink-2/70">{rel.date}</span>
-								</div>
-							</div>
+				{/* Search Input */}
+				<div className="relative w-full sm:w-64">
+					<Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-ink-2" />
+					<input
+						type="text"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						placeholder="Search commit, scope, fix..."
+						className="w-full rounded-lg border border-line bg-white pl-8 pr-7 py-1.5 text-xs text-ink placeholder:text-ink-2/60 focus:outline-none focus:border-accent shadow-2xs font-mono"
+					/>
+					{searchQuery && (
+						<button
+							onClick={() => setSearchQuery("")}
+							className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-2 hover:text-ink cursor-pointer"
+						>
+							<X className="size-3.5" />
+						</button>
+					)}
+				</div>
+			</div>
 
-							<div className="grid gap-3 sm:grid-cols-2">
-								{rel.highlights.map((h, idx) => (
-									<div key={idx} className="rounded-lg border border-line/50 bg-paper/30 p-3.5 space-y-1">
-										<div className="flex items-center gap-2 text-xs font-semibold text-ink">
-											{h.type === "feature" && <Zap className="size-3.5 text-accent shrink-0" />}
-											{h.type === "fix" && <Wrench className="size-3.5 text-[#1d7a33] shrink-0" />}
-											{h.type === "perf" && <Sparkles className="size-3.5 text-[#f59e0b] shrink-0" />}
-											{h.type === "security" && <Shield className="size-3.5 text-[#3b82f6] shrink-0" />}
-											<span>{h.title}</span>
-										</div>
-										<p className="text-xs text-ink-2 leading-relaxed">{h.desc}</p>
-									</div>
-								))}
-							</div>
-						</div>
+			{/* Feed List */}
+			<div className="space-y-2">
+				{filteredEntries.length === 0 ? (
+					<div className="rounded-xl border border-dashed border-line bg-white/50 p-10 text-center space-y-2">
+						<GitCommit className="size-8 mx-auto text-ink-2/50" />
+						<p className="text-sm font-medium text-ink">No updates found</p>
+						<p className="text-xs text-ink-2">Try adjusting your search query or filter tab.</p>
 					</div>
-				))}
+				) : (
+					filteredEntries.map((entry) => {
+						const isExpanded = expandedIds.has(entry.id);
+
+						return (
+							<div
+								key={entry.id}
+								className={`rounded-xl border transition-all duration-200 overflow-hidden ${
+									isExpanded 
+										? "border-accent/60 bg-white shadow-xs ring-1 ring-accent/15" 
+										: "border-line bg-white hover:border-line-2 hover:shadow-2xs"
+								}`}
+							>
+								{/* Clickable Header Row */}
+								<div
+									onClick={() => toggleExpand(entry.id)}
+									className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:px-4 sm:py-3 gap-2 sm:gap-4 cursor-pointer select-none group"
+								>
+									{/* Left Meta & Title */}
+									<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+										{/* Timestamp Pill */}
+										<div className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-ink-2 bg-paper/80 border border-line/60 px-2 py-0.5 rounded shrink-0">
+											<Clock className="size-3 text-accent shrink-0" />
+											<span>{entry.time}</span>
+										</div>
+
+										{/* Type Tag */}
+										<span
+											className={`font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border shrink-0 ${
+												entry.type === "added"
+													? "bg-[#1d7a33]/10 text-[#1d7a33] border-[#1d7a33]/30"
+													: entry.type === "fixed"
+													? "bg-[#0284c7]/10 text-[#0284c7] border-[#0284c7]/30"
+													: entry.type === "changed"
+													? "bg-[#d97706]/10 text-[#d97706] border-[#d97706]/30"
+													: "bg-[#6366f1]/10 text-[#6366f1] border-[#6366f1]/30"
+											}`}
+										>
+											{entry.type.toUpperCase()}
+										</span>
+
+										{/* Scope Tag */}
+										<span className="hidden md:inline-block font-mono text-[11px] text-ink-2 bg-paper/60 px-1.5 py-0.5 rounded border border-line/50 shrink-0">
+											{entry.scope}
+										</span>
+
+										{/* Title */}
+										<span className="font-mono text-xs text-ink truncate group-hover:text-accent transition">
+											{entry.title}
+										</span>
+									</div>
+
+									{/* Right Commit & Expand Chevron */}
+									<div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pl-1 sm:pl-0 border-t sm:border-t-0 border-line/40 pt-1 sm:pt-0">
+										<div className="flex items-center gap-1.5 font-mono text-[11px] text-ink-2">
+											<GitCommit className="size-3 text-ink-2/60" />
+											<span>{entry.commit}</span>
+										</div>
+
+										<div className="flex items-center gap-1 text-[11px] font-mono text-ink-2/70 hidden lg:inline-flex">
+											<span>{entry.date}</span>
+										</div>
+
+										{/* Chevron with smooth rotation */}
+										<div
+											className={`size-6 rounded flex items-center justify-center border border-line/60 text-ink-2 transition-transform duration-200 group-hover:border-accent group-hover:text-accent ${
+												isExpanded ? "rotate-180 bg-paper/60" : ""
+											}`}
+										>
+											<ChevronDown className="size-3.5" />
+										</div>
+									</div>
+								</div>
+
+								{/* Animated Expandable Details Panel */}
+								<AnimatePresence initial={false}>
+									{isExpanded && (
+										<motion.div
+											key="content"
+											initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+											animate={{ height: "auto", opacity: 1 }}
+											exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+											transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+											className="overflow-hidden"
+										>
+											<div className="border-t border-line/80 bg-paper/20 p-4 sm:p-5 space-y-4 text-xs">
+												{/* Detailed Summary */}
+												<div>
+													<h4 className="font-mono text-[11px] font-semibold text-ink uppercase tracking-wider mb-1">
+														Overview
+													</h4>
+													<p className="text-ink-2 leading-relaxed text-xs sm:text-[13px]">
+														{entry.summary}
+													</p>
+												</div>
+
+												{/* Key Changes & Highlights */}
+												{entry.highlights && entry.highlights.length > 0 && (
+													<div>
+														<h4 className="font-mono text-[11px] font-semibold text-ink uppercase tracking-wider mb-2">
+															Key Changes
+														</h4>
+														<ul className="space-y-1.5">
+															{entry.highlights.map((item, idx) => (
+																<li key={idx} className="flex items-start gap-2 text-ink">
+																	<CheckCircle2 className="size-3.5 text-accent mt-0.5 shrink-0" />
+																	<span className="leading-normal">{item}</span>
+																</li>
+															))}
+														</ul>
+													</div>
+												)}
+
+												{/* Affected Files & Deployment Timestamp */}
+												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-line/60 text-[11px] font-mono text-ink-2">
+													{entry.files && entry.files.length > 0 ? (
+														<div className="flex flex-wrap items-center gap-1.5">
+															<FileCode2 className="size-3 text-ink-2 shrink-0" />
+															<span className="text-ink-2/70">Modified:</span>
+															{entry.files.map((f) => (
+																<span
+																	key={f}
+																	className="bg-white px-1.5 py-0.5 rounded border border-line text-ink"
+																>
+																	{f}
+																</span>
+															))}
+														</div>
+													) : (
+														<div />
+													)}
+
+													<div className="flex items-center gap-1.5 text-ink-2/80 shrink-0">
+														<Clock className="size-3" />
+														<span>Deployed: {entry.fullDateTime}</span>
+													</div>
+												</div>
+											</div>
+										</motion.div>
+									)}
+								</AnimatePresence>
+							</div>
+						);
+					})
+				)}
 			</div>
 		</div>
 	);
