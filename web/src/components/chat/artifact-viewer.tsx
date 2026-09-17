@@ -6,6 +6,7 @@ import hljs from "highlight.js";
 import { Button } from "@web/components/ui/button";
 import { getBeautifiedHtml } from "./artifact-html-utils";
 import { downloadArtifactFile } from "./artifact-download";
+import { fmtTTL } from "@web/lib/utils";
 import type { ArtifactItem } from "./message-list";
 
 export interface ArtifactViewerProps {
@@ -91,9 +92,9 @@ export function ArtifactViewer({ artifact, onClose }: ArtifactViewerProps) {
 					<span className="rounded bg-paper-2 px-1.5 py-0.2 font-mono text-[9.5px] text-ink-2 uppercase border border-line shrink-0">
 						{artifact.language || artifact.type}
 					</span>
-					<div className="hidden sm:flex items-center gap-1 rounded bg-[#f4faf5] border border-[#bcd9c0] px-1.5 py-0.2 text-[9.5px] font-mono text-[#1d7a33] shrink-0">
+					<div className="hidden sm:flex items-center gap-1 rounded bg-[#f4faf5] border border-[#bcd9c0] px-1.5 py-0.2 text-[9.5px] font-mono text-[#1d7a33] shrink-0" title={`Hết hạn lúc: ${new Date(artifact.expiresAt).toLocaleString()}`}>
 						<Clock className="size-2.5" />
-						<span>24h</span>
+						<span>{fmtTTL(artifact.expiresAt)}</span>
 					</div>
 				</div>
 

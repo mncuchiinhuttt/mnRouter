@@ -26,7 +26,12 @@ export class ChatService {
 		const thread = await chatRepo.findThreadById(id, userId);
 		return thread ? chatRepo.updateThread(id, data) : null;
 	}
-	async deleteThread(id: string, userId: string): Promise<boolean> { return chatRepo.deleteThread(id, userId); }
+	async deleteThread(id: string, userId: string): Promise<boolean> {
+		try {
+			await fileService.deleteFilesByThread(id, userId);
+		} catch {}
+		return chatRepo.deleteThread(id, userId);
+	}
 
 	async listMessages(threadId: string, userId: string): Promise<{ messages: ChatMessage[]; artifacts: ChatArtifact[] }> {
 		const thread = await chatRepo.findThreadById(threadId, userId);

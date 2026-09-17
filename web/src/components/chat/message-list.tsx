@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bot, Code2, Copy, Download, FileCode2, FileText, Globe, Sparkles, ThumbsDown, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
-import { fmtCompact } from "@web/lib/utils";
+import { fmtCompact, fmtTime, fmtTTL } from "@web/lib/utils";
 import { Markdown } from "./markdown";
 import { ExecutionLogBox } from "./execution-log-box";
 import { ClarificationBox, extractClarification } from "./clarification-box";
@@ -99,11 +99,14 @@ export function MessageList({
 						<div className={`space-y-2 ${isUser ? "items-end" : "items-start"}`}>
 							{isUser && msg.fileIds && msg.fileIds.length > 0 && (
 								<div className="flex flex-wrap gap-1.5 justify-end">
-									{msg.fileIds.map((fid) => (
-										<div key={fid} className="flex items-center gap-1.5 rounded bg-white px-2 py-1 border border-line text-[11px] font-mono shadow-2xs">
-											<FileText className="size-3 text-accent" /><span className="truncate max-w-[140px]">{filesMap[fid]?.filename || "Attachment"}</span><span className="text-[9px] text-[#1d7a33] bg-[#f4faf5] px-1 rounded border border-[#bcd9c0]">24h</span>
-										</div>
-									))}
+									{msg.fileIds.map((fid) => {
+										const fileExpiresAt = msg.createdAt ? new Date(new Date(msg.createdAt).getTime() + 24 * 3600 * 1000) : null;
+										return (
+											<div key={fid} className="flex items-center gap-1.5 rounded bg-white px-2 py-1 border border-line text-[11px] font-mono shadow-2xs">
+												<FileText className="size-3 text-accent" /><span className="truncate max-w-[140px]">{filesMap[fid]?.filename || "Attachment"}</span><span className="text-[9px] text-[#1d7a33] bg-[#f4faf5] px-1 rounded border border-[#bcd9c0]">{fmtTTL(fileExpiresAt)}</span>
+											</div>
+										);
+									})}
 								</div>
 							)}
 
@@ -121,7 +124,10 @@ export function MessageList({
 								}`}
 							>
 								{isUser ? (
-									<div className="whitespace-pre-wrap break-words">{msg.content}</div>
+									<>
+										<div className="whitespace-pre-wrap break-words">{msg.content}</div>
+										<div className="text-[9.5px] font-mono text-white/75 text-right mt-1 select-none">{fmtTime(msg.createdAt)}</div>
+									</>
 								) : (() => {
 									const { cleaned, clarify } = extractClarification(msg.content);
 									const isLatest = idx === messages.length - 1;
@@ -135,7 +141,8 @@ export function MessageList({
 							</div>
 							{!isUser && (
 								<div className="flex items-center gap-2 font-mono text-[10.5px] text-ink-2/70 px-1 pt-0.5">
-									{msg.meta?.tokens ? <span>{msg.meta.tokens.toLocaleString()} tok</span> : null}
+									<span className="text-ink font-medium">{fmtTime(msg.createdAt)}</span>
+									{msg.meta?.tokens ? <span>&middot; {msg.meta.tokens.toLocaleString()} tok</span> : null}
 									{msg.meta?.latencyMs ? <span>&middot; {(msg.meta.latencyMs / 1000).toFixed(1)}s</span> : null}
 									<button type="button" onClick={() => copyText(msg.content)} className="hover:text-ink cursor-pointer transition flex items-center gap-0.5" title="Copy Text"><Copy className="size-3" /> Text</button>
 									<button type="button" onClick={() => copyMd(msg.content)} className="hover:text-ink cursor-pointer transition flex items-center gap-0.5" title="Copy MD"><FileCode2 className="size-3" /> MD</button>
@@ -151,7 +158,7 @@ export function MessageList({
 												<Code2 className="size-3.5" />
 												<span className="font-semibold">{art.title}</span>
 												<span className="rounded bg-white px-1.5 py-0.2 text-[10px] text-ink-2 border border-[#d5daff] uppercase">{art.language || art.type}</span>
-												<span className="text-[10px] text-[#1d7a33]">24h</span>
+												<span className="text-[10px] text-[#1d7a33]">{fmtTTL(art.expiresAt)}</span>
 											</button>
 											<button type="button" onClick={(e) => { e.stopPropagation(); const fn = downloadArtifactFile(art); toast.success(`Đã tải về ${fn}`); }} className="border-l border-[#d5daff] px-2 py-1.5 hover:bg-[#eef0ff] hover:text-accent cursor-pointer transition text-[#2323e6]/80" title="Tải về file"><Download className="size-3.5" /></button>
 										</div>

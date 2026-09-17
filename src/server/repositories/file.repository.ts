@@ -47,6 +47,16 @@ export class FileRepository {
 		return rows.filter((f) => f.expiresAt > now);
 	}
 
+	async findByThreadId(threadId: string): Promise<ChatFile[]> {
+		return db.select().from(chatFiles).where(eq(chatFiles.threadId, threadId));
+	}
+
+	async deleteByThreadId(threadId: string, userId?: string): Promise<number> {
+		const conditions = [eq(chatFiles.threadId, threadId)];
+		if (userId) conditions.push(eq(chatFiles.userId, userId));
+		const deleted = await db.delete(chatFiles).where(and(...conditions)).returning();
+		return deleted.length;
+	}
 	async delete(id: string, userId?: string): Promise<boolean> {
 		const conditions = [eq(chatFiles.id, id)];
 		if (userId) conditions.push(eq(chatFiles.userId, userId));

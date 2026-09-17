@@ -34,3 +34,18 @@ export function fmtDate(d: string | Date | null | undefined): string {
 	if (!d) return "—";
 	return new Date(d).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
+
+export function fmtTime(d: string | Date | null | undefined): string {
+	if (!d) return "";
+	return new Date(d).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+}
+
+export function fmtTTL(expiresAt?: string | Date | null): string {
+	if (!expiresAt) return "24h";
+	const diffMs = new Date(expiresAt).getTime() - Date.now();
+	if (diffMs <= 0) return "0h";
+	const hours = Math.floor(diffMs / (3600 * 1000));
+	if (hours >= 1) return `${hours}h`;
+	const mins = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+	return `${mins}m`;
+}

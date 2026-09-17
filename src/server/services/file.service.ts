@@ -85,6 +85,20 @@ export class FileService {
 		}
 		return fileRepo.delete(id, userId);
 	}
+
+	async deleteFilesByThread(threadId: string, userId?: string): Promise<number> {
+		const files = await fileRepo.findByThreadId(threadId);
+		let count = 0;
+		for (const file of files) {
+			if (userId && file.userId !== userId) continue;
+			try {
+				await unlink(file.storagePath);
+			} catch {}
+			await fileRepo.delete(file.id, userId);
+			count++;
+		}
+		return count;
+	}
 }
 
 export const fileService = new FileService();
