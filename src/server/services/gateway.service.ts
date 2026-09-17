@@ -143,7 +143,18 @@ export class GatewayService {
 			},
 		});
 
-		return new Response(stream, { status: 200, headers: { "content-type": kind === "anthropic" ? "text/event-stream" : "text/event-stream; charset=utf-8", "cache-control": "no-cache", connection: "keep-alive" } });
+		const rateHeaders: Record<string, string> = {
+			"content-type": kind === "anthropic" ? "text/event-stream" : "text/event-stream; charset=utf-8",
+			"cache-control": "no-cache",
+			connection: "keep-alive",
+			"x-ratelimit-limit-requests": "10000",
+			"x-ratelimit-remaining-requests": "9999",
+			"x-ratelimit-reset-requests": "1s",
+			"x-ratelimit-limit-tokens": "10000000",
+			"x-ratelimit-remaining-tokens": "9999000",
+			"x-ratelimit-reset-tokens": "1s",
+		};
+		return new Response(stream, { status: 200, headers: rateHeaders });
 	}
 
 	private async handleNonStream(upstream: any, formatter: any, auth: any, resolved: any, kind: IngressKind, startedAt: number, canonical: CanonicalRequest) {
@@ -165,7 +176,16 @@ export class GatewayService {
 				endpoint: kind, status: "ok", usage: finalUsage, credits: computeCredits(resolved.priceIn, resolved.priceOut, finalUsage, resolved.priceCacheRead, resolved.priceCacheWrite),
 				latencyMs: Date.now() - startedAt, ttftMs: ttftTracker.value, meta: { connection: upstream.connectionLabel, streaming: false },
 			});
-			return Response.json(formatter.formatNonStream(result, resolved.id));
+			const nonStreamHeaders: Record<string, string> = {
+				"content-type": "application/json",
+				"x-ratelimit-limit-requests": "10000",
+				"x-ratelimit-remaining-requests": "9999",
+				"x-ratelimit-reset-requests": "1s",
+				"x-ratelimit-limit-tokens": "10000000",
+				"x-ratelimit-remaining-tokens": "9999000",
+				"x-ratelimit-reset-tokens": "1s",
+			};
+			return new Response(JSON.stringify(formatter.formatNonStream(result, resolved.id)), { status: 200, headers: nonStreamHeaders });
 		} catch (err) {
 			const status = err instanceof UpstreamError ? err.httpStatus : 502;
 			recordUsage({

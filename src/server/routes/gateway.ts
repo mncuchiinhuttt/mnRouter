@@ -116,6 +116,69 @@ export function gatewayRoutes() {
 	app.get("/v1/dashboard/billing/subscription", handleBillingUsage);
 	app.get("/dashboard/billing/credit_grants", handleBillingUsage);
 	app.get("/v1/dashboard/billing/credit_grants", handleBillingUsage);
+	const handleCodexUsage = async (c: any) => {
+		const authHeader = c.req.header("authorization") || (c.req.header("x-api-key") ? `Bearer ${c.req.header("x-api-key")}` : undefined);
+		const auth = await authService.authenticateApiKey(authHeader);
+		const user = auth?.user ?? c.get("user");
+		if (!user) return c.json({ error: "unauthorized" }, 401);
+
+		const { usageRepo } = await import("../repositories/usage.repository.js");
+		const usedCredits = await usageRepo.getWeeklyCredits(user.id);
+		const creditBudget = user.monthlyCreditBudget ?? 50_000;
+		const usedPercent = creditBudget > 0 ? Math.min(100, Math.round((usedCredits / creditBudget) * 100)) : 0;
+		const remainingCredits = Math.max(0, creditBudget - usedCredits);
+		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
+		const nextMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000 - Date.now()) / 1000);
+
+		return c.json({
+			plan_type: "pro",
+			allowed: true,
+			limit_reached: false,
+			rate_limit: {
+				primary_window: {
+					limit_window_seconds: 18000,
+					used_percent: 0,
+					reset_after_seconds: 18000,
+				},
+				secondary_window: {
+					limit_window_seconds: 604800,
+					used_percent: usedPercent,
+					reset_after_seconds: Math.max(0, nextMonSec),
+				},
+			},
+			primary: {
+				limit_window_seconds: 18000,
+				used_percent: 0,
+				reset_after_seconds: 18000,
+			},
+			secondary: {
+				limit_window_seconds: 604800,
+				used_percent: usedPercent,
+				reset_after_seconds: Math.max(0, nextMonSec),
+			},
+			spend_control: {
+				reached: false,
+				limit: creditBudget,
+				remaining: remainingCredits,
+				remaining_percent: Math.max(0, 100 - usedPercent),
+			},
+			rate_limit_reset_credits: {
+				available_count: 0,
+				credits: [],
+			},
+			rate_limits: [
+				{ limit_name: "5h window", window_minutes: 300, used_percent: 0 },
+				{ limit_name: "Weekly window", window_minutes: 10080, used_percent: usedPercent },
+			],
+		});
+	};
+
+	app.get("/wham/usage", handleCodexUsage);
+	app.get("/v1/wham/usage", handleCodexUsage);
+	app.get("/backend-api/wham/usage", handleCodexUsage);
+	app.get("/backend-api/wham/rate_limits", handleCodexUsage);
+	app.get("/backend-api/account/rateLimits/read", handleCodexUsage);
+	app.get("/backend-api/rate_limits", handleCodexUsage);
 
 	return app;
 }

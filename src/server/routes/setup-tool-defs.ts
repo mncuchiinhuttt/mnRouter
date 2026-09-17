@@ -63,7 +63,7 @@ export function getToolDefs(
 			id: "openai-codex",
 			name: "OpenAI Codex",
 			vars: [["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
-			files: [{ path: `${H}.codex${S}config.toml`, content: `model_provider = "mnrouter"\nmodel = "gemini-3.8-flash"\n\n[model_providers.mnrouter]\nname = "mnrouter"\nbase_url = "${v1}"\nexperimental_bearer_token = "${key}"\n` }],
+			files: [{ path: `${H}.codex${S}config.toml`, content: `model_provider = "mnrouter"\nmodel = "gemini-3.8-flash"\nchatgpt_base_url = "${v1.replace(/\/v1\/?$/, "")}/backend-api/"\n\n[model_providers.mnrouter]\nname = "mnrouter"\nbase_url = "${v1}"\nexperimental_bearer_token = "${key}"\n` }],
 		},
 		opencode: {
 			id: "opencode",
