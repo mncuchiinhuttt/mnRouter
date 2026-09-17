@@ -88,6 +88,72 @@ export function resolveAntigravityWireModel(model: string, reasoningEffort?: str
 	return model;
 }
 
+const GEMINI_UNSUPPORTED_FIELDS = new Set([
+	"$schema", "$ref", "$defs", "$dynamicRef", "$dynamicAnchor",
+	"examples", "prefixItems", "unevaluatedProperties", "unevaluatedItems",
+	"patternProperties", "additionalProperties", "propertyNames",
+	"minItems", "maxItems", "minLength", "maxLength",
+	"minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
+	"multipleOf", "pattern", "format", "dependencies",
+	"dependentSchemas", "dependentRequired", "x-mcp-header",
+	"deprecated", "readOnly", "writeOnly", "$comment", "title",
+	"default",
+]);
+
+export function sanitizeGeminiParameters(schema: unknown): Record<string, unknown> {
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+		return { type: "OBJECT", properties: {} };
+	}
+
+	function cleanNode(node: unknown): unknown {
+		if (!node || typeof node !== "object") return node;
+		if (Array.isArray(node)) return node.map(cleanNode);
+
+		const out: Record<string, unknown> = {};
+		for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+			if (GEMINI_UNSUPPORTED_FIELDS.has(k)) continue;
+
+			if (k === "type") {
+				if (Array.isArray(v)) {
+					const nonNull = v.find((t) => t !== "null") || "STRING";
+					out.type = String(nonNull).toUpperCase();
+				} else if (typeof v === "string") {
+					out.type = v.toUpperCase();
+				}
+			} else if (k === "anyOf" || k === "oneOf" || k === "allOf") {
+				if (Array.isArray(v)) {
+					const nonNull = v.filter((b) => b && typeof b === "object" && (b as any).type !== "null");
+					if (nonNull.length === 1 && nonNull[0]) {
+						const merged = cleanNode(nonNull[0]);
+						if (merged && typeof merged === "object") {
+							Object.assign(out, merged);
+						}
+					}
+				}
+			} else if (k === "properties" && v && typeof v === "object") {
+				const props: Record<string, unknown> = {};
+				for (const [pk, pv] of Object.entries(v as Record<string, unknown>)) {
+					props[pk] = cleanNode(pv);
+				}
+				out.properties = props;
+			} else if (k === "items") {
+				out.items = cleanNode(v);
+			} else {
+				out[k] = cleanNode(v);
+			}
+		}
+
+		if (!out.type && out.properties) {
+			out.type = "OBJECT";
+		}
+		return out;
+	}
+
+	const cleaned = cleanNode(schema) as Record<string, unknown>;
+	if (!cleaned.type) cleaned.type = "OBJECT";
+	if (!cleaned.properties) cleaned.properties = {};
+	return cleaned;
+}
 export function buildAntigravityRequest(cfg: ProviderConfig, req: CanonicalRequest, token: string, projectId: string) {
 	const request: Record<string, unknown> = { contents: toContents(req.messages) };
 	if (req.system) {
@@ -113,7 +179,7 @@ export function buildAntigravityRequest(cfg: ProviderConfig, req: CanonicalReque
 			functionDeclarations: req.tools.map((t) => ({
 				name: t.name,
 				description: t.description ?? "",
-				parameters: t.parameters,
+				parameters: sanitizeGeminiParameters(t.parameters),
 			})),
 		});
 		if (req.toolChoice === "none") request.toolConfig = { functionCallingConfig: { mode: "NONE" } };
