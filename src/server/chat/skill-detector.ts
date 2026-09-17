@@ -29,5 +29,11 @@ export function detectAutoSkills(
 	if (/\b(academic paper|bài báo khoa học|nghiên cứu khoa học|literature review|apa 7th|ieee paper)\b/i.test(lp)) set.add("academic-paper");
 	if (/\b(peer review|phản biện bài báo|critique paper|đánh giá bài báo)\b/i.test(lp)) set.add("academic-reviewer");
 
+	// 3. Marketing & Non-coding Skills Auto-detection
+	if (/\b(copywriting|viết copy|quảng cáo|facebook ads|tiktok ads|bán hàng|landing page|chốt sale|aida|pas|cta|headline)\b/i.test(lp)) set.add("copywriting-pro");
+	if (/\b(viral|tiktok|reels|threads|facebook post|bài đăng fanpage|kịch bản video|shorts|bài đăng mạng xã hội|mạng xã hội|social media|caption)\b/i.test(lp)) set.add("social-media-viral");
+	if (/\b(seo|chuẩn seo|bài seo|meta title|meta description|bài pr|bài blog|từ khóa|lsi|search intent)\b/i.test(lp)) set.add("seo-content-master");
+	if (/\b(kế hoạch marketing|chiến lược marketing|marketing plan|growth hack|product launch|ra mắt sản phẩm|phễu bán hàng|funnel|định vị thương hiệu|chân dung khách hàng)\b/i.test(lp)) set.add("marketing-growth-strategist");
+	if (/\b(storytelling|kể chuyện|kịch bản youtube|kịch bản podcast|câu chuyện thương hiệu|brand story|newsletter|biên kịch)\b/i.test(lp)) set.add("creative-storyteller");
 	return Array.from(set);
 }

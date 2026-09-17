@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@web/components/ui/dialog";
 import { Button } from "@web/components/ui/button";
-import { BookOpen, Bug, Check, Cpu, FileText, GraduationCap, Layers, Maximize2, Presentation, Rocket, Search, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { BookOpen, Bug, Check, Cpu, FileText, GraduationCap, Layers, Maximize2, Megaphone, MessageSquareQuote, PenTool, Presentation, Rocket, Search, Share2, ShieldCheck, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { HARNESS_SKILLS, type HarnessSkill } from "@shared/skills";
 
 interface CustomSkillProp {
@@ -110,6 +110,11 @@ export function SkillIcon({ icon, className }: { icon: HarnessSkill["icon"]; cla
 		case "BookOpen": return <BookOpen className={className} />;
 		case "Presentation": return <Presentation className={className} />;
 		case "FileText": return <FileText className={className} />;
+		case "Megaphone": return <Megaphone className={className} />;
+		case "Share2": return <Share2 className={className} />;
+		case "TrendingUp": return <TrendingUp className={className} />;
+		case "PenTool": return <PenTool className={className} />;
+		case "MessageSquareQuote": return <MessageSquareQuote className={className} />;
 		default: return <Sparkles className={className} />;
 	}
 }
