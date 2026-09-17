@@ -110,10 +110,13 @@ export class OpenAiResponsesFormatter {
 	private model: string;
 	private created = Math.floor(Date.now() / 1000);
 	private msgItemId = randomId("msg");
+	private reasoningItemId = randomId("rs");
 	private sentHeader = false;
+	private sentReasoningAdded = false;
+	private fullText = "";
+	private fullThinking = "";
 	private toolItems = new Map<string, { itemId: string; callId: string; name: string; args: string }>();
 	private nextOutputIndex = 0;
-
 	constructor(model: string) {
 		this.model = model;
 	}
@@ -164,10 +167,20 @@ export class OpenAiResponsesFormatter {
 				break;
 			case "text_delta":
 				this.ensureHeader(out);
+				this.fullText += ev.delta;
 				out.push(this.ev("response.output_text.delta", { type: "response.output_text.delta", item_id: this.msgItemId, output_index: 0, content_index: 0, delta: ev.delta }));
 				break;
 			case "thinking_delta":
-				out.push(this.ev("response.reasoning_summary_text.delta", { type: "response.reasoning_summary_text.delta", item_id: "rs_0", output_index: 0, summary_index: 0, delta: ev.delta }));
+				this.fullThinking += ev.delta;
+				if (!this.sentReasoningAdded) {
+					this.sentReasoningAdded = true;
+					out.push(this.ev("response.output_item.added", {
+						type: "response.output_item.added",
+						output_index: this.nextOutputIndex++,
+						item: { type: "reasoning", id: this.reasoningItemId, status: "in_progress", summary: [] }
+					}));
+				}
+				out.push(this.ev("response.reasoning_summary_text.delta", { type: "response.reasoning_summary_text.delta", item_id: this.reasoningItemId, output_index: 0, summary_index: 0, delta: ev.delta }));
 				break;
 			case "toolcall_start": {
 				const itemId = randomId("fc");
@@ -204,21 +217,45 @@ export class OpenAiResponsesFormatter {
 			}
 			case "done": {
 				this.ensureHeader(out);
+				if (this.sentReasoningAdded && this.fullThinking) {
+					out.push(
+						this.ev("response.reasoning_summary_text.done", { type: "response.reasoning_summary_text.done", item_id: this.reasoningItemId, output_index: 0, summary_index: 0, text: this.fullThinking })
+					);
+					out.push(
+						this.ev("response.output_item.done", {
+							type: "response.output_item.done",
+							output_index: 0,
+							item: { type: "reasoning", id: this.reasoningItemId, status: "completed", summary: [{ type: "summary_text", text: this.fullThinking }] }
+						})
+					);
+				}
 				out.push(
-					this.ev("response.output_text.done", { type: "response.output_text.done", item_id: this.msgItemId, output_index: 0, content_index: 0, text: "" }),
+					this.ev("response.output_text.done", { type: "response.output_text.done", item_id: this.msgItemId, output_index: 0, content_index: 0, text: this.fullText }),
 				);
 				out.push(
 					this.ev("response.output_item.done", {
 						type: "response.output_item.done",
 						output_index: 0,
-						item: { type: "message", id: this.msgItemId, status: "completed", role: "assistant", content: [{ type: "output_text", text: "", annotations: [] }] },
+						item: { type: "message", id: this.msgItemId, status: "completed", role: "assistant", content: [{ type: "output_text", text: this.fullText, annotations: [] }] },
 					}),
 				);
+				const finalOutput: Record<string, unknown>[] = [];
+				if (this.sentReasoningAdded && this.fullThinking) {
+					finalOutput.push({ id: this.reasoningItemId, type: "reasoning", status: "completed", summary: [{ type: "summary_text", text: this.fullThinking }] });
+				}
+				finalOutput.push({
+					id: this.msgItemId,
+					type: "message",
+					status: "completed",
+					role: "assistant",
+					content: [{ type: "output_text", text: this.fullText, annotations: [] }]
+				});
 				out.push(
 					this.ev("response.completed", {
 						type: "response.completed",
 						response: this.responseBase({
 							status: "completed",
+							output: finalOutput,
 							usage: {
 								input_tokens: ev.usage.promptTokens,
 								output_tokens: ev.usage.completionTokens,
