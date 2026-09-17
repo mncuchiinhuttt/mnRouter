@@ -7,6 +7,78 @@ export interface ToolDef {
 	files?: { path: string; content: string }[];
 }
 
+function buildCodexModelsCache(mList: Array<any>): string {
+	const models = mList.map((m, idx) => ({
+		slug: m.id,
+		display_name: m.displayName || m.id,
+		description: `${m.displayName || m.id} via mnRouter.`,
+		default_reasoning_level: "medium",
+		supported_reasoning_levels: [
+			{ effort: "low", description: "Fast responses with lighter reasoning" },
+			{ effort: "medium", description: "Balances speed and reasoning depth for everyday tasks" },
+			{ effort: "high", description: "Greater reasoning depth for complex problems" },
+			{ effort: "xhigh", description: "Extra high reasoning depth for complex problems" },
+			{ effort: "max", description: "Maximum reasoning depth for the hardest problems" },
+			{ effort: "ultra", description: "Maximum reasoning with automatic task delegation" },
+		],
+		shell_type: "unified_exec",
+		visibility: "list",
+		supported_in_api: true,
+		priority: idx,
+		additional_speed_tiers: ["fast"],
+		service_tiers: [{ id: "priority", name: "Fast", description: "1.5x speed, increased usage" }],
+		availability_nux: null,
+		upgrade: null,
+		model_messages: {
+			instructions_template: "You are Codex, an agent based on GPT-5. You and the user share one workspace, and your job is to collaborate with them until their goal is genuinely handled.",
+			instructions_variables: null,
+			approvals: null,
+			collaboration_modes: null,
+			auto_review: null,
+			permissions: null,
+			multi_agent: null,
+			token_budget: {
+				enabled: false,
+				use_history_notes_extension: false,
+				reminder_threshold_tokens: 6144,
+				reminder_message_template: "<context_window_reminder>Your current context window is nearly exhausted; only {n_remaining} tokens remain.</context_window_reminder>",
+				guidance_message: "For tasks that may span context windows, use notes to maintain a concise checkpoint.",
+				auto_compact_fallback_prompt: "<context_window_reminder>The current context window is exhausted.</context_window_reminder>",
+				auto_compact_fallback_buffer_tokens: 16384,
+			},
+		},
+		include_skills_usage_instructions: false,
+		include_plugin_usage_instructions: true,
+		include_apps_usage_instructions: true,
+		default_reasoning_summary: "none",
+		support_verbosity: true,
+		default_verbosity: "low",
+		apply_patch_tool_type: "freeform",
+		web_search_tool_type: "text_and_image",
+		truncation_policy: { mode: "tokens", limit: 10000 },
+		supports_image_detail_original: true,
+		context_window: m.contextWindow || 272000,
+		max_context_window: m.contextWindow || 1000000,
+		comp_hash: "3000",
+		effective_context_window_percent: 95,
+		experimental_supported_tools: [],
+		input_modalities: ["text", "image"],
+		supports_search_tool: true,
+		supports_experimental_context: false,
+		use_responses_lite: true,
+		node_repl_auto_review_required: false,
+		node_repl_disabled: false,
+		tool_mode: "code_mode_only",
+		multi_agent_version: "v2",
+	}));
+
+	return JSON.stringify({
+		fetched_at: new Date().toISOString(),
+		etag: `W/"mnrouter-${Date.now()}"`,
+		client_version: "0.154.0",
+		models,
+	}, null, 2);
+}
 export function getToolDefs(
 	base: string,
 	key: string,
@@ -63,7 +135,16 @@ export function getToolDefs(
 			id: "openai-codex",
 			name: "OpenAI Codex",
 			vars: [["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
-			files: [{ path: `${H}.codex${S}config.toml`, content: `model_provider = "mnrouter"\nmodel = "gemini-3.8-flash"\nchatgpt_base_url = "${v1.replace(/\/v1\/?$/, "")}/backend-api/"\n\n[model_providers.mnrouter]\nname = "mnrouter"\nbase_url = "${v1}"\nexperimental_bearer_token = "${key}"\n` }],
+			files: [
+				{
+					path: `${H}.codex${S}config.toml`,
+					content: `model_provider = "mnrouter"\nmodel = "${mList.find((m) => m.id === "gemini-3.8-flash")?.id || mList[0]?.id || "gemini-3.8-flash"}"\nchatgpt_base_url = "${v1.replace(/\/v1\/?$/, "")}/backend-api/"\n\n[model_providers.mnrouter]\nname = "mnrouter"\nbase_url = "${v1}"\nexperimental_bearer_token = "${key}"\n`,
+				},
+				{
+					path: `${H}.codex${S}models_cache.json`,
+					content: buildCodexModelsCache(mList),
+				},
+			],
 		},
 		opencode: {
 			id: "opencode",

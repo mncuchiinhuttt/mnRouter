@@ -55,8 +55,20 @@ function Save-ConfigWithBackup($path, $content) {
         if (-not (Test-Path $bak)) { Copy-Item -Path $resolved -Destination $bak -Force }
     }
     Set-Content -Path $resolved -Value $content -Encoding UTF8 -Force
+
+    if ($resolved -like "*\\.codex\\models_cache.json" -and (Test-Path "$resolved.mnrouter.bak")) {
+        try {
+            $oldJson = Get-Content "$resolved.mnrouter.bak" -Raw | ConvertFrom-Json
+            $newJson = Get-Content $resolved -Raw | ConvertFrom-Json
+            $newSlugs = @($newJson.models | ForEach-Object { $_.slug })
+            $rest = @($oldJson.models | Where-Object { $newSlugs -notcontains $_.slug })
+            foreach ($m in $rest) { if ($null -ne $m.priority) { $m.priority += 50 } }
+            $newJson.models = @($newJson.models) + $rest
+            $newJson | ConvertTo-Json -Depth 20 | Set-Content -Path $resolved -Encoding UTF8 -Force
+        } catch {}
+    }
+
     Write-Host "  ✓ Configured $resolved" -ForegroundColor Green
-}
 
 ${fileWrites}
 

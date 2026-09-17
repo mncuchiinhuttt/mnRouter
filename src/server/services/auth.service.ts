@@ -69,9 +69,8 @@ export class AuthService {
 	async authenticateApiKey(authHeader?: string): Promise<{ apiKey: ApiKey; user: User } | null> {
 		if (!authHeader) return null;
 		const match = authHeader.match(/Bearer\s+([A-Za-z0-9_-]+)/i);
-		if (!match || !match[1]) return null;
-
-		const rawKey = match[1];
+		const rawKey = match ? match[1] : (authHeader.startsWith("mr_") ? authHeader.trim() : null);
+		if (!rawKey) return null;
 		const keyHash = hashToken(rawKey);
 		const row = await keyRepo.findByHash(keyHash);
 		if (!row || row.user.status !== "active") return null;

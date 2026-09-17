@@ -58,13 +58,153 @@ write_file_with_backup() {
     \\$HOME/*) dest="$HOME/\${dest#\\$HOME/}" ;;
   esac
   d="$(dirname "$dest")"; mkdir -p "$d"
+  # Smart merge for Codex and OMP files (merge before overwriting)
+  case "$dest" in
+    */.codex/models_cache.json)
+      if command -v python3 >/dev/null 2>&1 && [ -f "$dest" ]; then
+        if [ ! -f "$dest.mnrouter.bak" ]; then cp "$dest" "$dest.mnrouter.bak"; fi
+        python3 - "$dest" "$content" << 'PYEOF' 2>/dev/null || true
+import json, sys
+try:
+    target, new_content = sys.argv[1], sys.argv[2]
+    with open(target, 'r') as f:
+        old = json.load(f)
+    new = json.loads(new_content)
+    new_slugs = {m.get('slug') for m in new.get('models', [])}
+    rest = [m for m in old.get('models', []) if m.get('slug') not in new_slugs]
+    for m in rest:
+        if m.get('priority') is not None:
+            m['priority'] += 50
+    new['models'] = new.get('models', []) + rest
+    with open(target, 'w') as f:
+        json.dump(new, f, indent=2)
+except Exception:
+    with open(target, 'w') as f:
+        f.write(new_content)
+PYEOF
+        printf "  \\033[32m✓\\033[0m Configured %s\\n" "$dest"
+        return
+      fi
+      ;;
+    */.codex/config.toml)
+      if command -v python3 >/dev/null 2>&1 && [ -f "$dest" ]; then
+        if [ ! -f "$dest.mnrouter.bak" ]; then cp "$dest" "$dest.mnrouter.bak"; fi
+        python3 - "$dest" "$content" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target, new_content = sys.argv[1], sys.argv[2]
+    with open(target, 'r') as f:
+        old = f.read()
+    lines = old.splitlines()
+    out_lines = [l for l in lines if not l.startswith(('model_provider =', 'model =', 'chatgpt_base_url ='))]
+    cleaned = []
+    in_mn = False
+    for l in out_lines:
+        if l.strip() == '[model_providers.mnrouter]':
+            in_mn = True
+            continue
+        if in_mn and l.strip().startswith('['):
+            in_mn = False
+        if not in_mn:
+            cleaned.append(l)
+    final_cfg = new_content.strip() + '\n\n' + '\n'.join(cleaned).strip() + '\n'
+    with open(target, 'w') as f:
+        f.write(final_cfg)
+except Exception:
+    with open(target, 'w') as f:
+        f.write(new_content)
+PYEOF
+        printf "  \\033[32m✓\\033[0m Configured %s\\n" "$dest"
+        return
+      fi
+      ;;
+    */.omp/agent/models.yml|*/.omp/models.yml)
+      if command -v python3 >/dev/null 2>&1 && [ -f "$dest" ]; then
+        if [ ! -f "$dest.mnrouter.bak" ]; then cp "$dest" "$dest.mnrouter.bak"; fi
+        python3 - "$dest" "$content" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target, new_content = sys.argv[1], sys.argv[2]
+    with open(target, 'r') as f:
+        old = f.read()
+    lines = old.splitlines()
+    out = []
+    in_mn = False
+    for l in lines:
+        if l.strip() == 'mnrouter:' or l.startswith('  mnrouter:'):
+            in_mn = True
+            continue
+        if in_mn:
+            if (l.startswith('  ') and not l.startswith('    ') and l.strip().endswith(':')) or (len(l) > 0 and not l.startswith(' ')):
+                in_mn = False
+        if not in_mn:
+            out.append(l)
+    # Strip 'providers:' header from new_content
+    new_lines = new_content.splitlines()
+    mn_block = [l for l in new_lines if l.strip() != 'providers:']
+    
+    # Insert mn_block after 'providers:' line in out
+    final_lines = []
+    inserted = False
+    for l in out:
+        final_lines.append(l)
+        if l.strip() == 'providers:' and not inserted:
+            final_lines.extend(mn_block)
+            inserted = True
+    if not inserted:
+        final_lines = new_lines
+    with open(target, 'w') as f:
+        f.write('\n'.join(final_lines).strip() + '\n')
+except Exception:
+    with open(target, 'w') as f:
+        f.write(new_content)
+PYEOF
+        printf "  \\033[32m✓\\033[0m Configured %s\\n" "$dest"
+        return
+      fi
+      ;;
+    */.omp/agent/config.yml)
+      if command -v python3 >/dev/null 2>&1 && [ -f "$dest" ]; then
+        if [ ! -f "$dest.mnrouter.bak" ]; then cp "$dest" "$dest.mnrouter.bak"; fi
+        python3 - "$dest" "$content" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target, new_content = sys.argv[1], sys.argv[2]
+    with open(target, 'r') as f:
+        old = f.read()
+    if 'mnrouter.ts' not in old:
+        if 'extensions:' in old:
+            lines = old.splitlines()
+            out = []
+            inserted = False
+            for l in lines:
+                out.append(l)
+                if l.strip() == 'extensions:' and not inserted:
+                    # extract the extension line from new_content
+                    for nl in new_content.splitlines():
+                        if 'mnrouter.ts' in nl:
+                            out.append(nl)
+                    inserted = True
+            with open(target, 'w') as f:
+                f.write('\n'.join(out).strip() + '\n')
+        else:
+            with open(target, 'w') as f:
+                f.write(old.rstrip() + '\n' + new_content.strip() + '\n')
+except Exception:
+    pass
+PYEOF
+        printf "  \\033[32m✓\\033[0m Configured %s\\n" "$dest"
+        return
+      fi
+      ;;
+  esac
+
   if [ -f "$dest" ] && [ ! -f "$dest.mnrouter.bak" ]; then
     cp "$dest" "$dest.mnrouter.bak"
   fi
   printf "%s\\n" "$content" > "$dest"
   printf "  \\033[32m✓\\033[0m Configured %s\\n" "$dest"
 }
-
 [ -f "$HOME/.zshrc" ] && append_config "$HOME/.zshrc"
 [ -f "$HOME/.bashrc" ] && append_config "$HOME/.bashrc"
 [ -f "$HOME/.bash_profile" ] && append_config "$HOME/.bash_profile"
@@ -109,8 +249,125 @@ restore_or_remove() {
     mv "$b" "$dest"
     printf "  \\033[32m✓\\033[0m Restored original %s\\n" "$dest"
   elif [ -f "$dest" ]; then
-    rm -f "$dest"
-    printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+    case "$dest" in
+      */.codex/config.toml)
+        if command -v python3 >/dev/null 2>&1; then
+          python3 - "$dest" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target = sys.argv[1]
+    with open(target, 'r') as f:
+        content = f.read()
+    lines = content.splitlines()
+    out_lines = [l for l in lines if not l.startswith(('model_provider = "mnrouter"', 'chatgpt_base_url ='))]
+    cleaned = []
+    in_mn = False
+    for l in out_lines:
+        if l.strip() == '[model_providers.mnrouter]':
+            in_mn = True
+            continue
+        if in_mn and l.strip().startswith('['):
+            in_mn = False
+        if not in_mn:
+            cleaned.append(l)
+    with open(target, 'w') as f:
+        f.write('\n'.join(cleaned).strip() + '\n')
+except Exception:
+    pass
+PYEOF
+          printf "  \\033[32m✓\\033[0m Cleaned mnRouter from %s\\n" "$dest"
+        else
+          rm -f "$dest"
+          printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        fi
+        ;;
+      */.codex/models_cache.json)
+        if command -v python3 >/dev/null 2>&1; then
+          python3 - "$dest" << 'PYEOF' 2>/dev/null || true
+import json, sys
+try:
+    target = sys.argv[1]
+    with open(target, 'r') as f:
+        data = json.load(f)
+    data['models'] = [m for m in data.get('models', []) if 'via mnRouter' not in m.get('description', '')]
+    with open(target, 'w') as f:
+        json.dump(data, f, indent=2)
+except Exception:
+    pass
+PYEOF
+          printf "  \\033[32m✓\\033[0m Cleaned mnRouter models from %s\\n" "$dest"
+        else
+          rm -f "$dest"
+          printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        fi
+        ;;
+      */.omp/agent/models.yml|*/.omp/models.yml)
+        if command -v python3 >/dev/null 2>&1; then
+          python3 - "$dest" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target = sys.argv[1]
+    with open(target, 'r') as f:
+        old = f.read()
+    lines = old.splitlines()
+    out = []
+    in_mn = False
+    for l in lines:
+        if l.strip() == 'mnrouter:' or l.startswith('  mnrouter:'):
+            in_mn = True
+            continue
+        if in_mn:
+            if (l.startswith('  ') and not l.startswith('    ') and l.strip().endswith(':')) or (len(l) > 0 and not l.startswith(' ')):
+                in_mn = False
+        if not in_mn:
+            out.append(l)
+    with open(target, 'w') as f:
+        f.write('\n'.join(out).strip() + '\n')
+except Exception:
+    pass
+PYEOF
+          printf "  \\033[32m✓\\033[0m Cleaned mnRouter provider from %s\\n" "$dest"
+        else
+          rm -f "$dest"
+          printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        fi
+        ;;
+      */.omp/agent/config.yml)
+        if command -v python3 >/dev/null 2>&1; then
+          python3 - "$dest" << 'PYEOF' 2>/dev/null || true
+import sys
+try:
+    target = sys.argv[1]
+    with open(target, 'r') as f:
+        old = f.read()
+    lines = old.splitlines()
+    out = []
+    for l in lines:
+        if 'mnrouter.ts' in l:
+            continue
+        if l.strip().startswith('default: mnrouter/'):
+            continue
+        out.append(l)
+    with open(target, 'w') as f:
+        f.write('\n'.join(out).strip() + '\n')
+except Exception:
+    pass
+PYEOF
+          printf "  \\033[32m✓\\033[0m Cleaned mnRouter extension from %s\\n" "$dest"
+        else
+          rm -f "$dest"
+          printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        fi
+        ;;
+      */.omp/agent/extensions/mnrouter.ts)
+        rm -f "$dest"
+        printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        ;;
+      *)
+        rm -f "$dest"
+        printf "  \\033[32m✓\\033[0m Removed %s\\n" "$dest"
+        ;;
+    esac
   fi
 }
 
