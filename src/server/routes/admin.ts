@@ -8,8 +8,8 @@ import { connectionService } from "../services/connection.service.js";
 import { usageRepo, settingsRepo, auditRepo } from "../repositories/usage.repository.js";
 import { modelRepo } from "../repositories/model.repository.js";
 import { telegramService } from "../services/telegram.service.js";
+import { env } from "../env.js";
 import type { ProviderId } from "../gateway/registry.js";
-
 const modelIdsSchema = z.array(z.string().min(1).max(200)).max(200).default([]);
 
 export function adminRoutes() {
@@ -253,14 +253,33 @@ export function adminRoutes() {
 		return c.json(res);
 	});
 	app.post("/api/admin/telegram/webhook/set", async (c) => {
+		const body = (await c.req.json().catch(() => ({}))) as { botToken?: string };
 		const cfg = await telegramService.getConfig();
-		if (!cfg.botToken) return c.json({ ok: false, error: "Missing Bot Token" }, 400);
-		const origin = new URL(c.req.url).origin;
+		const botToken = (body.botToken || cfg.botToken)?.trim();
+		if (!botToken) return c.json({ ok: false, error: "Missing Bot Token" }, 400);
+
+		// Always enforce HTTPS public origin for Telegram webhook
+		let origin = env.APP_URL?.replace(/\/+$/, "");
+		if (!origin || !origin.startsWith("https://")) {
+			const proto = c.req.header("x-forwarded-proto") || "https";
+			const host = c.req.header("x-forwarded-host") || c.req.header("host") || "mnrouter.mncuchiinhuttt.dev";
+			origin = `${proto}://${host}`;
+		}
+		if (origin.startsWith("http://")) {
+			origin = origin.replace("http://", "https://");
+		}
+		if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+			origin = "https://mnrouter.mncuchiinhuttt.dev";
+		}
+
 		const webhookUrl = `${origin}/api/telegram/webhook`;
 		try {
-			const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+			const res = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
 			const data = (await res.json()) as any;
-			await telegramService.registerCommands();
+			if (!data.ok) {
+				return c.json({ ok: false, error: data.description || "Failed to set Telegram webhook" }, 400);
+			}
+			await telegramService.registerCommands(botToken);
 			return c.json(data);
 		} catch (e) {
 			return c.json({ ok: false, error: (e as Error).message }, 500);

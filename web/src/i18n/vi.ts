@@ -49,6 +49,7 @@ const vi = {
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Kỹ năng",
 		announcements: "Thông báo",
+		settings: "Cài đặt",
 		system: "Hệ thống",
 		status: "Trạng thái Server",
 		changelog: "Nhật ký cập nhật",

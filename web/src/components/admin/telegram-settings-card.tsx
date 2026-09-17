@@ -75,7 +75,7 @@ export function TelegramSettingsCard() {
 	});
 
 	const webhookMutation = useMutation({
-		mutationFn: () => apiJson<{ ok: boolean; description?: string; error?: string }>("/api/admin/telegram/webhook/set", "POST", {}),
+		mutationFn: () => apiJson<{ ok: boolean; description?: string; error?: string }>("/api/admin/telegram/webhook/set", "POST", { botToken: form.botToken }),
 		onSuccess: (res) => {
 			if (res.ok) {
 				toast.success("Telegram webhook set! You can now chat /status to your bot.");
