@@ -51,8 +51,8 @@ export function gatewayRoutes() {
 			{
 				id: "mnrouter-credits",
 				label: "MNRouter AI Credits (Weekly)",
-				scope: { provider: "mnrouter" },
-				window: { id: "weekly", label: "Weekly Window", resetsAt: nextMonMs },
+				scope: { provider: "mnrouter", shared: true },
+				window: { id: "weekly", label: "Weekly", resetsAt: nextMonMs },
 				amount: {
 					used: Math.round(usedCredits * 100) / 100,
 					limit: creditBudget,
@@ -71,8 +71,8 @@ export function gatewayRoutes() {
 			limits.push({
 				id: "mnrouter-tokens",
 				label: "MNRouter Token Budget (Monthly)",
-				scope: { provider: "mnrouter" },
-				window: { id: "monthly", label: "Monthly Window", resetsAt: nextMonthMs },
+				scope: { provider: "mnrouter", shared: true },
+				window: { id: "monthly", label: "Monthly", resetsAt: nextMonthMs },
 				amount: {
 					used: usedTokens,
 					limit: tokBudget,
