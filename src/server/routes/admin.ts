@@ -7,6 +7,7 @@ import { modelService } from "../services/model.service.js";
 import { connectionService } from "../services/connection.service.js";
 import { usageRepo, settingsRepo, auditRepo } from "../repositories/usage.repository.js";
 import { modelRepo } from "../repositories/model.repository.js";
+import { telegramService } from "../services/telegram.service.js";
 import type { ProviderId } from "../gateway/registry.js";
 
 const modelIdsSchema = z.array(z.string().min(1).max(200)).max(200).default([]);
@@ -226,6 +227,47 @@ export function adminRoutes() {
 	});
 
 	app.get("/api/admin/audit", async (c) => c.json({ audit: await auditRepo.list(200) }));
+
+	// ---------- telegram bot monitoring ----------
+	app.get("/api/admin/telegram", async (c) => {
+		const cfg = await telegramService.getConfig();
+		return c.json({ config: cfg });
+	});
+
+	app.put("/api/admin/telegram", async (c) => {
+		const body = await c.req.json().catch(() => ({}));
+		const updated = await telegramService.saveConfig(body);
+		await auditRepo.record(c.get("user").id, "telegram.update", "settings", { enabled: updated.enabled });
+		return c.json({ config: updated });
+	});
+
+	app.post("/api/admin/telegram/test", async (c) => {
+		const body = await c.req.json().catch(() => ({}));
+		const res = await telegramService.sendTest(body.botToken, body.chatId);
+		return c.json(res);
+	});
+
+	app.post("/api/admin/telegram/webhook/set", async (c) => {
+		const cfg = await telegramService.getConfig();
+		if (!cfg.botToken) return c.json({ ok: false, error: "Missing Bot Token" }, 400);
+		const origin = new URL(c.req.url).origin;
+		const webhookUrl = `${origin}/api/telegram/webhook`;
+		try {
+			const res = await fetch(`https://api.telegram.org/bot${cfg.botToken}/setWebhook?url=${encodeURIComponent(webhookUrl)}`);
+			const data = (await res.json()) as any;
+			return c.json(data);
+		} catch (e) {
+			return c.json({ ok: false, error: (e as Error).message }, 500);
+		}
+	});
+
+	app.post("/api/telegram/webhook", async (c) => {
+		const body = await c.req.json().catch(() => null);
+		if (body) {
+			void telegramService.handleWebhookUpdate(body);
+		}
+		return c.json({ ok: true });
+	});
 
 	return app;
 }

@@ -81,10 +81,16 @@ async function markFailure(conn: ConnRow, cooldownMs: number, error: string) {
 		},
 		"cooldown",
 	);
+	void import("../services/telegram.service.js").then(({ telegramService }) => {
+		void telegramService.notifyCooldown(conn.provider, conn.label, error);
+	});
 }
 
 async function markExpired(conn: ConnRow, error: string) {
 	await patchConnData(conn.id, { lastError: error.slice(0, 500), lastErrorAt: Date.now() }, "expired");
+	void import("../services/telegram.service.js").then(({ telegramService }) => {
+		void telegramService.notifyCooldown(conn.provider, conn.label, `Token Expired: ${error}`);
+	});
 }
 
 /** Refresh token nếu sắp hết hạn (hoặc chưa có access token). */
