@@ -265,9 +265,13 @@ export function createAntigravityParser() {
 			for (const part of parts) {
 				if (part.inlineData) continue;
 				if (part.functionCall) {
+					this.state.sawTool = true;
 					const id = part.functionCall.id ?? `call_${randomUUID().slice(0, 8)}`;
+					const args = part.functionCall.args ?? {};
+					const argsStr = JSON.stringify(args);
 					events.push({ type: "toolcall_start", id, name: part.functionCall.name });
-					events.push({ type: "toolcall_end", id, name: part.functionCall.name, arguments: part.functionCall.args ?? {} });
+					events.push({ type: "toolcall_delta", id, delta: argsStr });
+					events.push({ type: "toolcall_end", id, name: part.functionCall.name, arguments: args });
 				} else if (part.thought) {
 					if (part.text) events.push({ type: "thinking_delta", delta: part.text });
 				} else if (part.text) {

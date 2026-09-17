@@ -111,7 +111,7 @@ export class OpenAiChatFormatter {
 	private nextIndex = 0;
 	private model: string;
 	private sentRole = false;
-
+	private streamedArgs = new Set<string>();
 	constructor(model: string) {
 		this.model = model;
 	}
@@ -149,11 +149,18 @@ export class OpenAiChatFormatter {
 			}
 			case "toolcall_delta": {
 				const index = this.toolIndex.get(ev.id) ?? 0;
+				this.streamedArgs.add(ev.id);
 				out.push(this.base({ tool_calls: [{ index, function: { arguments: ev.delta } }] }));
 				break;
 			}
-			case "toolcall_end":
-				break; // arguments already streamed
+			case "toolcall_end": {
+				const index = this.toolIndex.get(ev.id) ?? 0;
+				if (!this.streamedArgs.has(ev.id) && ev.arguments) {
+					const argsStr = typeof ev.arguments === "string" ? ev.arguments : JSON.stringify(ev.arguments);
+					out.push(this.base({ tool_calls: [{ index, function: { arguments: argsStr } }] }));
+				}
+				break;
+			}
 			case "done": {
 				const finish = ev.stopReason === "toolUse" ? "tool_calls" : ev.stopReason === "length" ? "length" : "stop";
 				out.push(this.base({}, finish));
