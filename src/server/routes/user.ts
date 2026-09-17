@@ -52,13 +52,15 @@ export function userRoutes() {
 		const summary = await usageRepo.getSummary(user.id);
 		const usedThisMonth = await usageRepo.getMonthlyTokens(user.id);
 		const usedCreditsThisWeek = await usageRepo.getWeeklyCredits(user.id);
+		const budget = user.weeklyCreditBudget ?? user.monthlyCreditBudget ?? null;
 		return c.json({
 			...summary,
-			budget: user.monthlyTokenBudget,
+			budget: user.weeklyTokenBudget ?? user.monthlyTokenBudget,
 			usedThisMonth,
-			creditBudget: user.monthlyCreditBudget,
+			weeklyCreditBudget: budget,
+			creditBudget: budget,
 			usedCreditsThisWeek,
-			usedCreditsThisMonth: usedCreditsThisWeek, // compatibility
+			usedCreditsThisMonth: usedCreditsThisWeek,
 		});
 	});
 
@@ -76,8 +78,10 @@ export function userRoutes() {
 			user: {
 				id: user.id, email: user.email, role: user.role, displayName: user.displayName,
 				username: user.username, department: user.department, avatarUrl: user.avatarUrl,
-				packageName: user.packageName, monthlyTokenBudget: user.monthlyTokenBudget,
-				monthlyCreditBudget: user.monthlyCreditBudget, maxApiKeys: user.maxApiKeys,
+				packageName: user.packageName, weeklyTokenBudget: user.weeklyTokenBudget ?? user.monthlyTokenBudget,
+				weeklyCreditBudget: user.weeklyCreditBudget ?? user.monthlyCreditBudget,
+				monthlyTokenBudget: user.weeklyTokenBudget ?? user.monthlyTokenBudget,
+				monthlyCreditBudget: user.weeklyCreditBudget ?? user.monthlyCreditBudget, maxApiKeys: user.maxApiKeys,
 				onboardedAt: user.onboardedAt,
 			},
 		});

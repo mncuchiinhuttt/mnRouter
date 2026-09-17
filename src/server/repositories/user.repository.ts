@@ -25,6 +25,8 @@ export class UserRepository {
 		displayName?: string | null;
 		packageName?: string | null;
 		maxApiKeys?: number;
+		weeklyTokenBudget?: number | null;
+		weeklyCreditBudget?: number | null;
 		monthlyTokenBudget?: number | null;
 		monthlyCreditBudget?: number | null;
 		allModels?: boolean;
@@ -38,8 +40,10 @@ export class UserRepository {
 				displayName: data.displayName,
 				packageName: data.packageName,
 				maxApiKeys: data.maxApiKeys ?? 1,
-				monthlyTokenBudget: data.monthlyTokenBudget,
-				monthlyCreditBudget: data.monthlyCreditBudget,
+				weeklyTokenBudget: data.weeklyTokenBudget ?? data.monthlyTokenBudget,
+				weeklyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
+				monthlyTokenBudget: data.weeklyTokenBudget ?? data.monthlyTokenBudget,
+				monthlyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
 				allModels: data.allModels ?? true,
 			})
 			.returning();

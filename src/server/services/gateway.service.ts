@@ -146,7 +146,7 @@ export class GatewayService {
 		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
 		const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000) / 1000);
 		const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
-		const creditBudget = auth?.user?.monthlyCreditBudget ?? 50_000;
+		const creditBudget = auth?.user?.weeklyCreditBudget ?? auth?.user?.monthlyCreditBudget ?? 50_000;
 
 		const rateHeaders: Record<string, string> = {
 			"content-type": kind === "anthropic" ? "text/event-stream" : "text/event-stream; charset=utf-8",
@@ -212,7 +212,7 @@ export class GatewayService {
 			const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
 			const resetMonSec = Math.floor((new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000) / 1000);
 			const reset5hSec = Math.floor(Date.now() / 1000) + 18000;
-			const creditBudget = auth?.user?.monthlyCreditBudget ?? 50_000;
+			const creditBudget = auth?.user?.weeklyCreditBudget ?? auth?.user?.monthlyCreditBudget ?? 50_000;
 
 			const nonStreamHeaders: Record<string, string> = {
 				"content-type": "application/json",

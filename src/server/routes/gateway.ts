@@ -42,7 +42,7 @@ export function gatewayRoutes() {
 		const now = Date.now();
 		const usedCredits = await usageRepo.getWeeklyCredits(user.id);
 		const usedTokens = await usageRepo.getMonthlyTokens(user.id);
-		const creditBudget = user.monthlyCreditBudget ?? 50_000;
+		const creditBudget = user.weeklyCreditBudget ?? user.monthlyCreditBudget ?? 50_000;
 		const remainingCredits = Math.max(0, creditBudget - usedCredits);
 		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;
 		const nextMonMs = new Date().setHours(0, 0, 0, 0) + daysToMon * 24 * 3600 * 1000;
@@ -124,7 +124,7 @@ export function gatewayRoutes() {
 
 		const { usageRepo } = await import("../repositories/usage.repository.js");
 		const usedCredits = await usageRepo.getWeeklyCredits(user.id);
-		const creditBudget = user.monthlyCreditBudget ?? 50_000;
+		const creditBudget = user.weeklyCreditBudget ?? user.monthlyCreditBudget ?? 50_000;
 		const usedPercent = creditBudget > 0 ? Math.min(100, Math.round((usedCredits / creditBudget) * 100)) : 0;
 		const remainingCredits = Math.max(0, creditBudget - usedCredits);
 		const daysToMon = ((1 - new Date().getDay() + 7) % 7) || 7;

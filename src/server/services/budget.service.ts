@@ -42,15 +42,16 @@ export class BudgetService {
 		return { allowed: true, retryAfter: 0 };
 	}
 
-	async checkBudget(user: Pick<User, "id" | "monthlyCreditBudget">): Promise<BudgetCheckResult> {
+	async checkBudget(user: Pick<User, "id"> & { weeklyCreditBudget?: number | null; monthlyCreditBudget?: number | null }): Promise<BudgetCheckResult> {
+		const budget = user.weeklyCreditBudget ?? user.monthlyCreditBudget ?? null;
 		const usedCredits = await usageRepo.getWeeklyCredits(user.id);
-		const creditExceeded = user.monthlyCreditBudget != null && usedCredits >= user.monthlyCreditBudget;
+		const creditExceeded = budget != null && usedCredits >= budget;
 
 		return {
 			allowed: !creditExceeded,
 			reason: creditExceeded ? "credits" : undefined,
 			usedCredits,
-			creditBudget: user.monthlyCreditBudget,
+			creditBudget: budget,
 		};
 	}
 }

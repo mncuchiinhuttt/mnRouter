@@ -11,6 +11,7 @@ export class UserService {
 		displayName?: string | null;
 		packageName?: string | null;
 		maxApiKeys?: number;
+		weeklyCreditBudget?: number | null;
 		monthlyCreditBudget?: number | null;
 		allModels?: boolean;
 		allowedModels?: string[];
@@ -26,7 +27,8 @@ export class UserService {
 			displayName: data.displayName,
 			packageName: data.packageName,
 			maxApiKeys: data.maxApiKeys,
-			monthlyCreditBudget: data.monthlyCreditBudget,
+			weeklyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
+			monthlyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
 			allModels: data.allModels ?? true,
 		});
 
@@ -42,12 +44,17 @@ export class UserService {
 
 	async updateUser(id: string, data: {
 		maxApiKeys?: number;
+		weeklyCreditBudget?: number | null;
 		monthlyCreditBudget?: number | null;
 		packageName?: string | null;
 		status?: "active" | "disabled";
 		displayName?: string | null;
 	}, actorId?: string): Promise<User | null> {
-		const patch: Partial<User> = { ...data };
+		const budgetVal = data.weeklyCreditBudget !== undefined ? data.weeklyCreditBudget : data.monthlyCreditBudget;
+		const patch: Partial<User> = {
+			...data,
+			...(budgetVal !== undefined ? { weeklyCreditBudget: budgetVal, monthlyCreditBudget: budgetVal } : {}),
+		};
 		if (data.status === "disabled") {
 			patch.disabledAt = new Date();
 		} else if (data.status === "active") {

@@ -24,7 +24,8 @@ export function adminRoutes() {
 			displayName: z.string().trim().max(120).optional(),
 			packageName: z.string().trim().max(80).optional(),
 			maxApiKeys: z.number().int().min(0).max(50).default(1),
-			monthlyCreditBudget: z.number().int().min(0).nullable().default(null),
+			weeklyCreditBudget: z.number().int().min(0).nullable().optional(),
+			monthlyCreditBudget: z.number().int().min(0).nullable().optional(),
 			allModels: z.boolean().default(true),
 			allowedModels: modelIdsSchema,
 		});
@@ -42,6 +43,7 @@ export function adminRoutes() {
 	app.patch("/api/admin/users/:id", async (c) => {
 		const schema = z.object({
 			maxApiKeys: z.number().int().min(0).max(50).optional(),
+			weeklyCreditBudget: z.number().int().min(0).nullable().optional(),
 			monthlyCreditBudget: z.number().int().min(0).nullable().optional(),
 			packageName: z.string().trim().max(80).nullable().optional(),
 			status: z.enum(["active", "disabled"]).optional(),
@@ -90,7 +92,8 @@ export function adminRoutes() {
 			email: z.string().email(),
 			packageName: z.string().trim().max(80).optional(),
 			maxApiKeys: z.number().int().min(0).max(50).default(1),
-			monthlyCreditBudget: z.number().int().min(0).nullable().default(null),
+			weeklyCreditBudget: z.number().int().min(0).nullable().optional(),
+			monthlyCreditBudget: z.number().int().min(0).nullable().optional(),
 			allModels: z.boolean().default(true),
 			allowedModels: modelIdsSchema,
 		});

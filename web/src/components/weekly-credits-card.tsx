@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@web/lib/api";
 
 interface UsageResp {
-	creditBudget: number | null;
+	weeklyCreditBudget?: number | null;
+	creditBudget?: number | null;
 	usedCreditsThisWeek?: number;
 	usedCreditsThisMonth?: number;
 }
@@ -21,7 +22,7 @@ export function WeeklyCreditsCard({ packageName, role }: WeeklyCreditsCardProps 
 		refetchInterval: 30_000,
 	});
 
-	const budget = data?.creditBudget ?? null;
+	const budget = data?.weeklyCreditBudget ?? data?.creditBudget ?? null;
 	const used = Math.round(data?.usedCreditsThisWeek ?? data?.usedCreditsThisMonth ?? 0);
 	const remaining = budget != null ? Math.max(0, budget - used) : null;
 	const pct = budget != null && budget > 0 ? Math.min(100, Math.round((used / budget) * 100)) : 0;

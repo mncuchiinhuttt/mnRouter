@@ -14,7 +14,8 @@ export interface InvitationInput {
 	email: string;
 	packageName?: string | null;
 	maxApiKeys: number;
-	monthlyCreditBudget: number | null;
+	weeklyCreditBudget?: number | null;
+	monthlyCreditBudget?: number | null;
 	allModels: boolean;
 	allowedModels: string[];
 }
@@ -40,7 +41,8 @@ export class InvitationService {
 			invitedBy,
 			packageName: input.packageName?.trim() || null,
 			maxApiKeys: input.maxApiKeys,
-			monthlyCreditBudget: input.monthlyCreditBudget,
+			weeklyCreditBudget: input.weeklyCreditBudget ?? input.monthlyCreditBudget ?? null,
+			monthlyCreditBudget: input.weeklyCreditBudget ?? input.monthlyCreditBudget ?? null,
 			allModels: input.allModels,
 			allowedModels: validModels,
 			expiresAt,
@@ -79,7 +81,8 @@ export class InvitationService {
 			displayName: displayName?.trim() || null,
 			packageName: invitation.packageName,
 			maxApiKeys: invitation.maxApiKeys,
-			monthlyCreditBudget: invitation.monthlyCreditBudget,
+			weeklyCreditBudget: invitation.weeklyCreditBudget ?? invitation.monthlyCreditBudget ?? null,
+			monthlyCreditBudget: invitation.weeklyCreditBudget ?? invitation.monthlyCreditBudget ?? null,
 			allModels: invitation.allModels,
 		});
 

@@ -25,8 +25,10 @@ interface UserRow {
 	packageName: string | null;
 	status: "active" | "disabled";
 	maxApiKeys: number;
-	monthlyTokenBudget: number | null;
-	monthlyCreditBudget: number | null;
+	weeklyTokenBudget?: number | null;
+	weeklyCreditBudget?: number | null;
+	monthlyTokenBudget?: number | null;
+	monthlyCreditBudget?: number | null;
 	allModels: boolean;
 	createdAt: string;
 	activeKeys: number;
@@ -60,8 +62,10 @@ interface InvitationsResp {
 		email: string;
 		packageName: string | null;
 		maxApiKeys: number;
-		monthlyTokenBudget: number | null;
-		monthlyCreditBudget: number | null;
+		weeklyTokenBudget?: number | null;
+		weeklyCreditBudget?: number | null;
+		monthlyTokenBudget?: number | null;
+		monthlyCreditBudget?: number | null;
 		allModels: boolean;
 		allowedModels: string[];
 		status: "pending" | "accepted" | "revoked";
@@ -80,7 +84,7 @@ const EMPTY_INVITE = {
 	email: "",
 	packageName: "",
 	maxApiKeys: 1,
-	monthlyCreditBudget: "",
+	weeklyCreditBudget: "",
 	unlimitedBudget: true,
 	allModels: true,
 	modelIds: [] as string[],
@@ -120,7 +124,7 @@ export default function AdminUsers() {
 		if (!editing) return;
 		setAccessAllModels(editing.allModels);
 		setAccessModelIds([]);
-		setEditingUnlimited(editing.monthlyCreditBudget == null);
+		setEditingUnlimited((editing.weeklyCreditBudget ?? editing.monthlyCreditBudget) == null);
 	}, [editing]);
 
 	useEffect(() => {
@@ -135,7 +139,7 @@ export default function AdminUsers() {
 				email: inviteForm.email,
 				packageName: inviteForm.packageName || undefined,
 				maxApiKeys: Number(inviteForm.maxApiKeys),
-				monthlyCreditBudget: inviteForm.unlimitedBudget ? null : optionalNumber(inviteForm.monthlyCreditBudget),
+				weeklyCreditBudget: inviteForm.unlimitedBudget ? null : optionalNumber(inviteForm.weeklyCreditBudget),
 				allModels: inviteForm.allModels,
 				allowedModels: inviteForm.allModels ? [] : inviteForm.modelIds,
 			}),
@@ -163,7 +167,7 @@ export default function AdminUsers() {
 			if (!editing) throw new Error("No user selected");
 			await apiJson(`/api/admin/users/${editing.id}`, "PATCH", {
 				maxApiKeys: editing.maxApiKeys,
-				monthlyCreditBudget: editingUnlimited ? null : editing.monthlyCreditBudget,
+				weeklyCreditBudget: editingUnlimited ? null : (editing.weeklyCreditBudget ?? editing.monthlyCreditBudget),
 				packageName: editing.packageName,
 			});
 			return apiJson(`/api/admin/users/${editing.id}/models`, "PUT", { allModels: accessAllModels, modelIds: accessAllModels ? [] : accessModelIds });
@@ -257,10 +261,10 @@ export default function AdminUsers() {
 								</TD>
 								<TD className="text-right font-mono text-[13px] tabular-nums">{(Number(user.totalCredits) || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })} cr</TD>
 								<TD className="font-mono text-[13px]">
-									{user.monthlyCreditBudget == null ? (
+									{(user.weeklyCreditBudget ?? user.monthlyCreditBudget) == null ? (
 										<span className="text-ink-2">{t("credits.unlimited")}</span>
 									) : (
-										<span>{fmtCompact(user.monthlyCreditBudget)} cr</span>
+										<span>{fmtCompact(user.weeklyCreditBudget ?? user.monthlyCreditBudget ?? 0)} cr</span>
 									)}
 								</TD>
 								<TD>
@@ -271,7 +275,7 @@ export default function AdminUsers() {
 								</TD>
 								<TD className="whitespace-nowrap text-right">
 									<div className="flex items-center justify-end gap-1">
-										<Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditing(user); setEditingUnlimited(user.monthlyCreditBudget == null); }}>
+										<Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => { setEditing(user); setEditingUnlimited((user.weeklyCreditBudget ?? user.monthlyCreditBudget) == null); }}>
 											<UserRound className="size-3.5" /> {t("common.edit")}
 										</Button>
 										<Button size="sm" variant="ghost" className="h-7 px-2 text-[#c6293b] hover:bg-[#faebec] hover:text-[#a01828]" title={t("adminUsers.deleteUser")} onClick={() => setDeletingUser(user)}>
@@ -361,7 +365,7 @@ export default function AdminUsers() {
 										onClick={() => setInviteForm((prev) => ({
 											...prev,
 											unlimitedBudget: !prev.unlimitedBudget,
-											monthlyCreditBudget: !prev.unlimitedBudget ? "" : (prev.monthlyCreditBudget || "50000"),
+											weeklyCreditBudget: !prev.unlimitedBudget ? "" : (prev.weeklyCreditBudget || "50000"),
 										}))}
 										className="inline-flex items-center gap-1.5 font-mono text-[11px] text-accent hover:underline cursor-pointer"
 									>
@@ -376,7 +380,7 @@ export default function AdminUsers() {
 										</span>
 										<button
 											type="button"
-											onClick={() => setInviteForm((prev) => ({ ...prev, unlimitedBudget: false, monthlyCreditBudget: "50000" }))}
+											onClick={() => setInviteForm((prev) => ({ ...prev, unlimitedBudget: false, weeklyCreditBudget: "50000" }))}
 											className="text-[11px] text-ink-2 hover:text-ink underline cursor-pointer"
 										>
 											{t("credits.setLimit")}
@@ -387,14 +391,14 @@ export default function AdminUsers() {
 										<Input
 											id="invite-credit-budget"
 											inputMode="numeric"
-											value={inviteForm.monthlyCreditBudget}
-											onChange={(event) => setInviteForm({ ...inviteForm, monthlyCreditBudget: event.target.value.replace(/\D/g, "") })}
+											value={inviteForm.weeklyCreditBudget}
+											onChange={(event) => setInviteForm({ ...inviteForm, weeklyCreditBudget: event.target.value.replace(/\D/g, "") })}
 											placeholder="50000"
 											className="font-mono pr-24"
 										/>
 										<button
 											type="button"
-											onClick={() => setInviteForm((prev) => ({ ...prev, unlimitedBudget: true, monthlyCreditBudget: "" }))}
+											onClick={() => setInviteForm((prev) => ({ ...prev, unlimitedBudget: true, weeklyCreditBudget: "" }))}
 											className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded bg-paper-2 px-2 py-1 font-mono text-[10.5px] text-ink-2 hover:text-ink cursor-pointer border border-line"
 										>
 											<Infinity className="size-3 text-[#1d7a33]" /> {t("credits.unlimited")}
@@ -439,7 +443,8 @@ export default function AdminUsers() {
 												setEditingUnlimited(next);
 												setEditing({
 													...editing,
-													monthlyCreditBudget: next ? null : (editing.monthlyCreditBudget ?? 50000),
+													weeklyCreditBudget: next ? null : (editing.weeklyCreditBudget ?? editing.monthlyCreditBudget ?? 50000),
+													monthlyCreditBudget: next ? null : (editing.weeklyCreditBudget ?? editing.monthlyCreditBudget ?? 50000),
 												});
 											}}
 											className="inline-flex items-center gap-1.5 font-mono text-[11px] text-accent hover:underline cursor-pointer"
@@ -457,7 +462,7 @@ export default function AdminUsers() {
 												type="button"
 												onClick={() => {
 													setEditingUnlimited(false);
-													setEditing({ ...editing, monthlyCreditBudget: 50000 });
+													setEditing({ ...editing, weeklyCreditBudget: 50000, monthlyCreditBudget: 50000 });
 												}}
 												className="text-[11px] text-ink-2 hover:text-ink underline cursor-pointer"
 											>
@@ -469,9 +474,9 @@ export default function AdminUsers() {
 											<Input
 												id="edit-credit-budget"
 												inputMode="numeric"
-												value={editing.monthlyCreditBudget ?? ""}
+												value={editing.weeklyCreditBudget ?? editing.monthlyCreditBudget ?? ""}
 												placeholder="50000"
-												onChange={(event) => setEditing({ ...editing, monthlyCreditBudget: optionalNumber(event.target.value) })}
+												onChange={(event) => setEditing({ ...editing, weeklyCreditBudget: optionalNumber(event.target.value), monthlyCreditBudget: optionalNumber(event.target.value) })}
 												className="font-mono pr-24"
 											/>
 											<button

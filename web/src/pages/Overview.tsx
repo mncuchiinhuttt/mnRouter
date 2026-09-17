@@ -13,8 +13,10 @@ interface UsageResp {
 	daily: { date: string; prompt_tokens: string; completion_tokens: string; requests: string; credits: string }[];
 	budget: number | null;
 	usedThisMonth: number;
-	creditBudget: number | null;
-	usedCreditsThisMonth: number;
+	weeklyCreditBudget?: number | null;
+	creditBudget?: number | null;
+	usedCreditsThisWeek?: number;
+	usedCreditsThisMonth?: number;
 }
 
 interface Announcement {
@@ -47,7 +49,9 @@ export default function Overview() {
 	const visibleAnnouncements = (annData?.announcements ?? []).filter((a) => !dismissed.includes(a.id));
 
 	const daily = (data?.daily ?? []).slice(0, 30).reverse().map((d) => ({ date: d.date.slice(5), total: Number(d.prompt_tokens) + Number(d.completion_tokens) }));
-	const creditPct = data?.creditBudget ? Math.min(100, Math.round((data.usedCreditsThisMonth / data.creditBudget) * 100)) : 0;
+	const budget = data?.weeklyCreditBudget ?? data?.creditBudget ?? null;
+	const used = data?.usedCreditsThisWeek ?? data?.usedCreditsThisMonth ?? 0;
+	const creditPct = budget ? Math.min(100, Math.round((used / budget) * 100)) : 0;
 
 	return (
 		<div className="space-y-10">
@@ -91,15 +95,15 @@ export default function Overview() {
 				)}
 			</section>
 
-			{data?.creditBudget != null && (
+			{budget != null && (
 				<section>
 					<h2 className="mb-4 text-2xl font-semibold tracking-tight sm:text-[28px]">{t("credits.weeklyBudget")}</h2>
 					<div className="rounded-lg border border-line bg-white p-5">
 						<div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
 							<div className={(creditPct >= 100 ? "label-mono text-[#c6293b]" : "label-mono text-accent") + " "}>{creditPct >= 100 ? t("overview.budgetExceeded") : `${creditPct}% ${t("overview.budgetUsed")}`}</div>
 							<div className="font-mono text-sm text-ink-2">
-								{fmtNum(data.usedCreditsThisMonth)} / {fmtNum(data.creditBudget)} cr
-								<span className="text-ink-2/60"> (≈ ${(data.creditBudget / 100).toFixed(2)})</span>
+								{fmtNum(used)} / {fmtNum(budget)} cr
+								<span className="text-ink-2/60"> (≈ ${(budget / 100).toFixed(2)})</span>
 							</div>
 						</div>
 						<div className="h-2.5 w-full overflow-hidden rounded-full bg-paper-2">

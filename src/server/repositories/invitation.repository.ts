@@ -10,6 +10,8 @@ export class InvitationRepository {
 		invitedBy?: string | null;
 		maxApiKeys?: number;
 		packageName?: string | null;
+		weeklyTokenBudget?: number | null;
+		weeklyCreditBudget?: number | null;
 		monthlyTokenBudget?: number | null;
 		monthlyCreditBudget?: number | null;
 		allModels?: boolean;
@@ -25,8 +27,10 @@ export class InvitationRepository {
 				invitedBy: data.invitedBy,
 				maxApiKeys: data.maxApiKeys ?? 1,
 				packageName: data.packageName,
-				monthlyTokenBudget: data.monthlyTokenBudget,
-				monthlyCreditBudget: data.monthlyCreditBudget,
+				weeklyTokenBudget: data.weeklyTokenBudget ?? data.monthlyTokenBudget,
+				weeklyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
+				monthlyTokenBudget: data.weeklyTokenBudget ?? data.monthlyTokenBudget,
+				monthlyCreditBudget: data.weeklyCreditBudget ?? data.monthlyCreditBudget,
 				allModels: data.allModels ?? true,
 				allowedModels: data.allowedModels ?? [],
 				expiresAt: data.expiresAt,
