@@ -24,6 +24,7 @@ interface GeminiContent {
 
 function toContents(messages: CanonicalMessage[]): GeminiContent[] {
 	const contents: GeminiContent[] = [];
+	const toolCallNames = new Map<string, string>();
 	const push = (role: "user" | "model", part: GeminiPart) => {
 		const last = contents[contents.length - 1];
 		if (last && last.role === role) last.parts.push(part);
@@ -35,8 +36,16 @@ function toContents(messages: CanonicalMessage[]): GeminiContent[] {
 			if (b.type === "text" && b.text) push(role, { text: b.text });
 			else if (b.type === "thinking") push("model", { text: b.thinking, thought: true, thoughtSignature: b.signature });
 			else if (b.type === "image") push("user", { inlineData: { mimeType: b.mime, data: b.data } });
-			else if (b.type === "toolCall") push("model", { functionCall: { id: b.id, name: b.name, args: b.arguments ?? {} } });
-			else if (b.type === "toolResult") push("user", { functionResponse: { id: b.toolUseId, name: b.toolUseId, response: { output: b.content } } });
+			else if (b.type === "toolCall") {
+				if (b.id && b.name) toolCallNames.set(b.id, b.name);
+				push("model", {
+					functionCall: { id: b.id, name: b.name, args: b.arguments ?? {} },
+					thoughtSignature: (b as any).thoughtSignature || (b as any).signature || "skip_thought_signature_validator",
+				});
+			} else if (b.type === "toolResult") {
+				const name = toolCallNames.get(b.toolUseId) || b.toolUseId;
+				push("user", { functionResponse: { id: b.toolUseId, name, response: { output: b.content } } });
+			}
 		}
 	}
 	return contents;
