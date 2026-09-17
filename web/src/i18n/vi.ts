@@ -49,6 +49,9 @@ const vi = {
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Kỹ năng",
 		announcements: "Thông báo",
+		system: "Hệ thống",
+		status: "Trạng thái Server",
+		changelog: "Nhật ký cập nhật",
 		logout: "Đăng xuất",
 	},
 	login: {

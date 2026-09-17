@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Activity, BarChart3, Boxes, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
+import { Activity, BarChart3, Boxes, History, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@web/lib/utils";
 import { setLang } from "@web/i18n";
@@ -76,54 +76,64 @@ export function LangToggle() {
 
 function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void; t: (k: string) => string }) {
 	return (
-		<>
-			<div className="flex items-center gap-3 px-5 pb-6 pt-6">
-				<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white">
-					<svg viewBox="0 0 32 32" className="h-7 w-7">
-						<path d="M7 23V9l4.5 8L16 9l4.5 8L25 9v14" stroke="#2323e6" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-					</svg>
+		<div className="flex h-full flex-col overflow-hidden">
+			<div className="shrink-0">
+				<div className="flex items-center gap-3 px-5 pb-5 pt-6">
+					<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-white shadow-xs">
+						<svg viewBox="0 0 32 32" className="h-7 w-7">
+							<path d="M7 23V9l4.5 8L16 9l4.5 8L25 9v14" stroke="#2323e6" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+						</svg>
+					</div>
+					<div className="font-mono text-[15px] font-semibold leading-[1.1] tracking-[0.08em] text-white">
+						MN
+						<br />
+						ROUTER
+					</div>
 				</div>
-				<div className="font-mono text-[15px] font-semibold leading-[1.1] tracking-[0.08em] text-white">
-					MN
-					<br />
-					ROUTER
-				</div>
+
+				<WeeklyCreditsCard packageName={me.packageName} role={me.role} />
 			</div>
 
-			<WeeklyCreditsCard packageName={me.packageName} role={me.role} />
+			<div className="flex-1 overflow-y-auto overscroll-contain pb-4 [scrollbar-width:thin] [scrollbar-color:#3a3a5c_transparent]">
+				<SectionLabel>{t("nav.account")}</SectionLabel>
+				<nav className="flex flex-col gap-0.5">
+					<NavItem to="/" icon={<LayoutGrid className="h-3.5 w-3.5" />} label={t("nav.overview")} onNavigate={onNavigate} />
+					<NavItem to="/usage" icon={<BarChart3 className="h-3.5 w-3.5" />} label={t("nav.usage")} onNavigate={onNavigate} />
+					<NavItem to="/leaderboard" icon={<Trophy className="h-3.5 w-3.5" />} label={t("nav.leaderboard")} onNavigate={onNavigate} />
+					<NavItem to="/keys" icon={<KeyRound className="h-3.5 w-3.5" />} label={t("nav.apiKeys")} onNavigate={onNavigate} />
+					<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} />
+					<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} />
+					<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} />
+				</nav>
 
-			<SectionLabel>{t("nav.account")}</SectionLabel>
-			<nav className="flex flex-col gap-0.5">
-				<NavItem to="/" icon={<LayoutGrid className="h-3.5 w-3.5" />} label={t("nav.overview")} onNavigate={onNavigate} />
-				<NavItem to="/usage" icon={<BarChart3 className="h-3.5 w-3.5" />} label={t("nav.usage")} onNavigate={onNavigate} />
-				<NavItem to="/leaderboard" icon={<Trophy className="h-3.5 w-3.5" />} label={t("nav.leaderboard")} onNavigate={onNavigate} />
-				<NavItem to="/keys" icon={<KeyRound className="h-3.5 w-3.5" />} label={t("nav.apiKeys")} onNavigate={onNavigate} />
-				<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} />
-				<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} />
-				<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} />
-			</nav>
+				{me.role === "admin" && (
+					<>
+						<SectionLabel>{t("nav.admin")}</SectionLabel>
+						<nav className="flex flex-col gap-0.5">
+							<NavItem to="/admin/users" icon={<Users className="h-3.5 w-3.5" />} label={t("nav.users")} onNavigate={onNavigate} />
+							<NavItem to="/admin/connections" icon={<Plug className="h-3.5 w-3.5" />} label={t("nav.connections")} onNavigate={onNavigate} />
+							<NavItem to="/admin/models" icon={<SlidersHorizontal className="h-3.5 w-3.5" />} label={t("nav.models")} onNavigate={onNavigate} />
+							<NavItem to="/admin/quotas" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.quotas")} onNavigate={onNavigate} />
+							<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} />
+							<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} />
+							<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} />
+							<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} />
+							<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} />
+						</nav>
+					</>
+				)}
 
-			{me.role === "admin" && (
-				<>
-					<SectionLabel>{t("nav.admin")}</SectionLabel>
-					<nav className="flex flex-col gap-0.5">
-						<NavItem to="/admin/users" icon={<Users className="h-3.5 w-3.5" />} label={t("nav.users")} onNavigate={onNavigate} />
-						<NavItem to="/admin/connections" icon={<Plug className="h-3.5 w-3.5" />} label={t("nav.connections")} onNavigate={onNavigate} />
-						<NavItem to="/admin/models" icon={<SlidersHorizontal className="h-3.5 w-3.5" />} label={t("nav.models")} onNavigate={onNavigate} />
-						<NavItem to="/admin/quotas" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.quotas")} onNavigate={onNavigate} />
-						<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} />
-						<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} />
-						<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} />
-						<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} />
-						<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} />
-					</nav>
-				</>
-			)}
+				<SectionLabel>{t("nav.system")}</SectionLabel>
+				<nav className="flex flex-col gap-0.5">
+					<NavItem to="/status" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.status")} onNavigate={onNavigate} />
+					<NavItem to="/changelog" icon={<History className="h-3.5 w-3.5" />} label={t("nav.changelog")} onNavigate={onNavigate} />
+				</nav>
+			</div>
 
-			<div className="mt-auto border-t border-[#26264a] px-3 py-3">
+			<div className="shrink-0 border-t border-[#26264a] bg-navy px-3 py-3">
 				<UserMenu me={me} onNavigate={onNavigate} />
 			</div>
-		</>
+		</div>
 	);
 }
 

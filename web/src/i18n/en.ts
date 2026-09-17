@@ -51,6 +51,9 @@ const en: Dict = {
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Skills",
 		announcements: "Announcements",
+		system: "System",
+		status: "Server Status",
+		changelog: "Changelog",
 		logout: "Sign out",
 	},
 	login: {

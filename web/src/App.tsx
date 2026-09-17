@@ -23,6 +23,8 @@ import AdminAnalytics from "@web/pages/AdminAnalytics";
 import AdminLogs from "@web/pages/AdminLogs";
 import AdminAnnouncements from "@web/pages/AdminAnnouncements";
 import AdminSettings from "@web/pages/AdminSettings";
+import ServerStatusPage from "@web/pages/ServerStatusPage";
+import ChangelogPage from "@web/pages/ChangelogPage";
 
 export function useMe() {
 	return useQuery({
@@ -70,6 +72,8 @@ export default function App() {
 				<Route path="chat" element={<ChatPage />} />
 				<Route path="mcp" element={<McpSkillsPage />} />
 				<Route path="help" element={<Help />} />
+				<Route path="status" element={<ServerStatusPage />} />
+				<Route path="changelog" element={<ChangelogPage />} />
 				<Route path="admin/users" element={<AdminUsers />} />
 				<Route path="admin/connections" element={<AdminConnections />} />
 				<Route path="admin/models" element={<AdminModels />} />
