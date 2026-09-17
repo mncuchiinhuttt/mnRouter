@@ -10,13 +10,18 @@ export interface ToolDef {
 export function getToolDefs(
 	base: string,
 	key: string,
-	modelsList?: Array<{ id: string; displayName?: string; contextWindow?: number; maxOutput?: number }>,
+	modelsList?: Array<{ id: string; displayName?: string; contextWindow?: number; maxOutput?: number; priceIn?: number; priceOut?: number; priceCacheRead?: number; priceCacheWrite?: number }>,
 	isWindows = false
 ): Record<string, ToolDef> {
 	const v1 = `${base}/v1`;
 	const mList = modelsList && modelsList.length > 0 ? modelsList : DEFAULT_MODELS;
 	const ompModels = mList
-		.map((m) => `      - id: "${m.id}"\n        name: "${m.displayName || m.id}"\n        contextWindow: ${m.contextWindow || 1000000}\n        maxTokens: ${m.maxOutput || 65536}`)
+		.map((m) => {
+			const i = Number(((m.priceIn ?? 0) / 100).toFixed(4)), o = Number(((m.priceOut ?? 0) / 100).toFixed(4));
+			const cr = Number(((m.priceCacheRead ?? Math.round((m.priceIn ?? 0) * 0.1)) / 100).toFixed(4));
+			const cw = Number(((m.priceCacheWrite ?? Math.round((m.priceIn ?? 0) * 1.25)) / 100).toFixed(4));
+			return `      - id: "${m.id}"\n        name: "${m.displayName || m.id}"\n        contextWindow: ${m.contextWindow || 1000000}\n        maxTokens: ${m.maxOutput || 65536}\n        cost:\n          input: ${i}\n          output: ${o}\n          cacheRead: ${cr}\n          cacheWrite: ${cw}`;
+		})
 		.join("\n");
 	const piModels = mList.map((m) => `          { "id": "${m.id}", "name": "${m.displayName || m.id}" }`).join(",\n");
 	const opencodeModels = mList.map((m) => `    "${m.id}"`).join(",\n");
@@ -28,10 +33,7 @@ export function getToolDefs(
 		"claude-code": {
 			id: "claude-code",
 			name: "Claude Code",
-			vars: [
-				["ANTHROPIC_BASE_URL", base],
-				["ANTHROPIC_API_KEY", key],
-			],
+			vars: [["ANTHROPIC_BASE_URL", base], ["ANTHROPIC_API_KEY", key]],
 			files: [
 				{ path: `${H}.claude${S}config.json`, content: `{\n  "defaultModel": "claude-sonnet-4-6-ag",\n  "alwaysApproveResets": true\n}` },
 				{ path: `${H}.claude.json`, content: `{\n  "defaultModel": "claude-sonnet-4-6-ag",\n  "alwaysApproveResets": true\n}` },
@@ -40,27 +42,18 @@ export function getToolDefs(
 		"claude-cowork": {
 			id: "claude-cowork",
 			name: "Claude Cowork",
-			vars: [
-				["ANTHROPIC_BASE_URL", base],
-				["ANTHROPIC_API_KEY", key],
-				["CLAUDE_BASE_URL", base],
-			],
+			vars: [["ANTHROPIC_BASE_URL", base], ["ANTHROPIC_API_KEY", key], ["CLAUDE_BASE_URL", base]],
 			files: isWindows
 				? [{ path: `$userProfile\\AppData\\Roaming\\Claude\\claude_desktop_config.json`, content: `{\n  "env": { "ANTHROPIC_BASE_URL": "${base}", "ANTHROPIC_API_KEY": "${key}" }\n}` }]
 				: [
-						{ path: `$HOME/Library/Application Support/Claude/claude_desktop_config.json`, content: `{\n  "env": { "ANTHROPIC_BASE_URL": "${base}", "ANTHROPIC_API_KEY": "${key}" }\n}` },
-						{ path: `$HOME/.config/Claude/claude_desktop_config.json`, content: `{\n  "env": { "ANTHROPIC_BASE_URL": "${base}", "ANTHROPIC_API_KEY": "${key}" }\n}` },
-				  ],
+					{ path: `$HOME/Library/Application Support/Claude/claude_desktop_config.json`, content: `{\n  "env": { "ANTHROPIC_BASE_URL": "${base}", "ANTHROPIC_API_KEY": "${key}" }\n}` },
+					{ path: `$HOME/.config/Claude/claude_desktop_config.json`, content: `{\n  "env": { "ANTHROPIC_BASE_URL": "${base}", "ANTHROPIC_API_KEY": "${key}" }\n}` },
+				],
 		},
 		openclaw: {
 			id: "openclaw",
 			name: "OpenClaw",
-			vars: [
-				["OPENCLAW_API_BASE", v1],
-				["OPENCLAW_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-			],
+			vars: [["OPENCLAW_API_BASE", v1], ["OPENCLAW_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
 			files: [
 				{ path: `${H}.openclaw${S}config.json`, content: `{\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "defaultModel": "claude-sonnet-4-6-ag"\n}` },
 				{ path: `${H}.config${S}openclaw${S}config.json`, content: `{\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "defaultModel": "claude-sonnet-4-6-ag"\n}` },
@@ -69,21 +62,13 @@ export function getToolDefs(
 		"openai-codex": {
 			id: "openai-codex",
 			name: "OpenAI Codex",
-			vars: [
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-			],
+			vars: [["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
 			files: [{ path: `${H}.codex${S}config.toml`, content: `model = "gpt-5.5"\napi_base = "${v1}"\napi_key = "${key}"` }],
 		},
 		opencode: {
 			id: "opencode",
 			name: "OpenCode",
-			vars: [
-				["OPENCODE_BASE_URL", v1],
-				["OPENCODE_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-			],
+			vars: [["OPENCODE_BASE_URL", v1], ["OPENCODE_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
 			files: [
 				{ path: `${H}.config${S}opencode${S}config.json`, content: `{\n  "provider": "custom",\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "model": "claude-sonnet-4-6-ag",\n  "models": [\n${opencodeModels}\n  ]\n}` },
 				{ path: `${H}.opencode${S}config.json`, content: `{\n  "provider": "custom",\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "model": "claude-sonnet-4-6-ag",\n  "models": [\n${opencodeModels}\n  ]\n}` },
@@ -152,6 +137,7 @@ export function getToolDefs(
 			files: [
 				{ path: `${H}.omp${S}agent${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
 				{ path: `${H}.omp${S}models.yml`, content: `providers:\n  mnrouter:\n    baseUrl: "${v1}"\n    apiKey: "${key}"\n    api: "openai-completions"\n    authHeader: true\n    quota:\n      enabled: true\n      endpoint: "${base}/dashboard/billing/usage"\n      interval: "10m"\n    models:\n${ompModels}` },
+				{ path: `${H}.omp${S}agent${S}extensions${S}mnrouter.ts`, content: `export default function (pi: any) {\n  pi.registerProvider("mnrouter", {\n    baseUrl: "${v1}",\n    apiKey: "${key}",\n    api: "openai-completions",\n    usage: {\n      id: "mnrouter",\n      async fetchUsage(params: any, ctx: any) {\n        try {\n          const fetchFn = ctx?.fetch || fetch;\n          const res = await fetchFn("${v1}/usage", { headers: { authorization: "Bearer ${key}" } });\n          if (!res.ok) return null;\n          const data = await res.json();\n          return data.reports?.[0] || null;\n        } catch { return null; }\n      }\n    }\n  });\n}` },
 			],
 		},
 		zcode: {
