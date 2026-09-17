@@ -206,6 +206,7 @@ const en: Dict = {
 		invitationRevoked: "Invitation revoked",
 		accessTitle: "Model access",
 		allModels: "Can use every enabled model",
+		allModelsShort: "All Models",
 		selectedModels: "Can use selected models only",
 		noModels: "There are no models to choose from yet.",
 		quickSelectProvider: "Quick select by Provider:",

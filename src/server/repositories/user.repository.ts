@@ -1,6 +1,6 @@
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@db";
-import { users, apiKeys, usageDaily, type User, type ApiKey } from "@db/schema";
+import { users, apiKeys, usageDaily, userModels, type User, type ApiKey } from "@db/schema";
 
 export class UserRepository {
 	async findById(id: string): Promise<User | null> {
@@ -56,7 +56,7 @@ export class UserRepository {
 		return !!deleted;
 	}
 
-	async listAll(): Promise<(User & { activeKeys: number; totalCredits: number })[]> {
+	async listAll(): Promise<(User & { activeKeys: number; totalCredits: number; allowedModelCount: number })[]> {
 		const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
 		const activeKeys = await db
 			.select({ userId: apiKeys.userId, activeCount: count(apiKeys.id) })
@@ -72,13 +72,20 @@ export class UserRepository {
 			.from(usageDaily)
 			.groupBy(usageDaily.userId);
 
+		const userModelCounts = await db
+			.select({ userId: userModels.userId, modelCount: count(userModels.modelId) })
+			.from(userModels)
+			.groupBy(userModels.userId);
+
 		const activeKeysMap = new Map(activeKeys.map((r) => [r.userId, r.activeCount]));
 		const userCreditsMap = new Map(userCredits.map((r) => [r.userId, Math.round((Number(r.totalCredits) || 0) * 10000) / 10000]));
+		const userModelCountsMap = new Map(userModelCounts.map((r) => [r.userId, Number(r.modelCount) || 0]));
 
 		return allUsers.map((u) => ({
 			...u,
 			activeKeys: activeKeysMap.get(u.id) ?? 0,
 			totalCredits: userCreditsMap.get(u.id) ?? 0,
+			allowedModelCount: userModelCountsMap.get(u.id) ?? 0,
 		}));
 	}
 

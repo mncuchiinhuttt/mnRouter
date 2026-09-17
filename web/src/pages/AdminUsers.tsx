@@ -32,6 +32,7 @@ interface UserRow {
 	activeKeys: number;
 	totalTokens: number;
 	totalCredits: number;
+	allowedModelCount?: number;
 }
 
 interface UserKeyItem {
@@ -251,10 +252,9 @@ export default function AdminUsers() {
 										</Button>
 									</div>
 								</TD>
-								<TD className="max-w-[220px]">
-									<Badge className="whitespace-normal leading-tight">{user.allModels ? t("adminUsers.allModels") : t("adminUsers.selectedModels")}</Badge>
+								<TD>
+									<Badge>{user.allModels ? t("adminUsers.allModelsShort", "All Models") : t("adminUsers.selectedModelCount", { count: user.allowedModelCount ?? 0 })}</Badge>
 								</TD>
-								<TD className="text-right font-mono text-[13px] tabular-nums">{(Number(user.totalCredits) || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })} cr</TD>
 								<TD className="font-mono text-[13px]">
 									{user.monthlyCreditBudget == null ? (
 										<span className="text-ink-2">{t("credits.unlimited")}</span>
@@ -314,8 +314,7 @@ export default function AdminUsers() {
 								<TR key={invitation.id}>
 									<TD className="font-mono text-[12px]">{invitation.email}</TD>
 									<TD className="font-mono text-[12px]">{invitation.packageName ?? "—"}</TD>
-									<TD><Badge>{invitation.allModels ? t("adminUsers.allModels") : t("adminUsers.selectedModelCount", { count: invitation.allowedModels.length })}</Badge></TD>
-									<TD><Badge className={invitation.status === "pending" ? "border-accent text-accent" : ""}>{invitation.status}</Badge></TD>
+									<TD><Badge>{invitation.allModels ? t("adminUsers.allModelsShort", "All Models") : t("adminUsers.selectedModelCount", { count: invitation.allowedModels.length })}</Badge></TD>
 									<TD className="font-mono text-[12px] text-ink-2">{fmtDate(invitation.expiresAt)}</TD>
 									<TD className="text-right">
 										{invitation.status === "pending" && <Button size="sm" variant="ghost" onClick={() => revokeInvitation.mutate(invitation.id)} disabled={revokeInvitation.isPending}>{t("adminUsers.revokeInvitation")}</Button>}

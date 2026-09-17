@@ -149,8 +149,7 @@ export function UserLeaderboard({ users, isLoading }: UserLeaderboardProps) {
 									{u.credits.toFixed(2)} cr
 								</TD>
 								<TD className="text-right font-mono text-xs tabular-nums text-ink">
-									<div>{u.requests} reqs</div>
-									{u.errors > 0 && <div className="text-[10px] text-[#c6293b]">{u.errors} errs</div>}
+									{u.requests} reqs
 								</TD>
 								<TD className="text-right font-mono text-[11px] text-ink-2">
 									{u.lastActive ? new Date(u.lastActive).toLocaleString() : "Never"}
