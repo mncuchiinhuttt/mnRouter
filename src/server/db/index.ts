@@ -21,6 +21,10 @@ if (dbPath !== ":memory:") {
 
 export const sqlite = new Database(dbPath, { create: true });
 sqlite.run("PRAGMA journal_mode = WAL;");
+sqlite.run("PRAGMA synchronous = NORMAL;");
+sqlite.run("PRAGMA cache_size = -16000;");
+sqlite.run("PRAGMA temp_store = MEMORY;");
+sqlite.run("PRAGMA mmap_size = 268435456;");
 sqlite.run("PRAGMA foreign_keys = ON;");
 sqlite.run("PRAGMA busy_timeout = 5000;");
 

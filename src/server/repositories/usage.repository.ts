@@ -21,6 +21,61 @@ export class UsageRepository {
 		await db.insert(usageRequests).values(data);
 	}
 
+	async recordBatch(
+		requests: Array<typeof usageRequests.$inferInsert>,
+		dailyAggregates?: Map<string, {
+			date: string;
+			userId: string;
+			provider: string;
+			model: string;
+			requests: number;
+			errors: number;
+			prompt: number;
+			comp: number;
+			cacheR: number;
+			cacheW: number;
+			credits: number;
+		}>
+	): Promise<void> {
+		if (requests.length === 0) return;
+
+		await db.transaction(async (tx) => {
+			await tx.insert(usageRequests).values(requests);
+
+			if (dailyAggregates && dailyAggregates.size > 0) {
+				for (const agg of dailyAggregates.values()) {
+					const creditsStr = String(Math.round(agg.credits * 10000) / 10000);
+					await tx
+						.insert(usageDaily)
+						.values({
+							date: agg.date,
+							userId: agg.userId,
+							provider: agg.provider,
+							model: agg.model,
+							requests: agg.requests,
+							errors: agg.errors,
+							promptTokens: agg.prompt,
+							completionTokens: agg.comp,
+							cacheReadTokens: agg.cacheR,
+							cacheWriteTokens: agg.cacheW,
+							credits: creditsStr,
+						})
+						.onConflictDoUpdate({
+							target: [usageDaily.date, usageDaily.userId, usageDaily.provider, usageDaily.model],
+							set: {
+								requests: sql`${usageDaily.requests} + ${agg.requests}`,
+								errors: sql`${usageDaily.errors} + ${agg.errors}`,
+								promptTokens: sql`${usageDaily.promptTokens} + ${agg.prompt}`,
+								completionTokens: sql`${usageDaily.completionTokens} + ${agg.comp}`,
+								cacheReadTokens: sql`${usageDaily.cacheReadTokens} + ${agg.cacheR}`,
+								cacheWriteTokens: sql`${usageDaily.cacheWriteTokens} + ${agg.cacheW}`,
+								credits: sql`CAST(CAST(${usageDaily.credits} AS NUMERIC) + ${Math.round(agg.credits * 10000) / 10000} AS TEXT)`,
+							},
+						});
+				}
+			}
+		});
+	}
 	async recordDaily(date: string, userId: string, provider: string, model: string, u: { prompt: number; comp: number; cacheR: number; cacheW: number; credits: number; ok: boolean }): Promise<void> {
 		await db
 			.insert(usageDaily)
