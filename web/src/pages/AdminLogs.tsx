@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtDate, fmtNum } from "@web/lib/utils";
@@ -49,6 +50,8 @@ export default function AdminLogs() {
 	const [limit, setLimit] = useState(100);
 	const [status, setStatus] = useState("");
 	const [refreshInterval, setRefreshInterval] = useState<number>(10_000);
+	const [newlyAddedIds, setNewlyAddedIds] = useState<Set<number>>(new Set());
+	const prevIdsRef = useRef<Set<number> | null>(null);
 
 	const { data, isLoading, refetch, isFetching } = useQuery({
 		queryKey: ["logs", status, page, limit],
@@ -62,6 +65,37 @@ export default function AdminLogs() {
 		setPage(1);
 	};
 
+	useEffect(() => {
+		const logs = data?.logs;
+		if (!logs || logs.length === 0) return;
+		const currentIds = new Set(logs.map((l) => l.id));
+
+		if (prevIdsRef.current === null) {
+			prevIdsRef.current = currentIds;
+			return;
+		}
+
+		const brandNewIds = new Set<number>();
+		for (const id of currentIds) {
+			if (!prevIdsRef.current.has(id)) {
+				brandNewIds.add(id);
+			}
+		}
+
+		prevIdsRef.current = currentIds;
+
+		if (brandNewIds.size > 0) {
+			setNewlyAddedIds((prev) => new Set([...prev, ...brandNewIds]));
+			const timer = setTimeout(() => {
+				setNewlyAddedIds((prev) => {
+					const next = new Set(prev);
+					for (const id of brandNewIds) next.delete(id);
+					return next;
+				});
+			}, 3500);
+			return () => clearTimeout(timer);
+		}
+	}, [data?.logs]);
 	return (
 		<div className="space-y-8">
 			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -131,48 +165,88 @@ export default function AdminLogs() {
 							<TH className="text-right">{t("adminLogs.ttft")}</TH>
 						</TR>
 					</THead>
-					<TBody>
+					<tbody className="[&_tr:last-child]:border-0">
 						{isLoading && (
-							<TR>
+							<tr className="border-b border-line">
 								<TD colSpan={10} className="py-8 text-center text-sm text-ink-2 font-mono">
 									{t("common.loading")}
 								</TD>
-							</TR>
+							</tr>
 						)}
-						{(data?.logs ?? []).map((l) => (
-							<TR key={l.id} className="hover:bg-paper-2/40 transition">
-								<TD className="whitespace-nowrap font-mono text-[12px] text-ink-2">{fmtDate(l.ts)}</TD>
-								<TD className="font-mono text-[12px] text-ink">{l.userEmail ?? "—"}</TD>
-								<TD>
-									<div className="font-mono text-[12px] text-ink">{l.model}</div>
-									<div className="label-mono text-[9.5px] text-ink-2">
-										{l.provider} · {l.endpoint}
-									</div>
-								</TD>
-								<TD>
-									<Badge className={STATUS_COLOR[l.status] ?? ""}>{l.status.toUpperCase()}</Badge>
-									{l.errorCode && <div className="font-mono text-[10px] text-[#c6293b]">{l.errorCode}</div>}
-								</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.promptTokens)}</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.completionTokens)}</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.cacheReadTokens)}</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums font-semibold">
-									{Number(l.credits ?? 0) > 0 ? Number(l.credits).toFixed(2) : "—"}
-								</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums text-ink-2">
-									{l.latencyMs != null ? `${(l.latencyMs / 1000).toFixed(1)}s` : "—"}
-								</TD>
-								<TD className="text-right font-mono text-[12px] tabular-nums text-ink-2">{l.ttftMs != null ? `${l.ttftMs}ms` : "—"}</TD>
-							</TR>
-						))}
+						{(data?.logs ?? []).map((l) => {
+							const isNew = newlyAddedIds.has(l.id);
+							return (
+								<motion.tr
+									key={l.id}
+									layout="position"
+									initial={isNew ? { opacity: 0, y: -20, scale: 0.98 } : false}
+									animate={{
+										opacity: 1,
+										y: 0,
+										scale: 1,
+										backgroundColor: isNew
+											? l.status === "ok"
+												? ["rgba(29, 122, 51, 0.18)", "rgba(29, 122, 51, 0.08)", "rgba(255, 255, 255, 0)"]
+												: ["rgba(198, 41, 59, 0.18)", "rgba(198, 41, 59, 0.08)", "rgba(255, 255, 255, 0)"]
+											: "rgba(255, 255, 255, 0)",
+									}}
+									transition={{
+										layout: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+										opacity: { duration: 0.4 },
+										y: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+										backgroundColor: isNew ? { duration: 3.5, ease: "easeOut" } : { duration: 0.2 },
+									}}
+									className={`border-b border-line transition-colors hover:bg-paper-2/60 relative ${
+										isNew
+											? l.status === "ok"
+												? "shadow-[inset_3px_0_0_#1d7a33,0_0_16px_rgba(29,122,51,0.14)]"
+												: "shadow-[inset_3px_0_0_#c6293b,0_0_16px_rgba(198,41,59,0.14)]"
+											: ""
+									}`}
+								>
+									<TD className="whitespace-nowrap font-mono text-[12px] text-ink-2">
+										<div className="flex items-center gap-1.5">
+											{isNew && (
+												<span className="relative flex size-2 shrink-0">
+													<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+													<span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
+												</span>
+											)}
+											<span>{fmtDate(l.ts)}</span>
+										</div>
+									</TD>
+									<TD className="font-mono text-[12px] text-ink">{l.userEmail ?? "—"}</TD>
+									<TD>
+										<div className="font-mono text-[12px] text-ink">{l.model}</div>
+										<div className="label-mono text-[9.5px] text-ink-2">
+											{l.provider} · {l.endpoint}
+										</div>
+									</TD>
+									<TD>
+										<Badge className={STATUS_COLOR[l.status] ?? ""}>{l.status.toUpperCase()}</Badge>
+										{l.errorCode && <div className="font-mono text-[10px] text-[#c6293b]">{l.errorCode}</div>}
+									</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.promptTokens)}</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.completionTokens)}</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums">{fmtCompact(l.cacheReadTokens)}</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums font-semibold">
+										{Number(l.credits ?? 0) > 0 ? Number(l.credits).toFixed(2) : "—"}
+									</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums text-ink-2">
+										{l.latencyMs != null ? `${(l.latencyMs / 1000).toFixed(1)}s` : "—"}
+									</TD>
+									<TD className="text-right font-mono text-[12px] tabular-nums text-ink-2">{l.ttftMs != null ? `${l.ttftMs}ms` : "—"}</TD>
+								</motion.tr>
+							);
+						})}
 						{!isLoading && (data?.logs.length ?? 0) === 0 && (
-							<TR>
+							<tr className="border-b border-line">
 								<TD colSpan={10} className="py-10 text-center text-sm text-ink-2 font-mono">
 									{t("adminLogs.noLogs")}
 								</TD>
-							</TR>
+							</tr>
 						)}
-					</TBody>
+					</tbody>
 				</Table>
 
 				{/* Pagination Footer */}
