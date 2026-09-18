@@ -34,6 +34,25 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "copilot-walkthrough",
+		commit: "79f90a6",
+		time: "15:25",
+		date: "2026-09-18",
+		fullDateTime: "18/09/2026 15:25 (GMT+7)",
+		type: "added",
+		scope: "copilot",
+		title: "feat: add autonomous interactive screen spotlight walkthrough and dynamic command bar",
+		summary: "Engineered in-app AI Copilot command bar (Cmd+K) with full application context mapping, live AI autonomous step generation, hardware-accelerated spotlight walkthrough, and system guardrails.",
+		highlights: [
+			"Floating bottom-center command bar with Cmd+K shortcut, auto-focus, and Esc collapse",
+			"Full application context mapping across all 17 platform pages, actions, and selectors",
+			"Autonomous step generation with live AI model and sub-millisecond semantic intent resolver",
+			"Hardware-accelerated 60fps box-shadow spotlight overlay with click-through element interaction",
+			"Strict system guardrails explaining passwordless email auth, invite-only signup, and free credit allocation",
+			"Complete bilingual i18n localization in Vietnamese and English",
+		],
+	},
+	{
 		id: "c5b9e49",
 		commit: "c5b9e49",
 		time: "01:54",
