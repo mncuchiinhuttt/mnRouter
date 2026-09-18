@@ -87,6 +87,11 @@ Nhiệm vụ của bạn:
 
 export class CopilotService {
 	async ask(query: string, userRole = "user"): Promise<CopilotReply> {
+		// 1. Instant local intent match (< 1ms) for common platform actions
+		const instant = this.tryFastMatch(query, userRole);
+		if (instant) return instant;
+
+		// 2. Query live AI model for complex or unknown questions
 		let compactModel = await modelRepo.findEnabledById("gemini-3.8-flash");
 		if (!compactModel) {
 			compactModel = await modelRepo.findEnabledById("muse-spark-1.3-contributor-free");
@@ -120,25 +125,27 @@ export class CopilotService {
 					}
 				}
 
-				// Extract JSON
 				const jsonMatch = rawOutput.match(/\{[\s\S]*\}/);
 				if (jsonMatch) {
 					const parsed = JSON.parse(jsonMatch[0]) as CopilotReply;
 					if (parsed.content) return parsed;
 				}
 			} catch (err) {
-				console.warn("[copilot] AI model call failed, using intelligent fallback", err);
+				console.warn("[copilot] AI model call failed, using fallback", err);
 			}
 		}
 
-		// Intelligent local fallback if model call failed or is offline
-		return this.fallbackReply(query, userRole);
+		return (
+			this.tryFastMatch(query, userRole) || {
+				content: "Tui có thể hỗ trợ bạn về: Tạo API Key, Cấu hình Tools (Codex/Claude), Sử dụng Chat, Xem trạng thái Server hoặc Mời thành viên. Bạn hãy thử đặt câu hỏi cụ thể nha.",
+			}
+		);
 	}
 
-	private fallbackReply(query: string, userRole: string): CopilotReply {
-		const q = query.toLowerCase();
+	private tryFastMatch(query: string, userRole: string): CopilotReply | null {
+		const q = query.toLowerCase().trim();
 
-		if (q.includes("api key") || q.includes("tạo key") || q.includes("key")) {
+		if (q.includes("api key") || q.includes("tạo key") || q.includes("lấy key") || q.includes("key")) {
 			return {
 				content: "Để tạo API Key kết nối các công cụ AI bên ngoài, bạn vào trang API Keys, bấm '+ Create API key', đặt tên mô tả rồi lưu mã key lại. Bấm nút dưới đây để tui khoanh vùng chỉ từng bước nha:",
 				tour: {

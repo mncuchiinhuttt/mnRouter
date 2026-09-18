@@ -228,22 +228,32 @@ export function TourProvider({ children }: { children: ReactNode }) {
 		}
 	}, [location.pathname, activeTour, currentStepIndex]);
 
-	// Track target element rect on change, scroll, and resize
+	// Track target element rect smoothly on resize and scroll
 	useEffect(() => {
+		if (!activeTour) return;
 		updateRect();
-		const timer = setTimeout(updateRect, 300);
-		const interval = setInterval(updateRect, 600);
+		const timer = setTimeout(updateRect, 150);
 
-		window.addEventListener("resize", updateRect);
-		window.addEventListener("scroll", updateRect, true);
+		let ticking = false;
+		const onScrollOrResize = () => {
+			if (!ticking) {
+				window.requestAnimationFrame(() => {
+					updateRect();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		};
+
+		window.addEventListener("resize", onScrollOrResize);
+		window.addEventListener("scroll", onScrollOrResize, true);
 
 		return () => {
 			clearTimeout(timer);
-			clearInterval(interval);
-			window.removeEventListener("resize", updateRect);
-			window.removeEventListener("scroll", updateRect, true);
+			window.removeEventListener("resize", onScrollOrResize);
+			window.removeEventListener("scroll", onScrollOrResize, true);
 		};
-	}, [updateRect]);
+	}, [activeTour, updateRect]);
 	const startTour = useCallback((tourId: string) => {
 		const def = TOURS[tourId];
 		if (!def) return;
@@ -337,34 +347,15 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			<AnimatePresence>
 				{activeTour && currentStep && (
 					<div className="fixed inset-0 z-[9998] pointer-events-none">
-						{/* Blurred darkened backdrop with cutout hole for target element */}
-						<div
-							style={{
-								clipPath: targetRect
-									? `polygon(
-										0% 0%, 0% 100%,
-										${Math.max(0, targetRect.left - 6)}px 100%,
-										${Math.max(0, targetRect.left - 6)}px ${Math.max(0, targetRect.top - 6)}px,
-										${targetRect.right + 6}px ${Math.max(0, targetRect.top - 6)}px,
-										${targetRect.right + 6}px ${targetRect.bottom + 6}px,
-										${Math.max(0, targetRect.left - 6)}px ${targetRect.bottom + 6}px,
-										${Math.max(0, targetRect.left - 6)}px 100%,
-										100% 100%, 100% 0%
-									)`
-									: undefined,
-							}}
-							className="absolute inset-0 bg-navy/60 backdrop-blur-[2px] transition-all duration-300 pointer-events-auto cursor-default"
-							onClick={endTour}
-						/>
-
-						{/* Cutout Spotlight Glowing Ring around target */}
-						{targetRect && (
+						{/* Hardware-accelerated Spotlight & Backdrop */}
+						{targetRect ? (
 							<div
 								style={{
 									top: Math.max(0, targetRect.top - 6),
 									left: Math.max(0, targetRect.left - 6),
 									width: targetRect.width + 12,
 									height: targetRect.height + 12,
+									boxShadow: "0 0 0 9999px rgba(10, 15, 30, 0.60)",
 								}}
 								onClick={(e) => {
 									e.stopPropagation();
@@ -374,11 +365,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
 										nextStep();
 									}, 150);
 								}}
-								className="absolute rounded-lg ring-4 ring-accent shadow-2xl pointer-events-auto cursor-pointer transition-all duration-300 group"
+								className="absolute rounded-lg ring-4 ring-accent pointer-events-auto cursor-pointer transition-all duration-200"
 								title="Bấm vào đây để tiếp tục"
 							>
 								<span className="absolute -top-1 -right-1 size-3 rounded-full bg-accent animate-ping" />
 							</div>
+						) : (
+							<div
+								className="absolute inset-0 bg-navy/60 pointer-events-auto"
+								onClick={endTour}
+							/>
 						)}
 
 						{/* Floating Step Card */}
