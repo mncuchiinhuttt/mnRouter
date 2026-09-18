@@ -336,7 +336,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			{/* Spotlight & Blur Overlay */}
 			<AnimatePresence>
 				{activeTour && currentStep && (
-					<div className="fixed inset-0 z-[9998] pointer-events-auto">
+					<div className="fixed inset-0 z-[9998] pointer-events-none">
 						{/* Blurred darkened backdrop with cutout hole for target element */}
 						<div
 							style={{
@@ -353,7 +353,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 									)`
 									: undefined,
 							}}
-							className="absolute inset-0 bg-navy/60 backdrop-blur-[2px] transition-all duration-300"
+							className="absolute inset-0 bg-navy/60 backdrop-blur-[2px] transition-all duration-300 pointer-events-auto cursor-default"
 							onClick={endTour}
 						/>
 
@@ -366,7 +366,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
 									width: targetRect.width + 12,
 									height: targetRect.height + 12,
 								}}
-								className="absolute rounded-lg ring-4 ring-accent shadow-2xl pointer-events-none transition-all duration-300"
+								onClick={(e) => {
+									e.stopPropagation();
+									const el = findVisibleElement(currentStep.targetSelector);
+									if (el) el.click();
+									setTimeout(() => {
+										nextStep();
+									}, 150);
+								}}
+								className="absolute rounded-lg ring-4 ring-accent shadow-2xl pointer-events-auto cursor-pointer transition-all duration-300 group"
+								title="Bấm vào đây để tiếp tục"
 							>
 								<span className="absolute -top-1 -right-1 size-3 rounded-full bg-accent animate-ping" />
 							</div>
@@ -380,7 +389,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 									? calculateCardPosition(targetRect, currentStep.placement)
 									: { bottom: 30, right: 30 }),
 							}}
-							className="z-[9999] w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-line bg-white p-4 shadow-2xl space-y-3 font-mono text-xs transition-all duration-300"
+							className="z-[9999] w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-line bg-white p-4 shadow-2xl space-y-3 font-mono text-xs transition-all duration-300 pointer-events-auto"
 						>
 							{/* Header */}
 							<div className="flex items-center justify-between border-b border-line/60 pb-2">
