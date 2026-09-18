@@ -48,6 +48,7 @@ const vi = {
 		aiConfig: "Cấu hình Tools",
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Kỹ năng",
+		dataModels: "Data & Models",
 		announcements: "Thông báo",
 		settings: "Cài đặt",
 		system: "Hệ thống",

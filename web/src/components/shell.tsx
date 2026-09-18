@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Activity, BarChart3, Boxes, History, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
+import { Activity, BarChart3, Boxes, Database, History, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@web/lib/utils";
 import { setLang } from "@web/i18n";
@@ -106,6 +106,7 @@ function SidebarContent({ me, onNavigate, t, isMobile = false }: { me: Me; onNav
 					<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-config"} />
 					<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-chat"} />
 					<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-mcp"} />
+					<NavItem to="/data" icon={<Database className="h-3.5 w-3.5" />} label={t("nav.dataModels")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-data"} />
 				</nav>
 
 				{me.role === "admin" && (

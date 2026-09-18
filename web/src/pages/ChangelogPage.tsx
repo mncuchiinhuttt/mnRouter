@@ -34,6 +34,34 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "data-models-quota-upgrade",
+		commit: "a4f89d1",
+		time: "02:40",
+		date: "2026-09-19",
+		fullDateTime: "19/09/2026 02:40 (GMT+7)",
+		type: "added",
+		scope: "data",
+		title: "feat: add opencode.ai/data style Models & Data intelligence portal, flexible credits display, and multi-window quota tracking",
+		summary: "Introduced dedicated Models & Data intelligence page under Account, responsive credit numbers on Usage cards, OMP-grade 5-hour and 7-day rolling quota tracking with exact countdown resets, and clean telemetry indicators.",
+		highlights: [
+			"New user-facing Data & Models directory (/data) tracking token volume, market share by provider, session cost benchmarks, and side-by-side model spec comparison",
+			"Responsive, auto-scaling typography for credit metrics in Usage stat cards preventing overflow for large numbers",
+			"Streamlined Server Status verified header removing redundant runtime version text",
+			"Antigravity quota synchronization matching OMP engine: parses exact resetTime, computes countdown minutes, and differentiates 5-hour rolling vs 7-day windows",
+			"Bilingual English and Vietnamese localization for all new navigation and dataset metrics",
+		],
+		files: [
+			"web/src/pages/ModelsDataPage.tsx",
+			"src/server/routes/user.ts",
+			"src/server/services/antigravity-quota.service.ts",
+			"web/src/components/admin/antigravity-quota-view.tsx",
+			"web/src/components/usage-widgets.tsx",
+			"web/src/pages/Usage.tsx",
+			"web/src/pages/ServerStatusPage.tsx",
+			"web/src/components/shell.tsx",
+		],
+	},
+	{
 		id: "copilot-walkthrough",
 		commit: "79f90a6",
 		time: "15:25",

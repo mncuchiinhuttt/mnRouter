@@ -50,6 +50,7 @@ const en: Dict = {
 		aiConfig: "Tools Config",
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Skills",
+		dataModels: "Data & Models",
 		announcements: "Announcements",
 		settings: "Settings",
 		system: "System",

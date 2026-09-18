@@ -33,8 +33,12 @@ export interface AccountQuotaItem {
 	realQuota?: {
 		geminiRemainingFraction: number;
 		geminiResetTime?: string;
+		geminiResetInMinutes?: number;
+		geminiWindow?: "5h" | "7d" | "daily";
 		claudeRemainingFraction?: number;
 		claudeResetTime?: string;
+		claudeResetInMinutes?: number;
+		claudeWindow?: "5h" | "7d" | "daily";
 	} | null;
 	lastUsedAt: string | null;
 	tokens5h: number;

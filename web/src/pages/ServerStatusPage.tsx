@@ -122,7 +122,7 @@ export default function ServerStatusPage() {
 							{data?.system.message ?? t("status.allOperational", "All Systems Operational")}
 						</h2>
 						<p className="text-xs text-ink-2 font-mono mt-0.5">
-							{t("status.verifiedAt", "Verified live at")} {data?.system.serverTime ? new Date(data.system.serverTime).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"} &middot; {data?.system.runtime}
+							{t("status.verifiedAt", "Verified live at")} {data?.system.serverTime ? new Date(data.system.serverTime).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "—"}
 						</p>
 					</div>
 				</div>

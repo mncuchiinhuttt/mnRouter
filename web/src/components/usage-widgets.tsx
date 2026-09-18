@@ -4,16 +4,35 @@ import { fmtCompact, fmtNum } from "@web/lib/utils";
 export function StatStrip({ cells }: { cells: { label: string; value: string; highlight?: boolean }[] }) {
 	return (
 		<div className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
-			{cells.map((cell) => (
-				<div
-					key={cell.label}
-					className="flex min-h-[96px] flex-col justify-between gap-3 p-4 sm:min-h-[104px]"
-					style={cell.highlight ? { background: "var(--color-accent)" } : { background: "var(--color-paper)" }}
-				>
-					<div className={"stat-number text-[30px] leading-none sm:text-[34px] " + (cell.highlight ? "text-white" : "text-ink")}>{cell.value}</div>
-					<div className={"label-mono " + (cell.highlight ? "text-white/80" : "text-ink-2")}>{cell.label}</div>
-				</div>
-			))}
+			{cells.map((cell) => {
+				const valLen = cell.value.length;
+				const fontSizeClass =
+					valLen > 11
+						? "text-[20px] sm:text-[22px]"
+						: valLen > 8
+						? "text-[24px] sm:text-[26px]"
+						: "text-[28px] sm:text-[32px]";
+
+				return (
+					<div
+						key={cell.label}
+						className="flex min-h-[96px] flex-col justify-between gap-2 p-3 sm:p-4 sm:min-h-[104px] overflow-hidden"
+						style={cell.highlight ? { background: "var(--color-accent)" } : { background: "var(--color-paper)" }}
+					>
+						<div
+							className={`stat-number font-semibold leading-tight tracking-tight whitespace-nowrap truncate ${fontSizeClass} ${
+								cell.highlight ? "text-white" : "text-ink"
+							}`}
+							title={cell.value}
+						>
+							{cell.value}
+						</div>
+						<div className={"label-mono text-[10px] sm:text-[11px] truncate " + (cell.highlight ? "text-white/80" : "text-ink-2")}>
+							{cell.label}
+						</div>
+					</div>
+				);
+			})}
 		</div>
 	);
 }
