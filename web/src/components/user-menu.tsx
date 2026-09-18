@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { HelpCircle, Power, ChevronsUpDown, UserCog, ShieldCheck } from "lucide-react";
@@ -19,6 +19,13 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 	const navigate = useNavigate();
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [passOpen, setPassOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpenSettings = () => setSettingsOpen(true);
+		window.addEventListener("open-user-settings", handleOpenSettings);
+		return () => window.removeEventListener("open-user-settings", handleOpenSettings);
+	}, []);
+
 	const logout = async () => {
 		await api("/api/auth/logout", { method: "POST" }).catch(() => {});
 		onNavigate?.();

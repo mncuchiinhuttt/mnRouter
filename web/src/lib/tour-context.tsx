@@ -32,6 +32,25 @@ interface TourContextValue {
 }
 
 export const TOURS: Record<string, TourDefinition> = {
+	"update-profile": {
+		id: "update-profile",
+		title: "Đổi tên hiển thị",
+		description: "Cập nhật tên và thông tin tài khoản cá nhân.",
+		steps: [
+			{
+				targetSelector: '[data-tour="user-profile-btn"]',
+				title: "Mở menu tài khoản",
+				instruction: "Bấm vào ảnh đại diện hoặc tên của bạn ở góc dưới cùng menu bên trái.",
+				placement: "right",
+			},
+			{
+				targetSelector: '[data-tour="user-display-name-input"]',
+				title: "Nhập tên mới và Lưu",
+				instruction: "Nhập Tên hiển thị mới vào ô này rồi nhấn nút 'Lưu thay đổi'.",
+				placement: "top",
+			},
+		],
+	},
 	"create-api-key": {
 		id: "create-api-key",
 		title: "Cách tạo API Key",
@@ -318,9 +337,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			if (!target) return;
 
 			if (target.closest(currentStep.targetSelector)) {
+				if (currentStep.targetSelector.includes("user-profile-btn")) {
+					window.dispatchEvent(new CustomEvent("open-user-settings"));
+				}
 				setTimeout(() => {
 					nextStep();
-				}, 200);
+				}, 150);
 			}
 		};
 
@@ -377,7 +399,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 							/>
 						)}
 
-						{/* Floating Step Card */}
+						{/* Floating Step Card (High-Craft Dark HUD Design) */}
 						<div
 							style={{
 								position: "fixed",
@@ -385,66 +407,66 @@ export function TourProvider({ children }: { children: ReactNode }) {
 									? calculateCardPosition(targetRect, currentStep.placement)
 									: { bottom: 30, right: 30 }),
 							}}
-							className="z-[9999] w-[340px] max-w-[calc(100vw-32px)] rounded-xl border border-line bg-white p-4 shadow-2xl space-y-3 font-mono text-xs transition-all duration-300 pointer-events-auto"
+							className="z-[9999] w-[310px] max-w-[calc(100vw-32px)] rounded-xl border border-white/15 bg-navy/95 backdrop-blur-xl p-3.5 shadow-2xl text-white font-mono text-xs space-y-2.5 transition-all duration-300 pointer-events-auto"
 						>
-							{/* Header */}
-							<div className="flex items-center justify-between border-b border-line/60 pb-2">
-								<div className="flex items-center gap-1.5 font-semibold text-ink">
-									<Sparkles className="size-3.5 text-accent" />
-									<span>{activeTour.title}</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<span className="text-[10px] text-ink-2 bg-paper-2 border border-line px-1.5 py-0.5 rounded font-bold">
-										{currentStepIndex + 1}/{activeTour.steps.length}
+							{/* Top Micro Header */}
+							<div className="flex items-center justify-between border-b border-white/10 pb-2">
+								<div className="flex items-center gap-1.5 min-w-0">
+									<span className="text-[10px] uppercase font-bold tracking-widest text-accent shrink-0">
+										STEP {currentStepIndex + 1}/{activeTour.steps.length}
 									</span>
-									<button
-										onClick={endTour}
-										className="rounded p-1 text-ink-2 hover:bg-black/5 hover:text-ink transition cursor-pointer"
-										title="Đóng hướng dẫn"
-									>
-										<X className="size-3.5" />
-									</button>
+									<span className="text-white/30">&middot;</span>
+									<span className="text-[11px] font-semibold text-white truncate">
+										{activeTour.title}
+									</span>
 								</div>
+								<button
+									onClick={endTour}
+									className="rounded p-1 text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0 ml-1"
+									title="Đóng hướng dẫn"
+								>
+									<X className="size-3.5" />
+								</button>
 							</div>
 
 							{/* Step Content */}
-							<div>
-								<h4 className="font-bold text-sm text-ink mb-1">
+							<div className="space-y-1">
+								<h4 className="font-semibold text-xs text-white">
 									{currentStep.title}
 								</h4>
-								<p className="text-xs text-ink-2 leading-relaxed font-sans">
+								<p className="text-[11px] text-[#b9b9dd] leading-relaxed font-sans">
 									{currentStep.instruction}
 								</p>
 								{currentStep.actionNote && (
-									<p className="mt-1.5 text-[11px] text-accent/90 italic font-sans">
+									<p className="text-[10px] text-accent/90 italic font-sans pt-0.5">
 										{currentStep.actionNote}
 									</p>
 								)}
 							</div>
 
 							{/* Dynamic Action Footer */}
-							<div className="flex items-center justify-between pt-2 border-t border-line/60">
+							<div className="pt-2 border-t border-white/10">
 								{currentStepIndex === activeTour.steps.length - 1 ? (
 									<button
 										onClick={endTour}
-										className="w-full inline-flex items-center justify-center gap-1.5 rounded bg-accent py-2 text-xs font-bold text-white shadow-2xs hover:bg-accent/90 transition cursor-pointer"
+										className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-accent py-1.5 text-xs font-bold text-white shadow-xs hover:bg-accent/90 transition cursor-pointer"
 									>
 										<CheckCircle2 className="size-3.5" />
-										<span>Hoàn thành hướng dẫn</span>
+										<span>Hoàn thành</span>
 									</button>
 								) : (
-									<>
-										<div className="flex items-center gap-1.5 font-mono text-[11px] text-accent font-semibold">
-											<span className="size-1.5 rounded-full bg-accent animate-ping" />
-											<span>Bấm vào ô khoanh vùng để tiếp tục</span>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-1.5 font-mono text-[10px] text-accent font-medium">
+											<span className="size-1.5 rounded-full bg-accent animate-ping shrink-0" />
+											<span className="truncate">Nhấp vào ô khoanh viền</span>
 										</div>
 										<button
 											onClick={endTour}
-											className="text-[11px] text-ink-2 hover:text-ink transition underline cursor-pointer"
+											className="text-[10.5px] text-white/50 hover:text-white transition cursor-pointer shrink-0"
 										>
-											Đóng
+											Bỏ qua
 										</button>
-									</>
+									</div>
 								)}
 							</div>
 						</div>
