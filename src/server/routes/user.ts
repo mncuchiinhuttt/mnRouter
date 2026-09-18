@@ -69,6 +69,12 @@ export function userRoutes() {
 		});
 	});
 
+	app.get("/api/me/streak", async (c) => {
+		const user = c.get("user");
+		const data = await usageRepo.getStreakData(user.id);
+		return c.json(data);
+	});
+
 	app.get("/api/me/logs", async (c) => {
 		const page = Math.max(1, Number(c.req.query("page") ?? 1));
 		const requested = Number(c.req.query("limit") ?? 100);

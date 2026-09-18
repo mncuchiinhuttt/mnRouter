@@ -6,6 +6,7 @@ import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
 import { StatStrip, ModelBars } from "@web/components/usage-widgets";
 import { CreditsTrendChart, ProviderDonutChart } from "@web/components/usage-charts";
+import { ActivityHeatmap, type StreakData } from "@web/components/activity-heatmap";
 import { EmptyChart } from "./Overview";
 import { Tabs, TabsList, TabsTrigger } from "@web/components/ui/tabs-switch";
 import { TD, TH, TBody, THead, TR, Table } from "@web/components/ui/primitives";
@@ -43,6 +44,11 @@ export default function UsagePage() {
 		queryKey: ["my-logs", page, limit],
 		queryFn: () => api<LogsResp>(`/api/me/logs?page=${page}&limit=${limit}`),
 		placeholderData: keepPreviousData,
+		refetchInterval: refreshInterval > 0 ? refreshInterval : false,
+	});
+	const { data: streakData, isLoading: streakLoading } = useQuery({
+		queryKey: ["my-streak"],
+		queryFn: () => api<StreakData>("/api/me/streak"),
 		refetchInterval: refreshInterval > 0 ? refreshInterval : false,
 	});
 
@@ -119,6 +125,14 @@ export default function UsagePage() {
 				)}
 			</section>
 
+			{/* 365-Day Activity Heatmap & Streak */}
+			<section>
+				{streakLoading || !streakData ? (
+					<div className="h-44 animate-pulse rounded-xl bg-paper-2" />
+				) : (
+					<ActivityHeatmap data={streakData} />
+				)}
+			</section>
 			<section>
 				<div className="mb-3 flex flex-wrap items-center justify-between gap-3">
 					<h2 className="text-2xl font-semibold tracking-tight">{t("usage.tokens30d")}</h2>

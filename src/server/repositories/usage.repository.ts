@@ -181,6 +181,108 @@ export class UsageRepository {
 		};
 	}
 
+	/**
+	 * Returns 365-day activity calendar heatmap and current/longest streak stats.
+	 * Aggregates tokens, requests, and credits per day for GitHub/Codex-style heatmap.
+	 */
+	async getStreakData(userId?: string) {
+		const oneYearAgoMs = Date.now() - 365 * 24 * 3600 * 1000;
+		const whereClause = userId
+			? and(eq(usageRequests.userId, userId), gte(usageRequests.ts, new Date(oneYearAgoMs)))
+			: gte(usageRequests.ts, new Date(oneYearAgoMs));
+
+		const rows = await db
+			.select({
+				date: sql<string>`DATE(${usageRequests.ts} / 1000, 'unixepoch')`,
+				requests: sql<number>`COUNT(*)`,
+				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
+			})
+			.from(usageRequests)
+			.where(whereClause)
+			.groupBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`)
+			.orderBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`);
+
+		const activityMap = new Map<string, { requests: number; tokens: number; credits: number }>();
+		let totalActiveDays = 0;
+		let totalYearTokens = 0;
+		let totalYearRequests = 0;
+		let totalYearCredits = 0;
+
+		for (const r of rows) {
+			if (!r.date) continue;
+			const reqs = Number(r.requests || 0);
+			const toks = Number(r.tokens || 0);
+			const creds = Math.round(Number(r.credits || 0) * 1000) / 1000;
+			activityMap.set(r.date, { requests: reqs, tokens: toks, credits: creds });
+			if (reqs > 0 || toks > 0) {
+				totalActiveDays++;
+				totalYearTokens += toks;
+				totalYearRequests += reqs;
+				totalYearCredits += creds;
+			}
+		}
+
+		// Calculate Current Streak and Longest Streak
+		const now = new Date();
+		let currentStreak = 0;
+		let longestStreak = 0;
+		let tempStreak = 0;
+
+		// Scan day-by-day backwards from today for current streak
+		let checkDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		// Check today
+		const todayIso = checkDate.toISOString().slice(0, 10);
+		let hasToday = activityMap.has(todayIso) && (activityMap.get(todayIso)?.requests ?? 0) > 0;
+
+		if (!hasToday) {
+			// If not today, check if yesterday was active to preserve streak
+			checkDate.setDate(checkDate.getDate() - 1);
+		}
+
+		while (true) {
+			const iso = checkDate.toISOString().slice(0, 10);
+			const act = activityMap.get(iso);
+			if (act && act.requests > 0) {
+				currentStreak++;
+				checkDate.setDate(checkDate.getDate() - 1);
+			} else {
+				break;
+			}
+		}
+
+		// Calculate longest streak over the 365-day range
+		const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		startDate.setDate(startDate.getDate() - 364);
+
+		for (let d = new Date(startDate); d <= now; d.setDate(d.getDate() + 1)) {
+			const iso = d.toISOString().slice(0, 10);
+			const act = activityMap.get(iso);
+			if (act && act.requests > 0) {
+				tempStreak++;
+				if (tempStreak > longestStreak) longestStreak = tempStreak;
+			} else {
+				tempStreak = 0;
+			}
+		}
+
+		const days = rows.map((r) => ({
+			date: r.date,
+			requests: Number(r.requests || 0),
+			tokens: Number(r.tokens || 0),
+			credits: Math.round(Number(r.credits || 0) * 1000) / 1000,
+		}));
+
+		return {
+			currentStreak,
+			longestStreak,
+			totalActiveDays,
+			totalYearTokens,
+			totalYearRequests,
+			totalYearCredits: Math.round(totalYearCredits * 100) / 100,
+			days,
+		};
+	}
 	async getUserLogsPaged(userId: string, page = 1, limit = 100): Promise<{ logs: UsageRequestRow[]; total: number; page: number; limit: number; totalPages: number }> {
 		const safePage = Math.max(1, Math.floor(page));
 		const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
