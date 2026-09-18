@@ -54,23 +54,25 @@ const FULL_WEB_CONTEXT_PROMPT = `You are mnRouter AI Copilot - an autonomous in-
      - [data-tour="chat-context-pill"]: Context memory badge/pill in toolbar. Hovering shows token capacity; clicking triggers context compactor.
    - On /status:
      - [data-tour="services-health"]: Services & providers health list with 30-day uptime bars.
-   - Admin Pages (only if userRole == "admin"):
-     - [data-tour="nav-users"]: User management (/admin/users).
-     - [data-tour="invite-btn"]: "+ Send invitation" button on /admin/users.
-     - [data-tour="invite-emails"]: Multi-email tag input to invite multiple members at once.
-     - [data-tour="nav-connections"]: Upstream OAuth connections (/admin/connections).
-     - [data-tour="nav-models"]: Model catalog, pricing, and toggle switches (/admin/models).
-     - [data-tour="nav-quotas"]: 5h rolling and 7-day connection quota monitor (/admin/quotas).
-     - [data-tour="nav-analytics"]: Advanced token analytics & provider charts (/admin/analytics).
-     - [data-tour="nav-logs"]: Real-time request log stream (/admin/logs).
-     - [data-tour="nav-settings"]: Telegram bot monitoring and routing settings (/admin/settings).
-
---- TERMINAL & EXTERNAL COMMANDS:
+--- TERMINAL & EXTERNAL COMMANDS (FOR USERS):
 - Codex CLI 1-Click: curl -s https://mnrouter.mncuchiinhuttt.dev/api/setup/codex | bash
 - Claude Code 1-Click: curl -s https://mnrouter.mncuchiinhuttt.dev/api/setup/claude-code | bash
 - OMP 1-Click: curl -s https://mnrouter.mncuchiinhuttt.dev/api/setup/omp | bash
-- Telegram Bot: @mnrouter_bot with /status, /usage, /quotas, /logs, /invite <email>
 
+--- STRICT ROLE SEPARATION: COPILOT IS EXCLUSIVELY FOR REGULAR USERS ---
+Copilot is an assistant designed strictly for regular USER activities. It MUST NEVER grant access to or expose Admin-only tools:
+1. TELEGRAM BOT (@mnrouter_bot):
+   - The Telegram bot is an INTERNAL ADMIN-ONLY TOOL for server infrastructure monitoring (/status, /usage, /quotas, /logs, /invite).
+   - It is strictly restricted to system administrators.
+   - Copilot MUST NEVER recommend, expose, or share the Telegram bot or its slash commands with users.
+   - If a user asks about Telegram or the bot, explicitly state: "Bot Telegram @mnrouter_bot là công cụ giám sát hạ tầng dành riêng cho Quản trị viên (Admin). Tài khoản người dùng sử dụng mnRouter trực tiếp trên nền tảng Web."
+2. MOBILE ACCESS:
+   - mnRouter is an in-browser responsive web application.
+   - When asked about accessing or connecting from a mobile phone ("điện thoại", "mobile", "ios", "android"): instruct the user to open Safari or Chrome on their mobile phone, visit the mnRouter URL, and sign in directly via Email Magic Link.
+   - NEVER recommend or mention the Telegram bot for mobile access!
+3. ADMIN FEATURES ARE OFF-LIMITS FOR USER COPILOT:
+   - All admin features (/admin/*) including member invitations, upstream connections, model catalog, provider quotas, system analytics, request logs, and admin settings are reserved for Administrators.
+   - Copilot does NOT guide or provide walkthroughs for admin features. If asked, explain that these features are admin-only. Set "tour": null, "externalSnippet": null.
 --- NON-EXISTENT FEATURES & SYSTEM CONSTRAINTS (CRITICAL - DO NOT HALLUCINATE):
 The following features DO NOT EXIST on mnRouter. If a user asks about them, explicitly explain that the feature does not exist on mnRouter and set "tour": null:
 1. Passwords ("mật khẩu", "password", "đổi pass", "quên mật khẩu"):
@@ -230,6 +232,15 @@ export class CopilotService {
 				content: isVi
 					? "Người dùng không thể tự xoá tài khoản trên hệ thống. Nếu bạn không còn nhu cầu sử dụng, hãy liên hệ Quản trị viên (Admin) để vô hiệu hoá hoặc thu hồi quyền tài khoản nha."
 					: "Self-deletion of accounts is not available. Please contact your administrator if you need your account deactivated or revoked.",
+			};
+		}
+
+		// E. Mobile Phone / Smartphone Access
+		if (q.includes("điện thoại") || q.includes("mobile") || q.includes("phone") || q.includes("smartphone") || q.includes("ios") || q.includes("android")) {
+			return {
+				content: isVi
+					? "mnRouter là ứng dụng web tương thích hoàn toàn với trình duyệt di động (Responsive Web App). Bạn có thể truy cập mnRouter trên điện thoại rất dễ dàng bằng cách mở trình duyệt (Safari trên iOS hoặc Chrome trên Android), truy cập vào đường dẫn mnRouter và đăng nhập bằng Email Magic Link để sử dụng Web Chat và lấy API Key nha."
+					: "mnRouter is a fully responsive web application. You can access it on your mobile device by opening Safari (iOS) or Chrome (Android), visiting the mnRouter URL, and signing in via your Email Magic Link.",
 			};
 		}
 
@@ -406,42 +417,30 @@ export class CopilotService {
 			};
 		}
 
-		// 10. Invite Members (/admin/users)
+		// 10. Invite Members (ADMIN ONLY - BLOCKED FOR COPILOT)
 		if (q.includes("mời") || q.includes("invite") || q.includes("thành viên") || q.includes("thêm user") || q.includes("add user")) {
 			return {
 				content: isVi
-					? "Tính năng Mời thành viên cho phép quản trị viên nhập nhiều email cùng lúc (gõ email nhấn Enter hoặc dán danh sách từ bảng tính) để cấp chung gói tài nguyên và danh sách model được phép sử dụng:"
-					: "Member invitations allow administrators to invite multiple users simultaneously with shared package budgets and model access permissions:",
-				tour: {
-					title: isVi ? "Mời thành viên mới" : "Invite Members",
-					steps: [
-						{ targetSelector: '[data-tour="nav-users"]', title: isVi ? "Bước 1: Vào Quản lý Người dùng" : "Step 1: Open Users", instruction: isVi ? "Bấm vào mục USERS ở nhóm ADMIN trên menu bên trái." : "Click USERS under ADMIN on the left sidebar." },
-						{ targetSelector: '[data-tour="invite-btn"]', title: isVi ? "Bước 2: Bấm Send invitation" : "Step 2: Click Send invitation", instruction: isVi ? "Bấm nút Send invitation ở góc trên bên phải." : "Click '+ Send invitation' at the top right." },
-						{ targetSelector: '[data-tour="invite-emails"]', title: isVi ? "Bước 3: Nhập danh sách Email" : "Step 3: Enter Emails", instruction: isVi ? "Gõ email nhấn Enter hoặc dán danh sách nhiều email cùng lúc." : "Type emails and press Enter or paste multiple addresses." },
-					],
-				},
+					? "Tính năng Mời thành viên và quản lý người dùng là tính năng Quản trị (Admin Only). Copilot chỉ hỗ trợ hướng dẫn các tính năng dành cho Người dùng thông thường. Nếu bạn cần mời thêm thành viên, vui lòng liên hệ Quản trị viên của hệ thống nha."
+					: "Member invitations and user management are restricted to Administrators. Copilot only assists with user-level gateway features. Please contact a system administrator to invite new users.",
 			};
 		}
 
-		// 11. Telegram Bot (/admin/settings)
+		// 11. Telegram Bot (ADMIN ONLY - BLOCKED FOR COPILOT)
 		if (q.includes("telegram") || q.includes("bot") || q.includes("lệnh") || q.includes("slash")) {
 			return {
 				content: isVi
-					? "Bot Telegram @mnrouter_bot hỗ trợ nhận cảnh báo cooldown, lỗi server và cho phép tra cứu trạng thái máy chủ qua bộ lệnh Slash Commands:"
-					: "The Telegram bot @mnrouter_bot sends alerts and provides live server monitoring via slash commands:",
-				tour: userRole === "admin"
-					? {
-							title: isVi ? "Cài đặt Bot Telegram" : "Telegram Bot Settings",
-							steps: [
-								{ targetSelector: '[data-tour="nav-settings"]', title: isVi ? "Bước 1: Mở Cài đặt hệ thống" : "Step 1: Open Settings", instruction: isVi ? "Bấm vào mục SETTINGS ở nhóm ADMIN trên menu bên trái." : "Click SETTINGS under ADMIN on the left sidebar." },
-							],
-					  }
-					: undefined,
-				externalSnippet: {
-					title: "Telegram Slash Commands",
-					code: "/status - Xem sức khoẻ máy chủ\n/usage - Xem lưu lượng tokens trong ngày\n/quotas - Kiểm tra hạn mức các hãng\n/logs - Xem 5 lượt request gần nhất\n/invite <email> [gói] - Tạo link mời trực tiếp",
-					hint: isVi ? "Mở ứng dụng Telegram, tìm @mnrouter_bot và gõ ký tự / để xem danh sách lệnh." : "Open Telegram, search @mnrouter_bot and type / to view commands.",
-				},
+					? "Bot Telegram @mnrouter_bot là công cụ giám sát hạ tầng máy chủ và nhận cảnh báo kỹ thuật dành riêng cho Quản trị viên (Admin). Copilot chỉ hỗ trợ các tính năng dành cho Người dùng (User Gateway) như tạo API Key, cấu hình CLI tool, Chat & Agent và kiểm tra hạn mức cá nhân."
+					: "The Telegram bot @mnrouter_bot is an infrastructure monitoring tool reserved exclusively for Administrators. Copilot is for user-facing features only (API Keys, Tools Config, Chat & Models).",
+			};
+		}
+
+		// 12. Admin Features Guard (Connections, Quotas, Logs, Analytics, Settings)
+		if (q.includes("admin") || q.includes("quota") || q.includes("hạn mức hãng") || q.includes("log server") || q.includes("connection")) {
+			return {
+				content: isVi
+					? "Các tính năng Quản trị hệ thống (như quản lý Kết nối OAuth, theo dõi Quota các hãng, xem Request Log toàn hệ thống, cấu hình Bot Telegram) chỉ dành riêng cho Quản trị viên (Admin). Copilot chỉ hỗ trợ hướng dẫn các tính năng dành cho Người dùng thông thường (User)."
+					: "System Administration features (OAuth Connections, Provider Quotas, Global Request Logs, Telegram Bot Settings) are strictly reserved for Administrators. Copilot only supports user-facing features.",
 			};
 		}
 
