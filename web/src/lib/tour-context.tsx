@@ -341,7 +341,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 								</p>
 								{currentStep.actionNote && (
 									<p className="mt-1.5 text-[11px] text-accent/90 italic font-sans">
-										💡 {currentStep.actionNote}
+										{currentStep.actionNote}
 									</p>
 								)}
 							</div>
