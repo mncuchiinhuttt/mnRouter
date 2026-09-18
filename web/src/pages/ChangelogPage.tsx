@@ -34,6 +34,33 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "streak-heatmap-and-quota-guard",
+		commit: "dbbbd41",
+		time: "04:10",
+		date: "2026-09-19",
+		fullDateTime: "19/09/2026 04:10 (GMT+7)",
+		type: "added",
+		scope: "usage",
+		title: "feat: add 365-day Usage Streak heatmap, Total Spend USD metric, and pre-route quota guard",
+		summary: "Integrated a 365-day coding activity heatmap with streak records, high-density 60-day model focus charts, cluster Total Spend in USD, and pre-routing quota protection to prevent upstream rate limit exhaustion.",
+		highlights: [
+			"Added 365-day activity matrix on Usage page tracking current streak, longest streak, and total active days with interactive hover details",
+			"Enhanced Models & Data page with Total Spend ($ USD equivalent) card calculated from cluster-wide credits",
+			"Implemented interactive model focus and dimming on high-density 60-day connected daily usage bars",
+			"Pre-route Quota Guard: router automatically evaluates upstream quotas and skips depleted accounts before dispatching requests",
+			"Fixed Telegram bot /invite command by decoupling non-user actor from foreign key constraints",
+			"Updated Community section on Help page with Upcoming status and private repository indicator",
+		],
+		files: [
+			"web/src/components/activity-heatmap.tsx",
+			"web/src/pages/Usage.tsx",
+			"web/src/pages/ModelsDataPage.tsx",
+			"src/server/gateway/router.ts",
+			"src/server/services/telegram-commands.ts",
+			"web/src/pages/Help.tsx",
+		],
+	},
+	{
 		id: "data-models-quota-upgrade",
 		commit: "a4f89d1",
 		time: "02:40",
@@ -41,7 +68,7 @@ const CHANGELOG_DATA: ChangelogEntry[] = [
 		fullDateTime: "19/09/2026 02:40 (GMT+7)",
 		type: "added",
 		scope: "data",
-		title: "feat: add opencode.ai/data style Models & Data intelligence portal, flexible credits display, and multi-window quota tracking",
+		title: "feat: add Cluster-wide Models & Data Intelligence portal, flexible credits display, and multi-window quota tracking",
 		summary: "Introduced dedicated Models & Data intelligence page under Account, responsive credit numbers on Usage cards, OMP-grade 5-hour and 7-day rolling quota tracking with exact countdown resets, and clean telemetry indicators.",
 		highlights: [
 			"New user-facing Data & Models directory (/data) tracking token volume, market share by provider, session cost benchmarks, and side-by-side model spec comparison",
