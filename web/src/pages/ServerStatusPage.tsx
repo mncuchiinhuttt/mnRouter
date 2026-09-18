@@ -184,7 +184,7 @@ export default function ServerStatusPage() {
 					<span className="text-xs font-mono text-ink-2">Past 30 days history</span>
 				</div>
 
-				<div className="rounded-lg border border-line bg-white shadow-2xs divide-y divide-line/70 overflow-hidden">
+				<div data-tour="services-health" className="rounded-lg border border-line bg-white shadow-2xs divide-y divide-line/70 overflow-hidden">
 					{isLoading && (
 						<div className="py-12 text-center text-sm font-mono text-ink-2">
 							{t("common.loading")}

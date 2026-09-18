@@ -107,7 +107,7 @@ export default function AiConfig() {
 			{activeTab === "tools" ? (
 				<div className="grid gap-6 lg:grid-cols-[250px_1fr]">
 					{/* Harness List with Logos */}
-					<div className="flex flex-row overflow-x-auto gap-1 pb-2 lg:flex-col lg:overflow-x-visible lg:pb-0">
+					<div data-tour="tool-tabs" className="flex flex-row overflow-x-auto gap-1 pb-2 lg:flex-col lg:overflow-x-visible lg:pb-0">
 						{HARNESSES.map((h) => {
 							const active = h.id === currentHarness.id;
 							return (
@@ -155,7 +155,7 @@ export default function AiConfig() {
 						{currentHarness.id === "zcode" ? (
 							<ZCodeCopyCard baseUrl={baseUrl} apiKey={effectiveKey} />
 						) : (
-							<div className="space-y-4">
+							<div data-tour="copy-script-btn" className="space-y-4">
 								<SnippetCard
 									title={`${t("aiConfig.oneLineSetup")} (${currentHarness.name})`}
 									subtitle={t("aiConfig.setupSubtitle")}

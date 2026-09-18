@@ -74,6 +74,7 @@ export default function ApiKeys() {
 						<code className="rounded-xs bg-paper-2 px-2 py-1 font-mono text-[12px] break-all">{location.origin}/v1</code>
 					</div>
 					<Button
+						data-tour="create-key-btn"
 						onClick={() => setCreateOpen(true)}
 						disabled={activeKeysCount >= (data?.maxKeys ?? 0)}
 						className="shrink-0"
@@ -160,6 +161,7 @@ export default function ApiKeys() {
 							<Label htmlFor="create-key-name">{t("keys.keyName")}</Label>
 							<Input
 								id="create-key-name"
+								data-tour="key-name-input"
 								value={createName}
 								onChange={(e) => setCreateName(e.target.value)}
 								placeholder={t("keys.namePlaceholder")}

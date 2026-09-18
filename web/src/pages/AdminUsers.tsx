@@ -219,7 +219,7 @@ export default function AdminUsers() {
 					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">{t("adminUsers.title")}</h1>
 					<p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">{t("adminUsers.desc")}</p>
 				</div>
-				<Button onClick={() => setInviteOpen(true)} className="shrink-0">
+				<Button data-tour="invite-btn" onClick={() => setInviteOpen(true)} className="shrink-0">
 					<Send /> {t("adminUsers.invite")}
 				</Button>
 			</header>
