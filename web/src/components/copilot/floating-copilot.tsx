@@ -10,14 +10,17 @@ import {
 	Send
 } from "lucide-react";
 import { toast } from "sonner";
-import { useTour } from "@web/lib/tour-context";
-
-/* Reading this as: Minimalist command bar and AI copilot overlay for technical users, with a refined Raycast / Linear / Apple Spotlight aesthetic language, leaning toward clean monochrome surfaces + micro-borders + zero emojis + typography-led elegance. */
+import { apiJson } from "@web/lib/api";
+import { useTour, type TourStep } from "@web/lib/tour-context";
 
 interface CopilotMessage {
 	id: string;
 	role: "assistant" | "user";
 	content: string;
+	tour?: {
+		title: string;
+		steps: TourStep[];
+	};
 	tourId?: string;
 	tourLabel?: string;
 	externalSnippet?: {
@@ -49,11 +52,10 @@ export function FloatingCopilot() {
 	const [input, setInput] = useState("");
 	const [messages, setMessages] = useState<CopilotMessage[]>(INITIAL_MESSAGES);
 	const [copiedCode, setCopiedCode] = useState<string | null>(null);
+	const [isThinking, setIsThinking] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
-	const { startTour, isTourActive } = useTour();
-
-	// Global shortcut Cmd+K or Ctrl+K to toggle, Esc to close
+	const { startTour, startCustomTour, isTourActive } = useTour();
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -94,9 +96,9 @@ export function FloatingCopilot() {
 		setTimeout(() => setCopiedCode(null), 2000);
 	};
 
-	const handleSend = (textToSend?: string) => {
+	const handleSend = async (textToSend?: string) => {
 		const query = (textToSend || input).trim();
-		if (!query) return;
+		if (!query || isThinking) return;
 
 		const userMsg: CopilotMessage = {
 			id: String(Date.now()),
@@ -106,17 +108,45 @@ export function FloatingCopilot() {
 
 		setMessages((prev) => [...prev, userMsg]);
 		if (!textToSend) setInput("");
+		setIsThinking(true);
 
-		setTimeout(() => {
+		try {
+			const res = await apiJson<{
+				content: string;
+				tour?: { title: string; steps: TourStep[] };
+				externalSnippet?: { title: string; code: string; hint?: string };
+			}>("/api/copilot/ask", "POST", { query });
+
+			const replyMsg: CopilotMessage = {
+				id: String(Date.now() + 1),
+				role: "assistant",
+				content: res.content,
+				tour: res.tour,
+				tourLabel: res.tour?.title ? `Chỉ từng bước: ${res.tour.title}` : undefined,
+				externalSnippet: res.externalSnippet,
+			};
+			setMessages((prev) => [...prev, replyMsg]);
+		} catch {
+			// Fallback local resolver if server or network error
 			const reply = resolveCopilotReply(query);
 			setMessages((prev) => [...prev, reply]);
-		}, 250);
+		} finally {
+			setIsThinking(false);
+		}
 	};
 
-	const handleStartGuidedTour = (tourId: string) => {
+	const handleStartAnyTour = (msg: CopilotMessage) => {
 		setIsOpen(false);
-		startTour(tourId);
-		toast.info("Đã bật chế độ hướng dẫn trực tiếp trên màn hình");
+		if (msg.tour && msg.tour.steps && msg.tour.steps.length > 0) {
+			startCustomTour({
+				id: "ai-tour-" + Date.now(),
+				title: msg.tour.title,
+				description: "",
+				steps: msg.tour.steps,
+			});
+		} else if (msg.tourId) {
+			startTour(msg.tourId);
+		}
 	};
 
 	// Hide floating bar if a tour is currently running
@@ -250,19 +280,18 @@ export function FloatingCopilot() {
 										<p className="whitespace-pre-wrap">{msg.content}</p>
 
 										{/* Interactive Tour Action Button */}
-										{msg.tourId && (
+										{(msg.tour || msg.tourId) && (
 											<div className="pt-2 border-t border-line/60">
 												<button
 													type="button"
-													onClick={() => handleStartGuidedTour(msg.tourId!)}
+													onClick={() => handleStartAnyTour(msg)}
 													className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/5 px-3 py-1.5 font-mono text-xs font-semibold text-accent hover:bg-accent hover:text-white transition cursor-pointer"
 												>
-													<span>{msg.tourLabel || "Chỉ từng bước trên màn hình"}</span>
+													<span>{msg.tourLabel || (msg.tour?.title ? `Chỉ từng bước: ${msg.tour.title}` : "Chỉ từng bước trên màn hình")}</span>
 													<ArrowRight className="size-3" />
 												</button>
 											</div>
 										)}
-
 										{/* External CLI / Terminal Instruction Box */}
 										{msg.externalSnippet && (
 											<div className="rounded border border-line bg-paper/50 p-2.5 space-y-1.5 font-mono text-[11px]">
@@ -297,6 +326,14 @@ export function FloatingCopilot() {
 									</div>
 								</div>
 							))}
+
+							{/* AI Thinking Indicator */}
+							{isThinking && (
+								<div className="flex items-center gap-1.5 font-mono text-[11px] text-ink-2/70 p-2 bg-paper/40 rounded-lg border border-line/50">
+									<span className="size-1.5 rounded-full bg-accent animate-ping" />
+									<span>Copilot đang phân tích câu hỏi và sinh bước chỉ dẫn...</span>
+								</div>
+							)}
 							<div ref={messagesEndRef} />
 						</div>
 

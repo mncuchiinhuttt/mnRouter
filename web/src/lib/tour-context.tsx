@@ -24,6 +24,7 @@ interface TourContextValue {
 	currentStepIndex: number;
 	currentStep: TourStep | null;
 	startTour: (tourId: string) => void;
+	startCustomTour: (tour: TourDefinition) => void;
 	nextStep: () => void;
 	prevStep: () => void;
 	endTour: () => void;
@@ -38,11 +39,9 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="nav-keys"]',
-				route: "/keys",
 				title: "Bước 1: Mở trang API Keys",
-				instruction: "Bấm vào mục API KEYS ở thanh menu bên trái để truy cập trang quản lý khoá bí mật.",
+				instruction: "Bấm vào mục API KEYS ở thanh menu bên trái.",
 				placement: "right",
-				actionNote: "Bấm vào mục này hoặc nút Tiếp theo để đi đến trang Quản lý khoá.",
 			},
 			{
 				targetSelector: '[data-tour="create-key-btn"]',
@@ -68,7 +67,6 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="nav-config"]',
-				route: "/config",
 				title: "Bước 1: Vào mục Tools Config",
 				instruction: "Bấm vào mục TOOLS CONFIG ở thanh menu bên trái.",
 				placement: "right",
@@ -96,7 +94,6 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="nav-chat"]',
-				route: "/chat",
 				title: "Bước 1: Vào Chat & Agent",
 				instruction: "Bấm vào mục CHAT & AGENT ở thanh menu bên trái.",
 				placement: "right",
@@ -124,7 +121,6 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="nav-status"]',
-				route: "/status",
 				title: "Bước 1: Mở Server Status",
 				instruction: "Bấm vào mục SERVER STATUS ở nhóm SYSTEM trên thanh menu.",
 				placement: "right",
@@ -145,7 +141,6 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="nav-users"]',
-				route: "/admin/users",
 				title: "Bước 1: Vào Quản lý Người dùng",
 				instruction: "Bấm vào mục USERS trong nhóm ADMIN trên menu bên trái.",
 				placement: "right",
@@ -217,13 +212,21 @@ export function TourProvider({ children }: { children: ReactNode }) {
 		}
 		setTargetRect(null);
 	}, [currentStep]);
-	// Navigate route if required
+	// Auto-advance when route changes to target page
 	useEffect(() => {
-		if (!currentStep) return;
-		if (currentStep.route && location.pathname !== currentStep.route) {
-			navigate(currentStep.route);
+		if (!activeTour || currentStepIndex !== 0) return;
+		if (activeTour.id === "create-api-key" && location.pathname === "/keys") {
+			setCurrentStepIndex(1);
+		} else if (activeTour.id === "tools-config" && location.pathname === "/config") {
+			setCurrentStepIndex(1);
+		} else if (activeTour.id === "chat-workspace" && location.pathname === "/chat") {
+			setCurrentStepIndex(1);
+		} else if (activeTour.id === "server-status" && location.pathname === "/status") {
+			setCurrentStepIndex(1);
+		} else if (activeTour.id === "invite-members" && location.pathname === "/admin/users") {
+			setCurrentStepIndex(1);
 		}
-	}, [currentStep, location.pathname, navigate]);
+	}, [location.pathname, activeTour, currentStepIndex]);
 
 	// Track target element rect on change, scroll, and resize
 	useEffect(() => {
@@ -246,19 +249,32 @@ export function TourProvider({ children }: { children: ReactNode }) {
 		if (!def) return;
 		setActiveTour(def);
 
-		// If user is already on the target route of step 1, skip step 1 and start at step 2!
+		// If user is already on the target route, start directly at step 2!
 		let startIdx = 0;
-		if (def.steps[0]?.route && location.pathname === def.steps[0].route && def.steps.length > 1) {
-			startIdx = 1;
+		if (tourId === "create-api-key" && location.pathname === "/keys") startIdx = 1;
+		else if (tourId === "tools-config" && location.pathname === "/config") startIdx = 1;
+		else if (tourId === "chat-workspace" && location.pathname === "/chat") startIdx = 1;
+		else if (tourId === "server-status" && location.pathname === "/status") startIdx = 1;
+		else if (tourId === "invite-members" && location.pathname === "/admin/users") startIdx = 1;
+
+		setCurrentStepIndex(startIdx);
+	}, [location.pathname]);
+
+	const startCustomTour = useCallback((tour: TourDefinition) => {
+		if (!tour || !tour.steps || tour.steps.length === 0) return;
+		setActiveTour(tour);
+
+		let startIdx = 0;
+		if (tour.steps.length > 1) {
+			const firstTarget = findVisibleElement(tour.steps[0]?.targetSelector || "");
+			const secondTarget = findVisibleElement(tour.steps[1]?.targetSelector || "");
+			if (secondTarget && !firstTarget) {
+				startIdx = 1;
+			}
 		}
 
 		setCurrentStepIndex(startIdx);
-		const initialStep = def.steps[startIdx];
-		if (initialStep?.route && location.pathname !== initialStep.route) {
-			navigate(initialStep.route);
-		}
-	}, [location.pathname, navigate]);
-
+	}, []);
 	const nextStep = useCallback(() => {
 		if (!activeTour) return;
 		if (currentStepIndex < activeTour.steps.length - 1) {
@@ -272,6 +288,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			endTour();
 		}
 	}, [activeTour, currentStepIndex, location.pathname, navigate, endTour]);
+
 	const prevStep = useCallback(() => {
 		if (!activeTour || currentStepIndex === 0) return;
 		const prevIdx = currentStepIndex - 1;
@@ -282,6 +299,24 @@ export function TourProvider({ children }: { children: ReactNode }) {
 		}
 	}, [activeTour, currentStepIndex, location.pathname, navigate]);
 
+	// Automatically advance when the user clicks the spotlighted target element
+	useEffect(() => {
+		if (!activeTour || !currentStep) return;
+
+		const handleTargetClick = (e: MouseEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target) return;
+
+			if (target.closest(currentStep.targetSelector)) {
+				setTimeout(() => {
+					nextStep();
+				}, 200);
+			}
+		};
+
+		document.addEventListener("click", handleTargetClick, true);
+		return () => document.removeEventListener("click", handleTargetClick, true);
+	}, [activeTour, currentStep, nextStep]);
 	return (
 		<TourContext.Provider
 			value={{
@@ -289,6 +324,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 				currentStepIndex,
 				currentStep,
 				startTour,
+				startCustomTour,
 				nextStep,
 				prevStep,
 				endTour,
@@ -381,37 +417,30 @@ export function TourProvider({ children }: { children: ReactNode }) {
 								)}
 							</div>
 
-							{/* Footer Navigation Buttons */}
+							{/* Dynamic Action Footer */}
 							<div className="flex items-center justify-between pt-2 border-t border-line/60">
-								<button
-									onClick={prevStep}
-									disabled={currentStepIndex === 0}
-									className={`inline-flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-medium transition cursor-pointer ${
-										currentStepIndex === 0
-											? "text-ink-2/40 cursor-not-allowed"
-											: "text-ink hover:bg-paper-2"
-									}`}
-								>
-									<ArrowLeft className="size-3" />
-									<span>Trước</span>
-								</button>
-
-								<button
-									onClick={nextStep}
-									className="inline-flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-[11px] font-bold text-white shadow-2xs hover:bg-accent/90 transition cursor-pointer"
-								>
-									{currentStepIndex === activeTour.steps.length - 1 ? (
-										<>
-											<CheckCircle2 className="size-3" />
-											<span>Hoàn thành</span>
-										</>
-									) : (
-										<>
-											<span>Tiếp theo</span>
-											<ArrowRight className="size-3" />
-										</>
-									)}
-								</button>
+								{currentStepIndex === activeTour.steps.length - 1 ? (
+									<button
+										onClick={endTour}
+										className="w-full inline-flex items-center justify-center gap-1.5 rounded bg-accent py-2 text-xs font-bold text-white shadow-2xs hover:bg-accent/90 transition cursor-pointer"
+									>
+										<CheckCircle2 className="size-3.5" />
+										<span>Hoàn thành hướng dẫn</span>
+									</button>
+								) : (
+									<>
+										<div className="flex items-center gap-1.5 font-mono text-[11px] text-accent font-semibold">
+											<span className="size-1.5 rounded-full bg-accent animate-ping" />
+											<span>Bấm vào ô khoanh vùng để tiếp tục</span>
+										</div>
+										<button
+											onClick={endTour}
+											className="text-[11px] text-ink-2 hover:text-ink transition underline cursor-pointer"
+										>
+											Đóng
+										</button>
+									</>
+								)}
 							</div>
 						</div>
 					</div>
