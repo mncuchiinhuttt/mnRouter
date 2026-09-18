@@ -114,8 +114,9 @@ const vi = {
 	},
 	usage: {
 		title: "Mức sử dụng",
+		streakTitle: "Usage Streak",
+		streakSub: "Nhật ký mức tiêu thụ token và tần suất hoạt động trong 365 ngày qua",
 		tokens30d: "Token trong 30 ngày",
-		byDay: "Theo ngày",
 		trendView: "Xu hướng",
 		byModel: "Theo model",
 		byProvider: "Theo provider",

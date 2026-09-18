@@ -122,11 +122,11 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
 					<div className="flex items-center gap-2">
 						<Flame className="size-5 text-amber-500 fill-amber-500 animate-pulse" />
 						<h3 className="text-lg font-bold tracking-tight text-ink">
-							AI Usage Streak & Activity
+							{t("usage.streakTitle", "Usage Streak")}
 						</h3>
 					</div>
 					<p className="text-xs font-mono text-ink-2 mt-0.5">
-						GitHub & Codex style 365-day coding activity heatmap
+						{t("usage.streakSub", "Daily token consumption and request activity over the last 365 days")}
 					</p>
 				</div>
 

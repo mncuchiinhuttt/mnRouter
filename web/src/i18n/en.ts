@@ -116,8 +116,9 @@ const en: Dict = {
 	},
 	usage: {
 		title: "Usage",
+		streakTitle: "Usage Streak",
+		streakSub: "Daily token consumption and request activity over the last 365 days",
 		tokens30d: "Tokens in the last 30 days",
-		byDay: "By day",
 		trendView: "Trends",
 		byModel: "By model",
 		byProvider: "By provider",
