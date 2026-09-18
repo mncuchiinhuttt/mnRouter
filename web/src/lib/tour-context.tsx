@@ -217,6 +217,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 	const currentStep = activeTour?.steps[currentStepIndex] ?? null;
 
 	const endTour = useCallback(() => {
+		window.dispatchEvent(new CustomEvent("close-user-menu"));
 		setActiveTour(null);
 		setCurrentStepIndex(0);
 		setTargetRect(null);
@@ -344,6 +345,12 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			if (!target) return;
 
 			if (target.closest(currentStep.targetSelector)) {
+				if (currentStep.targetSelector.includes("user-profile-btn")) {
+					window.dispatchEvent(new CustomEvent("open-user-menu"));
+				}
+				if (currentStep.targetSelector.includes("user-settings-item")) {
+					window.dispatchEvent(new CustomEvent("close-user-menu"));
+				}
 				setTimeout(() => {
 					nextStep();
 				}, 150);
@@ -386,14 +393,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
 								}}
 								onClick={(e) => {
 									e.stopPropagation();
+									if (currentStep.targetSelector.includes("user-profile-btn")) {
+										window.dispatchEvent(new CustomEvent("open-user-menu"));
+									}
+									if (currentStep.targetSelector.includes("user-settings-item")) {
+										window.dispatchEvent(new CustomEvent("close-user-menu"));
+									}
+
 									const el = findVisibleElement(currentStep.targetSelector);
 									if (el) el.click();
 									setTimeout(() => {
 										nextStep();
 									}, 150);
 								}}
-								className="absolute rounded-lg ring-4 ring-accent pointer-events-auto cursor-pointer transition-all duration-200"
-								title="Bấm vào đây để tiếp tục"
 							>
 								<span className="absolute -top-1 -right-1 size-3 rounded-full bg-accent animate-ping" />
 							</div>

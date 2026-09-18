@@ -17,8 +17,21 @@ import { ViewPassDialog } from "./onboarding/view-pass-dialog";
 export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const [menuOpen, setMenuOpen] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [passOpen, setPassOpen] = useState(false);
+
+	useEffect(() => {
+		const handleOpenMenu = () => setMenuOpen(true);
+		const handleCloseMenu = () => setMenuOpen(false);
+		window.addEventListener("open-user-menu", handleOpenMenu);
+		window.addEventListener("close-user-menu", handleCloseMenu);
+		return () => {
+			window.removeEventListener("open-user-menu", handleOpenMenu);
+			window.removeEventListener("close-user-menu", handleCloseMenu);
+		};
+	}, []);
+
 	const logout = async () => {
 		await api("/api/auth/logout", { method: "POST" }).catch(() => {});
 		onNavigate?.();
@@ -30,7 +43,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 
 	return (
 		<>
-			<DropdownMenu>
+			<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 			<DropdownMenuTrigger asChild>
 				<button data-tour="user-profile-btn" className="flex w-full items-center gap-2.5 rounded-md p-1.5 transition hover:bg-navy-3 text-left cursor-pointer outline-none group">
 					{me.avatarUrl ? (
@@ -50,13 +63,20 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 				</button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent side="top" align="start" className="w-56 mb-2 bg-white p-1.5 shadow-xl border border-line rounded-lg">
+			<DropdownMenuContent side="top" align="start" className="w-56 mb-2 bg-white p-1.5 shadow-xl border border-line rounded-lg z-[9999]">
 				<DropdownMenuItem onSelect={() => setPassOpen(true)} className="gap-2.5 font-mono text-xs uppercase tracking-wider text-ink hover:bg-paper-2 cursor-pointer">
 					<ShieldCheck className="size-4 text-accent" />
 					<span>{t("userMenu.accessPass", "Thẻ truy cập")}</span>
 				</DropdownMenuItem>
 
-				<DropdownMenuItem data-tour="user-settings-item" onSelect={() => setSettingsOpen(true)} className="gap-2.5 font-mono text-xs uppercase tracking-wider text-ink hover:bg-paper-2 cursor-pointer">
+				<DropdownMenuItem
+					data-tour="user-settings-item"
+					onSelect={() => {
+						setSettingsOpen(true);
+						setMenuOpen(false);
+					}}
+					className="gap-2.5 font-mono text-xs uppercase tracking-wider text-ink hover:bg-paper-2 cursor-pointer"
+				>
 					<UserCog className="size-4 text-accent" />
 					<span>{t("userMenu.profileSettings")}</span>
 				</DropdownMenuItem>
