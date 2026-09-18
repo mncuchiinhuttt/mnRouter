@@ -116,3 +116,42 @@ export async function getAntigravityRealQuota(
 		return cached ?? null;
 	}
 }
+
+/**
+ * Check if a connection has exhausted its real quota for the target model.
+ * Returns true if the account is known to be at 0% remaining quota and resetTime is in the future.
+ */
+export async function isAntigravityExhaustedForModel(
+	connId: string,
+	connData: Record<string, any>,
+	modelId: string,
+): Promise<{ exhausted: boolean; resetTime?: string; reason?: string }> {
+	const quota = await getAntigravityRealQuota(connId, connData);
+	if (!quota) return { exhausted: false };
+
+	const isClaude = modelId.toLowerCase().includes("claude") || modelId.toLowerCase().includes("anthropic");
+	const now = Date.now();
+
+	if (isClaude) {
+		const resetMs = quota.claudeResetTime ? new Date(quota.claudeResetTime).getTime() : 0;
+		if (quota.claudeRemainingFraction <= 0.001 && resetMs > now) {
+			return {
+				exhausted: true,
+				resetTime: quota.claudeResetTime,
+				reason: `Claude quota exhausted until ${new Date(resetMs).toLocaleTimeString()}`,
+			};
+		}
+	} else {
+		// Gemini models
+		const resetMs = quota.geminiResetTime ? new Date(quota.geminiResetTime).getTime() : 0;
+		if (quota.geminiRemainingFraction <= 0.001 && resetMs > now) {
+			return {
+				exhausted: true,
+				resetTime: quota.geminiResetTime,
+				reason: `Gemini quota exhausted until ${new Date(resetMs).toLocaleTimeString()}`,
+			};
+		}
+	}
+
+	return { exhausted: false };
+}

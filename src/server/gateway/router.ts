@@ -10,7 +10,7 @@ import { UpstreamError, classifyUpstreamError } from "./canonical.js";
 import { PROVIDERS, type ProviderId, DEFAULT_SETTINGS } from "./registry.js";
 import { buildEgressRequest, type EgressConnectionInfo, type WireParser } from "./egress/index.js";
 import { refreshProviderToken } from "./oauth.js";
-
+import { isAntigravityExhaustedForModel } from "../services/antigravity-quota.service.js";
 export type RoutingSettings = typeof DEFAULT_SETTINGS.routing;
 
 export async function getRoutingSettings(): Promise<RoutingSettings> {
@@ -29,12 +29,27 @@ function cooldownRemaining(conn: ConnRow): number {
 	return typeof until === "number" ? Math.max(0, until - Date.now()) : 0;
 }
 
-async function orderConnections(provider: ProviderId, strategy: string): Promise<ConnRow[]> {
+async function orderConnections(provider: ProviderId, strategy: string, modelId?: string): Promise<ConnRow[]> {
 	const rows = await db
 		.select()
 		.from(providerConnections)
 		.where(and(eq(providerConnections.provider, provider), eq(providerConnections.isActive, true)));
-	const usable = rows.filter((r) => cooldownRemaining(r) === 0);
+	let usable = rows.filter((r) => cooldownRemaining(r) === 0);
+
+	// Pre-route Quota Guard: Filter out accounts that have exhausted their quota for this model
+	if (provider === "antigravity" && modelId) {
+		const checked = await Promise.all(
+			usable.map(async (conn) => {
+				const check = await isAntigravityExhaustedForModel(conn.id, dataOf(conn), modelId);
+				return { conn, exhausted: check.exhausted, reason: check.reason };
+			}),
+		);
+		const nonExhausted = checked.filter((c) => !c.exhausted).map((c) => c.conn);
+		if (nonExhausted.length > 0) {
+			usable = nonExhausted;
+		}
+	}
+
 	if (strategy === "round-robin") {
 		usable.sort((a, b) => (dataOf(a).lastUsedAt ?? 0) - (dataOf(b).lastUsedAt ?? 0));
 	} else {
@@ -141,7 +156,7 @@ export async function openUpstreamWithFailover(
 	const routing = await getRoutingSettings();
 	const maxAttempts = opts?.connIdHint ? 1 : (routing.maxConnectionAttempts ?? 3);
 
-	let candidates = await orderConnections(provider, routing.strategy);
+	let candidates = await orderConnections(provider, routing.strategy, canonical.upstreamModel || canonical.model);
 	if (opts?.connIdHint) candidates = candidates.filter((c) => c.id === opts.connIdHint);
 	if (candidates.length === 0) {
 		throw new UpstreamError(`no active connection for provider "${provider}" (all cooling down or none configured)`, 503, "no_connection", false);
