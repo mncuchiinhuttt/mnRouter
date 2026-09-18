@@ -300,10 +300,9 @@ export default function ModelsDataPage() {
 					{data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
 						<div className="relative">
 							<div className="h-64 sm:h-72 w-full flex items-end gap-[2px] pt-6 pb-2 border-b border-line">
-								{data.dailyTimeline.map((day) => {
-									const maxVal = Math.max(1, ...data.dailyTimeline!.map((d) => d.total));
+								{data.dailyTimeline.map((day, dayIndex, allDays) => {
+									const maxVal = Math.max(1, ...allDays.map((d) => d.total));
 									const heightPct = Math.min(100, Math.max(3, (day.total / maxVal) * 100));
-
 									const t1Id = data.topThreeMeta?.[0]?.id;
 									const t2Id = data.topThreeMeta?.[1]?.id;
 									const t3Id = data.topThreeMeta?.[2]?.id;
@@ -348,8 +347,16 @@ export default function ModelsDataPage() {
 												)}
 											</div>
 
-											{/* Interactive Tooltip Card on Hover (OpenCode exact breakdown) */}
-											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none w-52 p-3 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-line text-xs font-mono">
+											{/* Interactive Tooltip Card on Hover (Clamped to avoid overflow) */}
+											<div
+												className={`absolute bottom-full mb-3 hidden group-hover:block z-50 pointer-events-none w-56 p-3 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-line text-xs font-mono ${
+													dayIndex >= allDays.length - 8
+														? "right-0"
+														: dayIndex <= 7
+														? "left-0"
+														: "left-1/2 -translate-x-1/2"
+												}`}
+											>
 												<div className="flex items-center justify-between border-b border-line/60 pb-1.5 mb-1.5">
 													<span className="font-bold text-ink uppercase">{day.formattedDate}</span>
 													<span className="font-bold text-accent">{fmtCompact(day.total)} total</span>
