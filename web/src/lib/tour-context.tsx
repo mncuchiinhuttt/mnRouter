@@ -168,6 +168,22 @@ export const TOURS: Record<string, TourDefinition> = {
 	},
 };
 
+function findVisibleElement(selector: string): HTMLElement | null {
+	const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
+	if (elements.length === 0) return null;
+
+	for (const el of elements) {
+		const rect = el.getBoundingClientRect();
+		if (rect.width > 0 && rect.height > 0) {
+			const style = window.getComputedStyle(el);
+			if (style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0") {
+				return el;
+			}
+		}
+	}
+	return elements[0] ?? null;
+}
+
 const TourContext = createContext<TourContextValue | null>(null);
 
 export function TourProvider({ children }: { children: ReactNode }) {
@@ -191,16 +207,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			return;
 		}
 
-		const el = document.querySelector(currentStep.targetSelector);
+		const el = findVisibleElement(currentStep.targetSelector);
 		if (el) {
-			el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 			const rect = el.getBoundingClientRect();
-			setTargetRect(rect);
-		} else {
-			setTargetRect(null);
+			if (rect.width > 0 && rect.height > 0) {
+				setTargetRect(rect);
+				return;
+			}
 		}
+		setTargetRect(null);
 	}, [currentStep]);
-
 	// Navigate route if required
 	useEffect(() => {
 		if (!currentStep) return;
@@ -225,14 +241,21 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			window.removeEventListener("scroll", updateRect, true);
 		};
 	}, [updateRect]);
-
 	const startTour = useCallback((tourId: string) => {
 		const def = TOURS[tourId];
 		if (!def) return;
 		setActiveTour(def);
-		setCurrentStepIndex(0);
-		if (def.steps[0]?.route && location.pathname !== def.steps[0].route) {
-			navigate(def.steps[0].route);
+
+		// If user is already on the target route of step 1, skip step 1 and start at step 2!
+		let startIdx = 0;
+		if (def.steps[0]?.route && location.pathname === def.steps[0].route && def.steps.length > 1) {
+			startIdx = 1;
+		}
+
+		setCurrentStepIndex(startIdx);
+		const initialStep = def.steps[startIdx];
+		if (initialStep?.route && location.pathname !== initialStep.route) {
+			navigate(initialStep.route);
 		}
 	}, [location.pathname, navigate]);
 
@@ -249,7 +272,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			endTour();
 		}
 	}, [activeTour, currentStepIndex, location.pathname, navigate, endTour]);
-
 	const prevStep = useCallback(() => {
 		if (!activeTour || currentStepIndex === 0) return;
 		const prevIdx = currentStepIndex - 1;
@@ -279,24 +301,37 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			<AnimatePresence>
 				{activeTour && currentStep && (
 					<div className="fixed inset-0 z-[9998] pointer-events-auto">
-						{/* Blurred darkened backdrop */}
+						{/* Blurred darkened backdrop with cutout hole for target element */}
 						<div
+							style={{
+								clipPath: targetRect
+									? `polygon(
+										0% 0%, 0% 100%,
+										${Math.max(0, targetRect.left - 6)}px 100%,
+										${Math.max(0, targetRect.left - 6)}px ${Math.max(0, targetRect.top - 6)}px,
+										${targetRect.right + 6}px ${Math.max(0, targetRect.top - 6)}px,
+										${targetRect.right + 6}px ${targetRect.bottom + 6}px,
+										${Math.max(0, targetRect.left - 6)}px ${targetRect.bottom + 6}px,
+										${Math.max(0, targetRect.left - 6)}px 100%,
+										100% 100%, 100% 0%
+									)`
+									: undefined,
+							}}
 							className="absolute inset-0 bg-navy/60 backdrop-blur-[2px] transition-all duration-300"
 							onClick={endTour}
 						/>
 
-						{/* Cutout Spotlight on Target Element */}
+						{/* Cutout Spotlight Glowing Ring around target */}
 						{targetRect && (
 							<div
 								style={{
-									top: targetRect.top - 6,
-									left: targetRect.left - 6,
+									top: Math.max(0, targetRect.top - 6),
+									left: Math.max(0, targetRect.left - 6),
 									width: targetRect.width + 12,
 									height: targetRect.height + 12,
 								}}
-								className="absolute rounded-lg ring-4 ring-accent shadow-[0_0_0_9999px_rgba(10,15,30,0.65)] pointer-events-none transition-all duration-300"
+								className="absolute rounded-lg ring-4 ring-accent shadow-2xl pointer-events-none transition-all duration-300"
 							>
-								{/* Glowing corner pulse */}
 								<span className="absolute -top-1 -right-1 size-3 rounded-full bg-accent animate-ping" />
 							</div>
 						)}
@@ -392,13 +427,21 @@ export function useTour() {
 	return ctx;
 }
 
-function calculateCardPosition(target: DOMRect, placement: TourStep["placement"] = "bottom") {
+function calculateCardPosition(target: DOMRect | null, placement: TourStep["placement"] = "bottom") {
 	const margin = 16;
 	const cardWidth = 340;
-	const cardHeight = 200;
+	const cardHeight = 220;
 
 	const viewportW = window.innerWidth;
 	const viewportH = window.innerHeight;
+
+	// Center card if target is not visible or has zero size
+	if (!target || (target.width === 0 && target.height === 0)) {
+		return {
+			top: Math.max(20, (viewportH - cardHeight) / 2),
+			left: Math.max(20, (viewportW - cardWidth) / 2),
+		};
+	}
 
 	let top = target.bottom + margin;
 	let left = target.left;
