@@ -58,7 +58,14 @@ export function FloatingCopilot() {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
 				e.preventDefault();
-				setIsOpen((prev) => !prev);
+				setIsOpen((prev) => {
+					const next = !prev;
+					if (next) {
+						setTimeout(() => inputRef.current?.focus(), 40);
+						setTimeout(() => inputRef.current?.focus(), 120);
+					}
+					return next;
+				});
 			} else if (e.key === "Escape" && isOpen) {
 				setIsOpen(false);
 			}
@@ -67,13 +74,18 @@ export function FloatingCopilot() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen]);
 
-	// Auto-scroll to latest message and focus input when expanded
+	// Auto-scroll and ensure robust focus when expanded
 	useEffect(() => {
 		if (isOpen) {
 			messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-			inputRef.current?.focus();
+			const t1 = setTimeout(() => inputRef.current?.focus(), 40);
+			const t2 = setTimeout(() => inputRef.current?.focus(), 120);
+			return () => {
+				clearTimeout(t1);
+				clearTimeout(t2);
+			};
 		}
-	}, [messages, isOpen]);
+	}, [isOpen]);
 
 	const copyToClipboard = (code: string) => {
 		navigator.clipboard.writeText(code);
@@ -164,6 +176,7 @@ export function FloatingCopilot() {
 
 							<input
 								ref={inputRef}
+								autoFocus
 								type="text"
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
