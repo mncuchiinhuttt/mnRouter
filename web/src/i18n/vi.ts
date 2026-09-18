@@ -410,8 +410,7 @@ const vi = {
 		aboutTitle: "mnRouter Gateway",
 		aboutBody: "mnRouter là cổng AI Gateway nội bộ điều phối lưu lượng cho Claude Code, Codex, Antigravity, Kiro, Grok và OpenCode. Hệ thống chuẩn hoá việc truy cập model, quản lý key và tính toán hạn mức AI credits cho toàn bộ quy trình lập trình.",
 		communityTitle: "Cộng đồng",
-		communityBody: "Để báo lỗi, yêu cầu tính năng hoặc theo dõi tài liệu và cập nhật, hãy truy cập repository GitHub của chúng tôi.",
-		supportTitle: "Liên hệ & Hỗ trợ",
+		communityBody: "Kênh cộng đồng và kho lưu trữ GitHub hiện đang được lưu hành nội bộ (Upcoming / Private) và sẽ sớm mở công khai trong thời gian tới. Để báo lỗi hoặc yêu cầu tính năng, bạn vui lòng liên hệ trực tiếp Quản trị viên.",
 		supportBody: "Bạn cũng có thể liên hệ trực tiếp với chúng tôi để được hỗ trợ.",
 	},
 	announcements: {

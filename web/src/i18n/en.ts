@@ -412,8 +412,7 @@ const en: Dict = {
 		aboutTitle: "mnRouter Gateway",
 		aboutBody: "mnRouter is an internal unified AI Gateway and routing system for Claude Code, Codex, Antigravity, Kiro, Grok, and OpenCode. It standardizes model access, key management, and credit accounting across your engineering workflows.",
 		communityTitle: "Community",
-		communityBody: "To report bugs, request features, or view documentation and updates, visit our GitHub repository.",
-		supportTitle: "Contact & Support",
+		communityBody: "The community channels and GitHub repository are currently private/internal (Upcoming) and will be made public in a future release. For bug reports or feature requests, please contact the administrator directly.",
 		supportBody: "You can also contact us directly for support.",
 	},
 	announcements: {

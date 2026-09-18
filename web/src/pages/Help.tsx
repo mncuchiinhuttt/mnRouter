@@ -36,23 +36,26 @@ export default function Help() {
 				</div>
 			</div>
 
-			{/* Card 2: Community */}
+			{/* Card 2: Community (Upcoming) */}
 			<div className="rounded-lg border border-line bg-white p-6 shadow-xs space-y-3">
-				<h2 className="text-lg font-semibold tracking-tight text-ink">{t("help.communityTitle")}</h2>
-				<p className="text-sm leading-relaxed text-ink-2">{t("help.communityBody")}</p>
+				<div className="flex items-center gap-2.5">
+					<h2 className="text-lg font-semibold tracking-tight text-ink">{t("help.communityTitle")}</h2>
+					<span className="label-mono inline-flex items-center rounded-sm bg-paper-2 border border-line px-2 py-0.5 text-[10.5px] text-ink-2 font-medium">
+						Upcoming
+					</span>
+				</div>
+				<p className="text-sm leading-relaxed text-ink-2">
+					{t("help.communityBody", "Kênh cộng đồng và mã nguồn GitHub đang trong quá trình chuẩn bị và sẽ sớm mở công khai. Hiện tại mnRouter được vận hành như một cổng AI Gateway nội bộ.")}
+				</p>
 				<div className="flex flex-wrap items-center gap-2.5 pt-1">
-					<a
-						href="https://github.com/mncuchiinhuttt/mnRouter"
-						target="_blank"
-						rel="noreferrer"
-						className="label-mono inline-flex items-center gap-2 rounded-sm border border-line bg-white px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:border-accent hover:text-accent"
+					<span
+						className="label-mono inline-flex items-center gap-2 rounded-sm border border-line/50 bg-paper-2 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 cursor-not-allowed opacity-75"
 					>
 						<Github className="size-3.5" />
-						<span>Github</span>
-					</a>
+						<span>GitHub (Private)</span>
+					</span>
 				</div>
 			</div>
-
 			{/* Card 3: Contact & Support */}
 			<div className="rounded-lg border border-line bg-white p-6 shadow-xs space-y-3">
 				<h2 className="text-lg font-semibold tracking-tight text-ink">{t("help.supportTitle")}</h2>
