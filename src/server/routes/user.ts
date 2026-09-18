@@ -306,6 +306,7 @@ export function userRoutes() {
 				totalModels: enrichedModels.length,
 				totalVolumeTokens,
 				totalPlatformCredits: Math.round(totalPlatformCredits * 100) / 100,
+				totalEstimatedUsd: Math.round((totalPlatformCredits / 100) * 100) / 100,
 				totalPlatformRequests,
 				cacheRatio,
 				cachedTokens: totalCacheReadTokens,

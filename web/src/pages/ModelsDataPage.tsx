@@ -53,6 +53,7 @@ interface MarketDataResp {
 		totalModels: number;
 		totalVolumeTokens: number;
 		totalPlatformCredits: number;
+		totalEstimatedUsd?: number;
 		totalPlatformRequests: number;
 		cacheRatio: number;
 		cachedTokens: number;
@@ -160,11 +161,24 @@ export default function ModelsDataPage() {
 			</header>
 
 			{/* High-Level Benchmark Grid (Inspired by opencode.ai/data) */}
-			<section className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:gap-4">
+			<section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+				<div className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-2xs">
+					<div className="flex items-center justify-between text-xs font-mono text-ink-2">
+						<span>TOTAL SPEND</span>
+						<Coins className="size-3.5 text-accent" />
+					</div>
+					<div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-ink">
+						${summary?.totalEstimatedUsd !== undefined ? Number(summary.totalEstimatedUsd).toFixed(2) : "0.00"}
+					</div>
+					<div className="mt-1 text-[11px] font-mono text-ink-2">
+						{summary?.totalPlatformCredits !== undefined ? `${Number(summary.totalPlatformCredits).toLocaleString("en-US")} cr` : "0 cr"} total
+					</div>
+				</div>
+
 				<div className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-2xs">
 					<div className="flex items-center justify-between text-xs font-mono text-ink-2">
 						<span>SESSION COST</span>
-						<Coins className="size-3.5 text-accent" />
+						<Coins className="size-3.5 text-ink-2" />
 					</div>
 					<div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-ink">
 						{summary?.avgCostPerSession ? `${summary.avgCostPerSession} cr` : "0.015 cr"}
