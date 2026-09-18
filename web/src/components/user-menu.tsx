@@ -14,7 +14,7 @@ import type { Me } from "./shell";
 import { UserSettingsDialog } from "./user-settings-dialog";
 import { ViewPassDialog } from "./onboarding/view-pass-dialog";
 
-export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }) {
+export function UserMenu({ me, onNavigate, isMobile = false }: { me: Me; onNavigate?: () => void; isMobile?: boolean }) {
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 	const [menuOpen, setMenuOpen] = useState(false);
@@ -22,6 +22,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 	const [passOpen, setPassOpen] = useState(false);
 
 	useEffect(() => {
+		if (isMobile) return;
 		const handleOpenMenu = () => setMenuOpen(true);
 		const handleCloseMenu = () => setMenuOpen(false);
 		window.addEventListener("open-user-menu", handleOpenMenu);
@@ -30,7 +31,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 			window.removeEventListener("open-user-menu", handleOpenMenu);
 			window.removeEventListener("close-user-menu", handleCloseMenu);
 		};
-	}, []);
+	}, [isMobile]);
 
 	const logout = async () => {
 		await api("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -45,7 +46,10 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 		<>
 			<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
 			<DropdownMenuTrigger asChild>
-				<button data-tour="user-profile-btn" className="flex w-full items-center gap-2.5 rounded-md p-1.5 transition hover:bg-navy-3 text-left cursor-pointer outline-none group">
+				<button
+					data-tour={isMobile ? undefined : "user-profile-btn"}
+					className="flex w-full items-center gap-2.5 rounded-md p-1.5 transition hover:bg-navy-3 text-left cursor-pointer outline-none group"
+				>
 					{me.avatarUrl ? (
 						<img src={me.avatarUrl} alt="" className="size-8 shrink-0 rounded-full object-cover border border-white/20 shadow-xs" />
 					) : (
@@ -70,7 +74,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 				</DropdownMenuItem>
 
 				<DropdownMenuItem
-					data-tour="user-settings-item"
+					data-tour={isMobile ? undefined : "user-settings-item"}
 					onSelect={() => {
 						setSettingsOpen(true);
 						setMenuOpen(false);

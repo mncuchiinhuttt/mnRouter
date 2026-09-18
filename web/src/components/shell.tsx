@@ -76,7 +76,7 @@ export function LangToggle() {
 	);
 }
 
-function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void; t: (k: string) => string }) {
+function SidebarContent({ me, onNavigate, t, isMobile = false }: { me: Me; onNavigate?: () => void; t: (k: string) => string; isMobile?: boolean }) {
 	return (
 		<div className="flex h-full flex-col overflow-hidden">
 			<div className="shrink-0">
@@ -99,41 +99,41 @@ function SidebarContent({ me, onNavigate, t }: { me: Me; onNavigate?: () => void
 			<div className="flex-1 overflow-y-auto overscroll-contain pb-4 [scrollbar-width:thin] [scrollbar-color:#3a3a5c_transparent]">
 				<SectionLabel>{t("nav.account")}</SectionLabel>
 				<nav className="flex flex-col gap-0.5">
-					<NavItem to="/" icon={<LayoutGrid className="h-3.5 w-3.5" />} label={t("nav.overview")} onNavigate={onNavigate} dataTour="nav-overview" />
-					<NavItem to="/usage" icon={<BarChart3 className="h-3.5 w-3.5" />} label={t("nav.usage")} onNavigate={onNavigate} dataTour="nav-usage" />
-					<NavItem to="/leaderboard" icon={<Trophy className="h-3.5 w-3.5" />} label={t("nav.leaderboard")} onNavigate={onNavigate} dataTour="nav-leaderboard" />
-					<NavItem to="/keys" icon={<KeyRound className="h-3.5 w-3.5" />} label={t("nav.apiKeys")} onNavigate={onNavigate} dataTour="nav-keys" />
-					<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} dataTour="nav-config" />
-					<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} dataTour="nav-chat" />
-					<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} dataTour="nav-mcp" />
+					<NavItem to="/" icon={<LayoutGrid className="h-3.5 w-3.5" />} label={t("nav.overview")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-overview"} />
+					<NavItem to="/usage" icon={<BarChart3 className="h-3.5 w-3.5" />} label={t("nav.usage")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-usage"} />
+					<NavItem to="/leaderboard" icon={<Trophy className="h-3.5 w-3.5" />} label={t("nav.leaderboard")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-leaderboard"} />
+					<NavItem to="/keys" icon={<KeyRound className="h-3.5 w-3.5" />} label={t("nav.apiKeys")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-keys"} />
+					<NavItem to="/config" icon={<Terminal className="h-3.5 w-3.5" />} label={t("nav.aiConfig")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-config"} />
+					<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-chat"} />
+					<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-mcp"} />
 				</nav>
 
 				{me.role === "admin" && (
 					<>
 						<SectionLabel>{t("nav.admin")}</SectionLabel>
 						<nav className="flex flex-col gap-0.5">
-							<NavItem to="/admin/users" icon={<Users className="h-3.5 w-3.5" />} label={t("nav.users")} onNavigate={onNavigate} dataTour="nav-users" />
-							<NavItem to="/admin/connections" icon={<Plug className="h-3.5 w-3.5" />} label={t("nav.connections")} onNavigate={onNavigate} dataTour="nav-connections" />
-							<NavItem to="/admin/models" icon={<SlidersHorizontal className="h-3.5 w-3.5" />} label={t("nav.models")} onNavigate={onNavigate} dataTour="nav-models" />
-							<NavItem to="/admin/quotas" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.quotas")} onNavigate={onNavigate} dataTour="nav-quotas" />
-							<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} dataTour="nav-analytics" />
-							<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} dataTour="nav-logs" />
-							<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} dataTour="nav-feedbacks" />
-							<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} dataTour="nav-announcements" />
-							<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} dataTour="nav-settings" />
+							<NavItem to="/admin/users" icon={<Users className="h-3.5 w-3.5" />} label={t("nav.users")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-users"} />
+							<NavItem to="/admin/connections" icon={<Plug className="h-3.5 w-3.5" />} label={t("nav.connections")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-connections"} />
+							<NavItem to="/admin/models" icon={<SlidersHorizontal className="h-3.5 w-3.5" />} label={t("nav.models")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-models"} />
+							<NavItem to="/admin/quotas" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.quotas")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-quotas"} />
+							<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-analytics"} />
+							<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-logs"} />
+							<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-feedbacks"} />
+							<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-announcements"} />
+							<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-settings"} />
 						</nav>
 					</>
 				)}
 
 				<SectionLabel>{t("nav.system")}</SectionLabel>
 				<nav className="flex flex-col gap-0.5">
-					<NavItem to="/status" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.status")} onNavigate={onNavigate} dataTour="nav-status" />
-					<NavItem to="/changelog" icon={<History className="h-3.5 w-3.5" />} label={t("nav.changelog")} onNavigate={onNavigate} dataTour="nav-changelog" />
+					<NavItem to="/status" icon={<Activity className="h-3.5 w-3.5" />} label={t("nav.status")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-status"} />
+					<NavItem to="/changelog" icon={<History className="h-3.5 w-3.5" />} label={t("nav.changelog")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-changelog"} />
 				</nav>
 			</div>
 
 			<div className="shrink-0 border-t border-[#26264a] bg-navy px-3 py-3">
-				<UserMenu me={me} onNavigate={onNavigate} />
+				<UserMenu me={me} onNavigate={onNavigate} isMobile={isMobile} />
 			</div>
 		</div>
 	);
@@ -180,12 +180,12 @@ export function Shell({ me }: { me: Me }) {
 				<button onClick={() => setMenuOpen(false)} className="absolute right-3 top-3 rounded-xs p-1.5 text-[#8f8fb8] hover:text-white cursor-pointer" aria-label={t("common.close")}>
 					<X className="h-4 w-4" />
 				</button>
-				<SidebarContent me={me} onNavigate={() => setMenuOpen(false)} t={t} />
+				<SidebarContent me={me} onNavigate={() => setMenuOpen(false)} t={t} isMobile={true} />
 			</aside>
 
 			{/* desktop sidebar */}
 			<aside className="halftone sticky top-0 hidden h-[100dvh] w-[248px] shrink-0 flex-col bg-navy lg:flex">
-				<SidebarContent me={me} t={t} />
+				<SidebarContent me={me} t={t} isMobile={false} />
 			</aside>
 
 			<main className={cn("min-w-0 flex-1 flex flex-col", isChat ? "h-[100dvh] overflow-hidden" : "")}>
