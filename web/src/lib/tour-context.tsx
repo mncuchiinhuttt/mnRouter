@@ -39,14 +39,20 @@ export const TOURS: Record<string, TourDefinition> = {
 		steps: [
 			{
 				targetSelector: '[data-tour="user-profile-btn"]',
-				title: "Mở menu tài khoản",
+				title: "Bước 1: Mở menu tài khoản",
 				instruction: "Bấm vào ảnh đại diện hoặc tên của bạn ở góc dưới cùng menu bên trái.",
 				placement: "right",
 			},
 			{
+				targetSelector: '[data-tour="user-settings-item"]',
+				title: "Bước 2: Chọn Cài đặt tài khoản",
+				instruction: "Bấm chọn 'USER SETTINGS' trong menu vừa mở.",
+				placement: "right",
+			},
+			{
 				targetSelector: '[data-tour="user-display-name-input"]',
-				title: "Nhập tên mới và Lưu",
-				instruction: "Nhập Tên hiển thị mới vào ô này rồi nhấn nút 'Lưu thay đổi'.",
+				title: "Bước 3: Nhập tên mới và Lưu",
+				instruction: "Nhập Tên hiển thị mới vào ô này rồi nhấn nút 'Save changes'.",
 				placement: "top",
 			},
 		],
@@ -337,9 +343,6 @@ export function TourProvider({ children }: { children: ReactNode }) {
 			if (!target) return;
 
 			if (target.closest(currentStep.targetSelector)) {
-				if (currentStep.targetSelector.includes("user-profile-btn")) {
-					window.dispatchEvent(new CustomEvent("open-user-settings"));
-				}
 				setTimeout(() => {
 					nextStep();
 				}, 150);
@@ -349,6 +352,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 		document.addEventListener("click", handleTargetClick, true);
 		return () => document.removeEventListener("click", handleTargetClick, true);
 	}, [activeTour, currentStep, nextStep]);
+
 	return (
 		<TourContext.Provider
 			value={{
