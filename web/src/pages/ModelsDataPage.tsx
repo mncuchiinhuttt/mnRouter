@@ -64,11 +64,8 @@ interface MarketDataResp {
 	dailyTimeline?: Array<{
 		date: string;
 		formattedDate: string;
-		top1: number;
-		top2: number;
-		top3: number;
-		others: number;
 		total: number;
+		byModel: Record<string, number>;
 	}>;
 	topThreeMeta?: Array<{
 		id: string;
@@ -89,6 +86,7 @@ export default function ModelsDataPage() {
 	const [search, setSearch] = useState("");
 	const [selectedProvider, setSelectedProvider] = useState("all");
 	const [comparePair, setComparePair] = useState<[string, string] | null>(null);
+	const [highlightedModel, setHighlightedModel] = useState<string | null>(null);
 
 	const { data, isLoading, refetch, isFetching } = useQuery({
 		queryKey: ["models-market-data"],
@@ -225,60 +223,185 @@ export default function ModelsDataPage() {
 						</h2>
 					</div>
 					<div className="flex flex-wrap items-center gap-3 text-xs font-mono text-ink-2">
-						<span className="flex items-center gap-1.5">
-							<span className="size-2.5 rounded-xs bg-[#5b52f9]" />
-							{data?.topThreeMeta?.[0]?.displayName ?? "Top 1"}
-						</span>
-						<span className="flex items-center gap-1.5">
-							<span className="size-2.5 rounded-xs bg-[#00b4d8]" />
-							{data?.topThreeMeta?.[1]?.displayName ?? "Top 2"}
-						</span>
-						<span className="flex items-center gap-1.5">
-							<span className="size-2.5 rounded-xs bg-[#10b981]" />
-							{data?.topThreeMeta?.[2]?.displayName ?? "Top 3"}
-						</span>
-						<span className="flex items-center gap-1.5">
+						{data?.topThreeMeta?.[0] && (
+							<button
+								type="button"
+								onClick={() => setHighlightedModel(highlightedModel === data.topThreeMeta?.[0]?.id ? null : data.topThreeMeta?.[0]?.id ?? null)}
+								className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition cursor-pointer ${
+									highlightedModel === data.topThreeMeta[0].id ? "bg-[#5b52f9]/15 text-[#5b52f9] font-bold" : "hover:text-ink"
+								}`}
+							>
+								<span className="size-2.5 rounded-xs bg-[#5b52f9]" />
+								{data.topThreeMeta[0].displayName}
+							</button>
+						)}
+						{data?.topThreeMeta?.[1] && (
+							<button
+								type="button"
+								onClick={() => setHighlightedModel(highlightedModel === data.topThreeMeta?.[1]?.id ? null : data.topThreeMeta?.[1]?.id ?? null)}
+								className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition cursor-pointer ${
+									highlightedModel === data.topThreeMeta[1].id ? "bg-[#00b4d8]/15 text-[#00b4d8] font-bold" : "hover:text-ink"
+								}`}
+							>
+								<span className="size-2.5 rounded-xs bg-[#00b4d8]" />
+								{data.topThreeMeta[1].displayName}
+							</button>
+						)}
+						{data?.topThreeMeta?.[2] && (
+							<button
+								type="button"
+								onClick={() => setHighlightedModel(highlightedModel === data.topThreeMeta?.[2]?.id ? null : data.topThreeMeta?.[2]?.id ?? null)}
+								className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition cursor-pointer ${
+									highlightedModel === data.topThreeMeta[2].id ? "bg-[#10b981]/15 text-[#10b981] font-bold" : "hover:text-ink"
+								}`}
+							>
+								<span className="size-2.5 rounded-xs bg-[#10b981]" />
+								{data.topThreeMeta[2].displayName}
+							</button>
+						)}
+						<button
+							type="button"
+							onClick={() => setHighlightedModel(highlightedModel === "others" ? null : "others")}
+							className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition cursor-pointer ${
+								highlightedModel === "others" ? "bg-[#f59e0b]/15 text-[#f59e0b] font-bold" : "hover:text-ink"
+							}`}
+						>
 							<span className="size-2.5 rounded-xs bg-[#f59e0b]" />
 							Others
-						</span>
+						</button>
+						{highlightedModel && (
+							<button
+								type="button"
+								onClick={() => setHighlightedModel(null)}
+								className="text-[11px] underline text-ink-2 hover:text-ink cursor-pointer ml-1"
+							>
+								Reset focus
+							</button>
+						)}
 					</div>
 				</div>
 
-				{/* High-density stacked daily bar graph (tight bars like OpenCode) */}
+				{/* High-density connected daily bars (matching OpenCode.ai exact layout) */}
 				<div className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-2xs">
 					{data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
-						<div className="h-64 sm:h-72 w-full">
-							<ResponsiveContainer width="100%" height="100%">
-								<BarChart
-									data={data.dailyTimeline}
-									barCategoryGap={2}
-									barGap={0}
-									margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
-								>
-									<CartesianGrid strokeDasharray="2 2" stroke="#eaeae4" vertical={false} />
-									<XAxis
-										dataKey="formattedDate"
-										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#8f8fb8" }}
-										tickLine={false}
-										axisLine={{ stroke: "#e3e3dc" }}
-										interval={4}
-									/>
-									<YAxis
-										tickFormatter={(v) => fmtCompact(v as number)}
-										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#8f8fb8" }}
-										tickLine={false}
-										axisLine={false}
-									/>
-									<Tooltip
-										contentStyle={{ borderRadius: 8, border: "1px solid #d9d9d3", fontSize: 11, fontFamily: "IBM Plex Mono", background: "#fff", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
-										formatter={(val: unknown, name: unknown) => [fmtNum(Number(val)) + " tok", String(name)]}
-									/>
-									<Bar dataKey="top1" name={data?.topThreeMeta?.[0]?.displayName ?? "Top 1"} stackId="a" fill="#5b52f9" radius={[0, 0, 0, 0]} />
-									<Bar dataKey="top2" name={data?.topThreeMeta?.[1]?.displayName ?? "Top 2"} stackId="a" fill="#00b4d8" radius={[0, 0, 0, 0]} />
-									<Bar dataKey="top3" name={data?.topThreeMeta?.[2]?.displayName ?? "Top 3"} stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-									<Bar dataKey="others" name="Others" stackId="a" fill="#f59e0b" radius={[2, 2, 0, 0]} />
-								</BarChart>
-							</ResponsiveContainer>
+						<div className="relative">
+							<div className="h-64 sm:h-72 w-full flex items-end gap-[2px] pt-6 pb-2 border-b border-line">
+								{data.dailyTimeline.map((day) => {
+									const maxVal = Math.max(1, ...data.dailyTimeline!.map((d) => d.total));
+									const heightPct = Math.min(100, Math.max(3, (day.total / maxVal) * 100));
+
+									const t1Id = data.topThreeMeta?.[0]?.id;
+									const t2Id = data.topThreeMeta?.[1]?.id;
+									const t3Id = data.topThreeMeta?.[2]?.id;
+
+									const t1Tok = t1Id ? (day.byModel[t1Id] || 0) : 0;
+									const t2Tok = t2Id ? (day.byModel[t2Id] || 0) : 0;
+									const t3Tok = t3Id ? (day.byModel[t3Id] || 0) : 0;
+									const othersTok = Math.max(0, day.total - t1Tok - t2Tok - t3Tok);
+
+									const t1Pct = day.total > 0 ? (t1Tok / day.total) * 100 : 0;
+									const t2Pct = day.total > 0 ? (t2Tok / day.total) * 100 : 0;
+									const t3Pct = day.total > 0 ? (t3Tok / day.total) * 100 : 0;
+									const othersPct = day.total > 0 ? (othersTok / day.total) * 100 : 0;
+
+									// Opencode focus dimming logic:
+									// If a model is highlighted, non-highlighted slices fade to muted light gray #e5e5df
+									const isMuted = Boolean(highlightedModel);
+									const t1Color = isMuted ? (highlightedModel === t1Id ? "#5b52f9" : "#e5e5df") : "#5b52f9";
+									const t2Color = isMuted ? (highlightedModel === t2Id ? "#00b4d8" : "#e5e5df") : "#00b4d8";
+									const t3Color = isMuted ? (highlightedModel === t3Id ? "#10b981" : "#e5e5df") : "#10b981";
+									const othersColor = isMuted ? (highlightedModel === "others" ? "#f59e0b" : "#e5e5df") : "#f59e0b";
+
+									return (
+										<div
+											key={day.date}
+											className="flex-1 h-full flex flex-col justify-end group relative cursor-pointer"
+										>
+											{/* Stacked bar segments */}
+											<div
+												className="w-full flex flex-col-reverse rounded-xs overflow-hidden transition-all duration-200"
+												style={{ height: day.total > 0 ? `${heightPct}%` : "3px" }}
+											>
+												{day.total === 0 ? (
+													<div className="w-full h-full bg-[#ebebe6]" />
+												) : (
+													<>
+														{t1Tok > 0 && <div style={{ height: `${t1Pct}%`, backgroundColor: t1Color }} />}
+														{t2Tok > 0 && <div style={{ height: `${t2Pct}%`, backgroundColor: t2Color }} />}
+														{t3Tok > 0 && <div style={{ height: `${t3Pct}%`, backgroundColor: t3Color }} />}
+														{othersTok > 0 && <div style={{ height: `${othersPct}%`, backgroundColor: othersColor }} />}
+													</>
+												)}
+											</div>
+
+											{/* Interactive Tooltip Card on Hover (OpenCode exact breakdown) */}
+											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:block z-50 pointer-events-none w-52 p-3 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-line text-xs font-mono">
+												<div className="flex items-center justify-between border-b border-line/60 pb-1.5 mb-1.5">
+													<span className="font-bold text-ink uppercase">{day.formattedDate}</span>
+													<span className="font-bold text-accent">{fmtCompact(day.total)} total</span>
+												</div>
+												<div className="space-y-1 text-[10.5px]">
+													<div
+														onMouseEnter={() => t1Id && setHighlightedModel(t1Id)}
+														className={`flex items-center justify-between pointer-events-auto cursor-pointer rounded px-1 py-0.5 ${
+															highlightedModel === t1Id ? "bg-[#5b52f9]/10 font-bold" : ""
+														}`}
+													>
+														<span className="flex items-center gap-1.5 truncate text-ink">
+															<span className="size-2 rounded-xs bg-[#5b52f9] shrink-0" />
+															<span className="truncate">{data?.topThreeMeta?.[0]?.displayName ?? "Top 1"}</span>
+														</span>
+														<span className="tabular-nums font-semibold text-ink">{fmtCompact(t1Tok)}</span>
+													</div>
+													<div
+														onMouseEnter={() => t2Id && setHighlightedModel(t2Id)}
+														className={`flex items-center justify-between pointer-events-auto cursor-pointer rounded px-1 py-0.5 ${
+															highlightedModel === t2Id ? "bg-[#00b4d8]/10 font-bold" : ""
+														}`}
+													>
+														<span className="flex items-center gap-1.5 truncate text-ink">
+															<span className="size-2 rounded-xs bg-[#00b4d8] shrink-0" />
+															<span className="truncate">{data?.topThreeMeta?.[1]?.displayName ?? "Top 2"}</span>
+														</span>
+														<span className="tabular-nums font-semibold text-ink">{fmtCompact(t2Tok)}</span>
+													</div>
+													<div
+														onMouseEnter={() => t3Id && setHighlightedModel(t3Id)}
+														className={`flex items-center justify-between pointer-events-auto cursor-pointer rounded px-1 py-0.5 ${
+															highlightedModel === t3Id ? "bg-[#10b981]/10 font-bold" : ""
+														}`}
+													>
+														<span className="flex items-center gap-1.5 truncate text-ink">
+															<span className="size-2 rounded-xs bg-[#10b981] shrink-0" />
+															<span className="truncate">{data?.topThreeMeta?.[2]?.displayName ?? "Top 3"}</span>
+														</span>
+														<span className="tabular-nums font-semibold text-ink">{fmtCompact(t3Tok)}</span>
+													</div>
+													<div
+														onMouseEnter={() => setHighlightedModel("others")}
+														className={`flex items-center justify-between pointer-events-auto cursor-pointer rounded px-1 py-0.5 ${
+															highlightedModel === "others" ? "bg-[#f59e0b]/10 font-bold" : ""
+														}`}
+													>
+														<span className="flex items-center gap-1.5 truncate text-ink">
+															<span className="size-2 rounded-xs bg-[#f59e0b] shrink-0" />
+															<span>Others</span>
+														</span>
+														<span className="tabular-nums font-semibold text-ink">{fmtCompact(othersTok)}</span>
+													</div>
+												</div>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+
+							{/* 60-day Timeline X-Axis Labels */}
+							<div className="flex justify-between text-[10px] font-mono text-ink-2 pt-2 px-1">
+								<span>{data.dailyTimeline[0]?.formattedDate}</span>
+								<span>{data.dailyTimeline[Math.floor(data.dailyTimeline.length / 2)]?.formattedDate}</span>
+								<span>{data.dailyTimeline[data.dailyTimeline.length - 1]?.formattedDate}</span>
+							</div>
 						</div>
 					) : (
 						<div className="h-48 flex items-center justify-center text-xs font-mono text-ink-2">

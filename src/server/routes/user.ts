@@ -228,8 +228,8 @@ export function userRoutes() {
 		const top3 = enrichedModels[2];
 		const top3Ids = new Set([top1?.id, top2?.id, top3?.id].filter(Boolean) as string[]);
 
-		// Daily stacked timeline by model (last 30 consecutive days)
-		const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000;
+		// 60-day continuous timeline with individual model breakdowns (like opencode.ai/data)
+		const sixtyDaysAgoMs = Date.now() - 60 * 24 * 3600 * 1000;
 		const dailyModelRows = await db
 			.select({
 				date: sql<string>`DATE(${usageRequests.ts} / 1000, 'unixepoch')`,
@@ -237,60 +237,46 @@ export function userRoutes() {
 				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
 			})
 			.from(usageRequests)
-			.where(sql`${usageRequests.ts} >= ${thirtyDaysAgoMs}`)
+			.where(sql`${usageRequests.ts} >= ${sixtyDaysAgoMs}`)
 			.groupBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`, usageRequests.model)
 			.orderBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`);
 
-		// Build an activity lookup map by date
-		const dailyLookup = new Map<string, { top1: number; top2: number; top3: number; others: number; total: number }>();
+		// Build per-day lookup map of model -> tokens
+		const dailyLookup = new Map<string, Record<string, number>>();
 		for (const r of dailyModelRows) {
 			if (!r.date) continue;
-			let dayObj = dailyLookup.get(r.date);
-			if (!dayObj) {
-				dayObj = { top1: 0, top2: 0, top3: 0, others: 0, total: 0 };
-				dailyLookup.set(r.date, dayObj);
+			let dayMap = dailyLookup.get(r.date);
+			if (!dayMap) {
+				dayMap = { total: 0 };
+				dailyLookup.set(r.date, dayMap);
 			}
 			const tok = Number(r.tokens || 0);
-			dayObj.total += tok;
-			if (top1 && r.model === top1.id) {
-				dayObj.top1 += tok;
-			} else if (top2 && r.model === top2.id) {
-				dayObj.top2 += tok;
-			} else if (top3 && r.model === top3.id) {
-				dayObj.top3 += tok;
-			} else {
-				dayObj.others += tok;
-			}
+			dayMap[r.model] = (dayMap[r.model] || 0) + tok;
+			dayMap.total = (dayMap.total || 0) + tok;
 		}
 
-		// Generate all 30 consecutive days up to today so the chart has high density like OpenCode
+		// Generate 60 consecutive days up to today
 		const dailyTimeline: Array<{
 			date: string;
 			formattedDate: string;
-			top1: number;
-			top2: number;
-			top3: number;
-			others: number;
 			total: number;
+			byModel: Record<string, number>;
 		}> = [];
 
 		const now = new Date();
-		for (let i = 29; i >= 0; i--) {
+		for (let i = 59; i >= 0; i--) {
 			const d = new Date(now);
 			d.setDate(d.getDate() - i);
 			const iso = d.toISOString().slice(0, 10);
-			const stat = dailyLookup.get(iso) || { top1: 0, top2: 0, top3: 0, others: 0, total: 0 };
+			const dayMap = dailyLookup.get(iso) || { total: 0 };
+			const { total, ...modelsOnly } = dayMap;
 			dailyTimeline.push({
 				date: iso,
 				formattedDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-				top1: stat.top1,
-				top2: stat.top2,
-				top3: stat.top3,
-				others: stat.others,
-				total: stat.total,
+				total: total || 0,
+				byModel: modelsOnly,
 			});
 		}
-
 		const topThreeMeta = [
 			top1 ? { id: top1.id, displayName: top1.displayName, provider: top1.provider } : null,
 			top2 ? { id: top2.id, displayName: top2.displayName, provider: top2.provider } : null,
