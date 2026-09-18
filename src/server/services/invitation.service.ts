@@ -21,10 +21,9 @@ export interface InvitationInput {
 }
 
 export class InvitationService {
-	async createInvitation(input: InvitationInput, invitedBy: string) {
+	async createInvitation(input: InvitationInput, invitedBy?: string | null) {
 		const email = input.email.toLowerCase().trim();
 		const existingUser = await userRepo.findByEmail(email);
-		if (existingUser) throw new Error("email_exists");
 
 		const pending = await invitationRepo.findPendingByEmail(email);
 		if (pending) throw new Error("invitation_pending");
@@ -38,7 +37,7 @@ export class InvitationService {
 		const row = await invitationRepo.create({
 			email,
 			tokenHash: hashToken(token),
-			invitedBy,
+			invitedBy: invitedBy || null,
 			packageName: input.packageName?.trim() || null,
 			maxApiKeys: input.maxApiKeys,
 			weeklyCreditBudget: input.weeklyCreditBudget ?? input.monthlyCreditBudget ?? null,
@@ -55,8 +54,9 @@ export class InvitationService {
 			await invitationRepo.revoke(row.id);
 			throw err;
 		}
-
-		await auditRepo.record(invitedBy, "invitation.create", row.id, { email, packageName: row.packageName });
+		if (invitedBy) {
+			await auditRepo.record(invitedBy, "invitation.create", row.id, { email, packageName: row.packageName });
+		}
 		return { id: row.id, email, packageName: row.packageName, expiresAt, inviteUrl: url };
 	}
 

@@ -3,6 +3,7 @@ import { invitationService } from "./invitation.service.js";
 import { connectionService } from "./connection.service.js";
 import { announcementService } from "./announcement.service.js";
 import { usageRepo } from "../repositories/usage.repository.js";
+import { userRepo } from "../repositories/user.repository.js";
 import { env } from "../env.js";
 
 export const BOT_COMMANDS = [
@@ -205,6 +206,7 @@ async function handleInvite(args: string[]): Promise<string> {
 	const weeklyCreditBudget = args[2] ? Number(args[2].replace(/\D/g, "")) : 50000;
 
 	try {
+		const admin = env.ADMIN_EMAIL ? await userRepo.findByEmail(env.ADMIN_EMAIL) : null;
 		const res = await invitationService.createInvitation(
 			{
 				email,
@@ -214,7 +216,7 @@ async function handleInvite(args: string[]): Promise<string> {
 				allModels: true,
 				allowedModels: [],
 			},
-			"telegram_bot",
+			admin ? admin.id : null,
 		);
 
 		return `✉️ <b>Invitation Created Successfully!</b>\n\n` +
@@ -237,8 +239,8 @@ async function handleAnnounce(content: string): Promise<string> {
 		return `⚠️ <b>Syntax:</b> <code>/announce &lt;your message&gt;</code>\n\n` +
 			`<i>Example:</i> <code>/announce Server maintenance tonight from 2AM to 3AM</code>`;
 	}
-
 	try {
+		const admin = env.ADMIN_EMAIL ? await userRepo.findByEmail(env.ADMIN_EMAIL) : null;
 		const item = await announcementService.createAnnouncement(
 			{
 				title: "Thông báo từ Quản trị viên",
@@ -246,7 +248,7 @@ async function handleAnnounce(content: string): Promise<string> {
 				type: "info",
 				active: true,
 			},
-			"telegram_bot",
+			admin ? admin.id : undefined,
 		);
 
 		return `📢 <b>Announcement Broadcasted to Dashboard!</b>\n\n` +
