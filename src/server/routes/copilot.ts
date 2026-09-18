@@ -27,6 +27,7 @@ export function copilotRoutes() {
 			parsed.data.lang,
 			parsed.data.currentPath
 		);
+		return c.json(reply);
 	});
 
 	return app;
