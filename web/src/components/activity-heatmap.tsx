@@ -234,19 +234,30 @@ export function ActivityHeatmap({ data }: ActivityHeatmapProps) {
 					</div>
 				</div>
 
-				{/* Floating tooltip on hover */}
+				{/* Floating tooltip on hover (Widened with viewport auto-shift) */}
 				{hoveredDay && (
 					<div
-						className="fixed z-50 pointer-events-none -translate-x-1/2 -translate-y-full rounded-md bg-navy text-white px-2.5 py-1.5 shadow-xl font-mono text-[11px] space-y-0.5 border border-white/20 animate-in fade-in-50 duration-100"
-						style={{ left: hoveredDay.x, top: hoveredDay.y }}
+						className="fixed z-50 pointer-events-none -translate-y-full rounded-lg bg-navy text-white p-3 shadow-2xl font-mono text-xs space-y-1.5 border border-white/20 animate-in fade-in-50 duration-100 min-w-[240px] max-w-xs"
+						style={{
+							left: Math.max(130, Math.min(window.innerWidth - 130, hoveredDay.x)),
+							top: hoveredDay.y - 4,
+							transform: "translate(-50%, -100%)",
+						}}
 					>
-						<div className="font-bold text-accent-light">{hoveredDay.date}</div>
-						<div className="text-white/90">
-							{fmtNum(hoveredDay.tokens)} tokens ({hoveredDay.requests} reqs)
+						<div className="flex items-center justify-between border-b border-white/15 pb-1.5">
+							<span className="font-bold text-accent-light">{hoveredDay.date}</span>
+							<span className="text-[10.5px] text-[#8f8fb8]">{hoveredDay.requests} requests</span>
+						</div>
+						<div className="flex items-center justify-between text-[11px] pt-0.5">
+							<span className="text-[#c5c5e0]">Total Volume:</span>
+							<span className="font-bold text-white tabular-nums">{fmtNum(hoveredDay.tokens)} tok</span>
 						</div>
 						{hoveredDay.credits > 0 && (
-							<div className="text-amber-300 text-[10px]">
-								{hoveredDay.credits} credits consumed
+							<div className="flex items-center justify-between text-[11px]">
+								<span className="text-[#c5c5e0]">AI Credits:</span>
+								<span className="font-bold text-amber-300 tabular-nums">
+									{hoveredDay.credits.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cr
+								</span>
 							</div>
 						)}
 					</div>
