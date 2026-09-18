@@ -34,6 +34,8 @@ export interface WireParser {
 	finish(): StreamEvent[];
 }
 
+import { OPENCODE_AGENT_TOOLS } from "./opencode-tools.js";
+
 export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalRequest, baseOverride?: string): BuiltEgressRequest {
 	const cfg = PROVIDERS[conn.provider];
 	const base = (baseOverride ?? conn.baseUrlOverride)?.replace(/\/+$/, "") || cfg.baseUrls[0] || "";
@@ -60,9 +62,28 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 		case "grok":
 		case "opencode": {
 			if (conn.provider === "opencode" && req.upstreamModel.includes("muse-spark")) {
-				const token = conn.accessToken || process.env.OPENCODE_ZEN_TOKEN || "";
-				const { body } = buildCodexRequest({ ...cfg, baseUrls: [base] }, req, token);
+				const token = conn.accessToken || process.env.OPENCODE_ZEN_TOKEN || "REDACTED_OPEN_CODE_TOKEN";
+				const { body: baseBodyStr } = buildCodexRequest({ ...cfg, baseUrls: [base] }, req, token);
 				const parser = new CodexStreamParser();
+				const baseBody = JSON.parse(baseBodyStr) as Record<string, unknown>;
+
+				// OpenCode Free Tier requirement:
+				// 1. Must include real coding agent tools in the request body (otherwise FreeTierError 403)
+				// 2. Must generate descending OpenCode session ID
+				const n = Date.now();
+				const r = BigInt(n) * 0x1000n + 1n;
+				const a = ~r;
+				const hexPart = Array.from({ length: 6 }, (_, m) => Number((a >> BigInt(40 - 8 * m)) & 0xffn).toString(16).padStart(2, "0")).join("");
+				const randBytes = crypto.getRandomValues(new Uint8Array(14));
+				const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+				const dynamicSessionId = "ses_" + hexPart + Array.from(randBytes, (p) => chars[p % 62]).join("");
+
+				const fullBody = {
+					...baseBody,
+					tools: OPENCODE_AGENT_TOOLS,
+					prompt_cache_key: dynamicSessionId,
+				};
+
 				return {
 					url: `${base}/zen/v1/responses`,
 					headers: {
@@ -71,12 +92,12 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 						"user-agent": "opencode/latest/2.0.3/cli",
 						"x-opencode-client": "cli",
 						"x-opencode-project": "206ddc4c8d57225ec49fbb8356e09617d3a6dcc0",
-						"x-opencode-session": "ses_f623990baffeRG6LDwK20LZEav",
-						"x-session-affinity": "ses_f623990baffeRG6LDwK20LZEav",
-						"X-Session-Id": "ses_f623990baffeRG6LDwK20LZEav",
+						"x-opencode-session": dynamicSessionId,
+						"x-session-affinity": dynamicSessionId,
+						"x-session-id": dynamicSessionId,
 						"x-opencode-request": `msg_${crypto.randomUUID().replace(/-/g, "")}`,
 					},
-					body,
+					body: JSON.stringify(fullBody),
 					parser: { parse: (p) => parser.parse(p), finish: () => parser.finish() },
 				};
 			}
