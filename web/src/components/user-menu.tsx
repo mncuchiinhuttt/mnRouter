@@ -32,7 +32,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 		<>
 			<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<button className="flex w-full items-center gap-2.5 rounded-md p-1.5 transition hover:bg-navy-3 text-left cursor-pointer outline-none group">
+				<button data-tour="user-profile-btn" className="flex w-full items-center gap-2.5 rounded-md p-1.5 transition hover:bg-navy-3 text-left cursor-pointer outline-none group">
 					{me.avatarUrl ? (
 						<img src={me.avatarUrl} alt="" className="size-8 shrink-0 rounded-full object-cover border border-white/20 shadow-xs" />
 					) : (
@@ -56,7 +56,7 @@ export function UserMenu({ me, onNavigate }: { me: Me; onNavigate?: () => void }
 					<span>{t("userMenu.accessPass", "Thẻ truy cập")}</span>
 				</DropdownMenuItem>
 
-				<DropdownMenuItem onSelect={() => setSettingsOpen(true)} className="gap-2.5 font-mono text-xs uppercase tracking-wider text-ink hover:bg-paper-2 cursor-pointer">
+				<DropdownMenuItem data-tour="user-settings-item" onSelect={() => setSettingsOpen(true)} className="gap-2.5 font-mono text-xs uppercase tracking-wider text-ink hover:bg-paper-2 cursor-pointer">
 					<UserCog className="size-4 text-accent" />
 					<span>{t("userMenu.profileSettings")}</span>
 				</DropdownMenuItem>

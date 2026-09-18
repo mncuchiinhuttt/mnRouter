@@ -144,6 +144,7 @@ export function UserSettingsDialog({ open, onOpenChange, me }: UserSettingsDialo
 								<span>{t("userSettings.displayName")}</span>
 							</Label>
 							<Input
+								data-tour="user-display-name-input"
 								value={displayName}
 								onChange={(e) => setDisplayName(e.target.value)}
 								placeholder="Alex Morgan"

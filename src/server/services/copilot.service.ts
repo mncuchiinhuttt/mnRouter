@@ -78,7 +78,9 @@ Nhiệm vụ của bạn:
   - [data-tour="invite-btn"]: Nút "+ Send invitation" trên trang /admin/users
   - [data-tour="invite-emails"]: Ô nhập nhiều email mời cùng lúc trên /admin/users
   - [data-tour="services-health"]: Bảng trạng thái dịch vụ và uptime trên /status
-
+  - [data-tour="user-profile-btn"]: Nút menu Tài khoản/Avatar ở góc dưới cùng bên trái thanh menu sidebar
+  - [data-tour="user-settings-item"]: Mục "Cài đặt tài khoản" trong menu tài khoản cá nhân
+  - [data-tour="user-display-name-input"]: Ô nhập Tên hiển thị mới trong hộp thoại Cài đặt tài khoản
 --- NGUYÊN TẮC:
 - Bước 1 luôn là nút chuyển hướng trên menu sidebar (ví dụ [data-tour="nav-keys"] nếu người dùng cần vào trang API Keys).
 - Bước 2 là nút bấm hành động cụ thể trên trang đó (ví dụ [data-tour="create-key-btn"]).
@@ -218,10 +220,21 @@ export class CopilotService {
 				},
 			};
 		}
+		if (q.includes("tên") || q.includes("name") || q.includes("profile") || q.includes("tài khoản") || q.includes("avatar") || q.includes("đổi tên") || q.includes("update tên")) {
+			return {
+				content: "Để đổi tên hiển thị hoặc ảnh đại diện, ní bấm vào mục Tài khoản cá nhân ở góc dưới cùng menu bên trái, chọn 'Cài đặt tài khoản' và nhập tên mới rồi bấm Lưu thay đổi nha:",
+				tour: {
+					title: "Đổi tên hiển thị & Thông tin cá nhân",
+					steps: [
+						{ targetSelector: '[data-tour="user-profile-btn"]', title: "Bước 1: Mở menu tài khoản", instruction: "Bấm vào ảnh đại diện hoặc tên của bạn ở góc dưới cùng thanh menu bên trái." },
+						{ targetSelector: '[data-tour="user-settings-item"]', title: "Bước 2: Chọn Cài đặt tài khoản", instruction: "Bấm chọn 'Cài đặt tài khoản' trong menu vừa mở." },
+						{ targetSelector: '[data-tour="user-display-name-input"]', title: "Bước 3: Nhập tên mới", instruction: "Nhập Tên hiển thị mới của bạn rồi bấm nút 'Lưu thay đổi'." },
+					],
+				},
+			};
+		}
 
-		return {
-			content: "Tui có thể hướng dẫn bạn về bất kỳ tính năng nào của mnRouter: Tạo API Key, Cấu hình Tools (Codex/Claude), Sử dụng Chat, Kiểm tra trạng thái máy chủ hoặc Mời thành viên. Bạn hãy thử đặt câu hỏi cụ thể nha.",
-		};
+		return null;
 	}
 }
 
