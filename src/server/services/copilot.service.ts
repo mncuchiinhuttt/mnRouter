@@ -1,8 +1,7 @@
-import { modelRepo } from "../repositories/model.repository.js";
-import { openUpstreamWithFailover } from "../gateway/router.js";
-import { translateUpstreamStream } from "../gateway/router.js";
-import type { CanonicalRequest } from "../gateway/canonical.js";
-import type { ProviderId } from "../gateway/registry.js";
+import { modelRepo } from "@repositories/model.repository.js";
+import { openUpstreamWithFailover, translateUpstreamStream } from "@gateway/router.js";
+import type { CanonicalRequest } from "@gateway/canonical.js";
+import type { ProviderId } from "@gateway/registry.js";
 
 export interface CopilotTourStep {
 	targetSelector: string;

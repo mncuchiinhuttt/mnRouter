@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { requireAuth } from "../auth/guards.js";
-import { copilotService } from "../services/copilot.service.js";
+import { requireAuth } from "@auth/guards.js";
+import { copilotService } from "@services/copilot.service.js";
 
 const askSchema = z.object({
 	query: z.string().trim().min(1).max(1000),

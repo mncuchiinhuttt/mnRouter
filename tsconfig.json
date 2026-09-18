@@ -18,6 +18,13 @@
 		"paths": {
 			"@db": ["src/server/db/index.ts"],
 			"@db/*": ["src/server/db/*"],
+			"@services/*": ["src/server/services/*"],
+			"@repositories/*": ["src/server/repositories/*"],
+			"@gateway/*": ["src/server/gateway/*"],
+			"@auth/*": ["src/server/auth/*"],
+			"@routes/*": ["src/server/routes/*"],
+			"@limits/*": ["src/server/limits/*"],
+			"@usage/*": ["src/server/usage/*"],
 			"@shared/*": ["src/shared/*"],
 			"@server/*": ["src/server/*"],
 			"@web/*": ["web/src/*"]
