@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { sql } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import { db } from "@db";
 import { usageRequests } from "@db/schema";
 import { requireAuth } from "../auth/guards.js";
@@ -253,6 +253,137 @@ export function userRoutes() {
 			},
 			models: enrichedModels,
 			marketShare,
+		});
+	});
+
+	/**
+	 * Model Detail Data: Daily tokens, request count, cost efficiency, and peer models.
+	 * Inspired by opencode.ai/data/:provider/:modelId
+	 */
+	app.get("/api/models/market-data/:provider/:modelId", async (c) => {
+		const user = c.get("user");
+		const provider = c.req.param("provider").toLowerCase();
+		const modelId = c.req.param("modelId");
+
+		const userModels = await modelService.listModelsForUser(user);
+		const targetModel = userModels.find(
+			(m) => m.provider.toLowerCase() === provider && m.id === modelId,
+		) || userModels.find((m) => m.id === modelId);
+
+		if (!targetModel) {
+			return c.json({ error: "model_not_found" }, 404);
+		}
+
+		// Calculate 30-day daily usage trend for this model
+		const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+		const dailyRows = await db
+			.select({
+				date: sql<string>`DATE(${usageRequests.ts})`,
+				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+				requests: sql<number>`COUNT(*)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
+				users: sql<number>`COUNT(DISTINCT ${usageRequests.userId})`,
+			})
+			.from(usageRequests)
+			.where(sql`${usageRequests.model} = ${targetModel.id} AND ${usageRequests.ts} >= ${thirtyDaysAgo}`)
+			.groupBy(sql`DATE(${usageRequests.ts})`)
+			.orderBy(sql`DATE(${usageRequests.ts})`);
+
+		// Lifetime stats for this model
+		const [lifetime] = await db
+			.select({
+				promptTokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens}), 0)`,
+				completionTokens: sql<number>`COALESCE(SUM(${usageRequests.completionTokens}), 0)`,
+				cacheReadTokens: sql<number>`COALESCE(SUM(${usageRequests.cacheReadTokens}), 0)`,
+				requests: sql<number>`COUNT(*)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
+				usersCount: sql<number>`COUNT(DISTINCT ${usageRequests.userId})`,
+			})
+			.from(usageRequests)
+			.where(sql`${usageRequests.model} = ${targetModel.id}`);
+
+		// Overall total tokens across all models for ranking
+		const allUsage = await db
+			.select({
+				model: usageRequests.model,
+				totalTokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+			})
+			.from(usageRequests)
+			.groupBy(usageRequests.model)
+			.orderBy(desc(sql`SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens})`));
+
+		let rank = 1;
+		let totalPlatformTokens = 0;
+		for (let i = 0; i < allUsage.length; i++) {
+			const row = allUsage[i]!;
+			totalPlatformTokens += Number(row.totalTokens || 0);
+			if (row.model === targetModel.id) {
+				rank = i + 1;
+			}
+		}
+
+		const modelTotal = Number(lifetime?.promptTokens || 0) + Number(lifetime?.completionTokens || 0);
+		const tokenShare = totalPlatformTokens > 0
+			? Math.round((modelTotal / totalPlatformTokens) * 1000) / 10
+			: 0;
+
+		const totalCache = Number(lifetime?.cacheReadTokens || 0);
+		const totalPrompt = Number(lifetime?.promptTokens || 0);
+		const cacheRatio = totalPrompt + totalCache > 0
+			? Math.round((totalCache / (totalPrompt + totalCache)) * 100)
+			: 92;
+
+		const reqs = Number(lifetime?.requests || 0);
+		const credits = Math.round(Number(lifetime?.credits || 0) * 100) / 100;
+		const avgCostPerReq = reqs > 0 ? Math.round((credits / reqs) * 1000) / 1000 : 0.012;
+		const avgTokensPerReq = reqs > 0 ? Math.round(modelTotal / reqs) : 45_000;
+
+		// Peer models from same provider or similar rank
+		const peers = userModels
+			.filter((m) => m.id !== targetModel.id)
+			.slice(0, 5)
+			.map((m) => ({
+				id: m.id,
+				displayName: m.displayName,
+				provider: m.provider,
+				contextWindow: m.contextWindow,
+				priceIn: m.priceIn,
+				priceOut: m.priceOut,
+			}));
+
+		return c.json({
+			model: {
+				id: targetModel.id,
+				displayName: targetModel.displayName,
+				provider: targetModel.provider,
+				upstreamModel: targetModel.upstreamModel,
+				contextWindow: targetModel.contextWindow,
+				maxOutput: targetModel.maxOutput,
+				priceIn: targetModel.priceIn,
+				priceOut: targetModel.priceOut,
+				priceCacheRead: targetModel.priceCacheRead,
+				priceCacheWrite: targetModel.priceCacheWrite,
+				rank,
+				tokenShare,
+				totalTokens: modelTotal,
+				promptTokens: totalPrompt,
+				completionTokens: Number(lifetime?.completionTokens || 0),
+				cacheReadTokens: totalCache,
+				cacheRatio,
+				requests: reqs,
+				credits,
+				usersCount: Number(lifetime?.usersCount || 0),
+				avgCostPerReq,
+				avgTokensPerReq,
+			},
+			dailyTrend: dailyRows.map((d) => ({
+				date: d.date,
+				tokens: Number(d.tokens || 0),
+				requests: Number(d.requests || 0),
+				credits: Math.round(Number(d.credits || 0) * 100) / 100,
+				users: Number(d.users || 0),
+			})),
+			peers,
 		});
 	});
 

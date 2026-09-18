@@ -17,6 +17,7 @@ import {
 	CheckCircle2,
 	RefreshCw,
 } from "lucide-react";
+import { Link } from "react-router";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
 import { Input } from "@web/components/ui/primitives";
@@ -211,9 +212,10 @@ export default function ModelsDataPage() {
 
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 					{topThree.map((m, idx) => (
-						<div
+						<Link
 							key={m.id}
-							className="relative overflow-hidden rounded-xl border border-line bg-white p-5 shadow-2xs transition hover:border-line-hover hover:shadow-xs group"
+							to={`/data/${m.provider}/${m.id}`}
+							className="relative overflow-hidden rounded-xl border border-line bg-white p-5 shadow-2xs transition hover:border-accent hover:shadow-xs group cursor-pointer block"
 						>
 							<div className="absolute top-3 right-4 font-mono text-3xl font-bold text-ink/10 select-none">
 								0{idx + 1}
@@ -247,7 +249,7 @@ export default function ModelsDataPage() {
 									<div className="font-semibold text-ink tabular-nums">{m.priceOut} cr</div>
 								</div>
 							</div>
-						</div>
+						</Link>
 					))}
 				</div>
 			</section>
@@ -448,7 +450,10 @@ export default function ModelsDataPage() {
 										<tr key={m.id} className="hover:bg-paper/80 transition-colors">
 											<td className="py-3 px-4 text-ink-2 tabular-nums">{idx + 1}</td>
 											<td className="py-3 px-4">
-												<div className="font-bold text-ink">{m.displayName}</div>
+												<Link to={`/data/${m.provider}/${m.id}`} className="font-bold text-ink hover:text-accent transition-colors flex items-center gap-1 group">
+													<span>{m.displayName}</span>
+													<ArrowUpRight className="size-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+												</Link>
 												<div className="text-[10px] text-ink-2">{m.id}</div>
 											</td>
 											<td className="py-3 px-4">

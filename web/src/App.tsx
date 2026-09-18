@@ -26,6 +26,7 @@ import AdminSettings from "@web/pages/AdminSettings";
 import ServerStatusPage from "@web/pages/ServerStatusPage";
 import ChangelogPage from "@web/pages/ChangelogPage";
 import ModelsDataPage from "@web/pages/ModelsDataPage";
+import ModelDetailPage from "@web/pages/ModelDetailPage";
 export function useMe() {
 	return useQuery({
 		queryKey: ["me"],
@@ -72,7 +73,7 @@ export default function App() {
 				<Route path="chat" element={<ChatPage />} />
 				<Route path="mcp" element={<McpSkillsPage />} />
 				<Route path="data" element={<ModelsDataPage />} />
-				<Route path="help" element={<Help />} />
+				<Route path="data/:provider/:modelId" element={<ModelDetailPage />} />
 				<Route path="status" element={<ServerStatusPage />} />
 				<Route path="changelog" element={<ChangelogPage />} />
 				<Route path="admin/users" element={<AdminUsers />} />
