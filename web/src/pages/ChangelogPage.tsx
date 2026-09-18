@@ -6,12 +6,10 @@ import {
 	Search, 
 	GitCommit, 
 	ChevronDown, 
-	ExternalLink, 
 	Sparkles, 
 	Wrench, 
 	Layers, 
 	Clock, 
-	FileCode2,
 	CheckCircle2,
 	X
 } from "lucide-react";
@@ -399,32 +397,17 @@ export default function ChangelogPage() {
 	return (
 		<div className="space-y-6 max-w-5xl mx-auto pb-16">
 			{/* Top Header */}
-			<header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-line pb-5">
-				<div>
-					<div className="flex items-center gap-2 text-xs font-mono text-ink-2 uppercase tracking-wider mb-1">
-						<History className="size-3.5 text-accent" />
-						<span>Project Changelog</span>
-					</div>
-					<h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
-						{t("changelog.title", "Server Changelog")}
-					</h1>
-					<p className="mt-1 text-xs sm:text-sm text-ink-2">
-						{t("changelog.desc", "Real-time stream of platform updates, bug fixes, and protocol improvements.")}
-					</p>
+			<header className="border-b border-line pb-5">
+				<div className="flex items-center gap-2 text-xs font-mono text-ink-2 uppercase tracking-wider mb-1">
+					<History className="size-3.5 text-accent" />
+					<span>Project Changelog</span>
 				</div>
-
-				<div className="flex items-center gap-2">
-					<a
-						href="https://github.com/mncuchiinhuttt/mnRouter"
-						target="_blank"
-						rel="noreferrer"
-						className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 font-mono text-xs font-medium text-ink hover:border-accent hover:text-accent transition shadow-2xs cursor-pointer"
-					>
-						<GitCommit className="size-3.5" />
-						<span>GITHUB REPO</span>
-						<ExternalLink className="size-3 text-ink-2 ml-0.5" />
-					</a>
-				</div>
+				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+					{t("changelog.title", "Server Changelog")}
+				</h1>
+				<p className="mt-1 text-xs sm:text-sm text-ink-2">
+					{t("changelog.desc", "Real-time stream of platform updates, bug fixes, and protocol improvements.")}
+				</p>
 			</header>
 
 			{/* Filter Bar & Search */}
@@ -599,29 +582,10 @@ export default function ChangelogPage() {
 													</div>
 												)}
 
-												{/* Affected Files & Deployment Timestamp */}
-												<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-line/60 text-[11px] font-mono text-ink-2">
-													{entry.files && entry.files.length > 0 ? (
-														<div className="flex flex-wrap items-center gap-1.5">
-															<FileCode2 className="size-3 text-ink-2 shrink-0" />
-															<span className="text-ink-2/70">Modified:</span>
-															{entry.files.map((f) => (
-																<span
-																	key={f}
-																	className="bg-white px-1.5 py-0.5 rounded border border-line text-ink"
-																>
-																	{f}
-																</span>
-															))}
-														</div>
-													) : (
-														<div />
-													)}
-
-													<div className="flex items-center gap-1.5 text-ink-2/80 shrink-0">
-														<Clock className="size-3" />
-														<span>Deployed: {entry.fullDateTime}</span>
-													</div>
+												{/* Deployment Timestamp */}
+												<div className="flex items-center gap-1.5 pt-3 border-t border-line/60 text-[11px] font-mono text-ink-2">
+													<Clock className="size-3 text-accent shrink-0" />
+													<span>Deployed: {entry.fullDateTime}</span>
 												</div>
 											</div>
 										</motion.div>
