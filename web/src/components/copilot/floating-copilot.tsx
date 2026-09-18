@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-	X, 
+import { useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
+import {
+	X,
 	Terminal, 
 	Copy, 
 	Check, 
@@ -31,6 +33,8 @@ interface CopilotReply {
 }
 
 export function FloatingCopilot() {
+	const { t, i18n } = useTranslation();
+	const location = useLocation();
 	const [isOpen, setIsOpen] = useState(false);
 	const [input, setInput] = useState("");
 	const [isThinking, setIsThinking] = useState(false);
@@ -72,7 +76,7 @@ export function FloatingCopilot() {
 	const copyToClipboard = (code: string) => {
 		navigator.clipboard.writeText(code);
 		setCopiedCode(code);
-		toast.success("Đã sao chép lệnh");
+		toast.success(t("copilot.copied", "Đã sao chép lệnh"));
 		setTimeout(() => setCopiedCode(null), 2000);
 	};
 
@@ -84,8 +88,11 @@ export function FloatingCopilot() {
 		setExternalResult(null);
 
 		try {
-			const res = await apiJson<CopilotReply>("/api/copilot/ask", "POST", { query });
-
+			const res = await apiJson<CopilotReply>("/api/copilot/ask", "POST", {
+				query,
+				lang: i18n.language || "vi",
+				currentPath: location.pathname,
+			});
 			// If the AI generated interactive web tour steps:
 			// Automatically launch the spotlight tour immediately without user click!
 			if (res.tour && res.tour.steps && res.tour.steps.length > 0) {
@@ -108,7 +115,7 @@ export function FloatingCopilot() {
 				});
 			}
 		} catch {
-			toast.error("Không thể kết nối Copilot, vui lòng thử lại");
+			toast.error(t("copilot.error", "Không thể kết nối Copilot, vui lòng thử lại"));
 		} finally {
 			setIsThinking(false);
 		}
@@ -137,7 +144,7 @@ export function FloatingCopilot() {
 						<div className="flex items-center gap-2 min-w-0 font-mono text-xs">
 							<span className="text-accent font-bold">&gt;</span>
 							<span className="text-ink-2 group-hover:text-ink transition truncate">
-								Hỏi Copilot chỉ dẫn...
+								{t("copilot.collapsedPlaceholder", "Hỏi Copilot chỉ dẫn...")}
 							</span>
 						</div>
 
@@ -176,7 +183,7 @@ export function FloatingCopilot() {
 								disabled={isThinking}
 								value={input}
 								onChange={(e) => setInput(e.target.value)}
-								placeholder="Bạn muốn làm gì? (ví dụ: tạo api key, cài codex, status)..."
+								placeholder={t("copilot.inputPlaceholder", "Bạn muốn làm gì? (ví dụ: tạo api key, cài codex, status)...")}
 								className="flex-1 bg-transparent text-xs text-ink placeholder:text-ink-2/50 focus:outline-none font-mono"
 							/>
 
@@ -212,7 +219,7 @@ export function FloatingCopilot() {
 										<Sparkles className="size-3.5 text-accent absolute" />
 									</div>
 									<div className="text-center space-y-0.5 font-mono text-xs text-ink">
-										<span>Copilot đang phân tích...</span>
+										<span>{t("copilot.thinkingTitle", "Copilot đang phân tích...")}</span>
 									</div>
 								</div>
 							)}
@@ -241,7 +248,7 @@ export function FloatingCopilot() {
 													) : (
 														<Copy className="size-3" />
 													)}
-													<span>Sao chép</span>
+													<span>{copiedCode === externalResult.snippet.code ? t("copilot.copied", "Đã sao chép") : t("copilot.copy", "Sao chép")}</span>
 												</button>
 											</div>
 											<pre className="p-2 rounded bg-paper text-ink overflow-x-auto text-[10.5px]">
@@ -262,7 +269,7 @@ export function FloatingCopilot() {
 											className="inline-flex items-center gap-1 rounded bg-paper-2 border border-line px-3 py-1 font-mono text-xs text-ink hover:border-accent transition cursor-pointer"
 										>
 											<CheckCircle2 className="size-3 text-[#1d7a33]" />
-											<span>Đã hiểu, đóng</span>
+											<span>{t("copilot.gotIt", "Đã hiểu, đóng")}</span>
 										</button>
 									</div>
 								</div>
@@ -271,8 +278,8 @@ export function FloatingCopilot() {
 							{/* 3. Subtle Ready State Footer */}
 							{!isThinking && !externalResult && (
 								<div className="flex items-center justify-between px-3.5 py-2 font-mono text-[10.5px] text-ink-2/70">
-									<span>// Nhập yêu cầu và nhấn Enter</span>
-									<span>Esc để đóng</span>
+									<span>// {t("copilot.readyHint", "Nhập yêu cầu và nhấn Enter")}</span>
+									<span>{t("copilot.escToClose", "Esc để đóng")}</span>
 								</div>
 							)}
 						</div>

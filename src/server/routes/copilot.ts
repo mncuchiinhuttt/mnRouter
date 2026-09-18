@@ -5,6 +5,8 @@ import { copilotService } from "@services/copilot.service.js";
 
 const askSchema = z.object({
 	query: z.string().trim().min(1).max(1000),
+	lang: z.string().default("vi"),
+	currentPath: z.string().default("/"),
 });
 
 export function copilotRoutes() {
@@ -19,8 +21,12 @@ export function copilotRoutes() {
 		}
 
 		const user = c.get("user");
-		const reply = await copilotService.ask(parsed.data.query, user?.role || "user");
-		return c.json(reply);
+		const reply = await copilotService.ask(
+			parsed.data.query,
+			user?.role || "user",
+			parsed.data.lang,
+			parsed.data.currentPath
+		);
 	});
 
 	return app;

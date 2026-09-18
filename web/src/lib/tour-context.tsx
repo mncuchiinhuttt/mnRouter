@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparkles, ArrowRight, ArrowLeft, X, CheckCircle2 } from "lucide-react";
 
@@ -187,7 +188,6 @@ export const TOURS: Record<string, TourDefinition> = {
 		],
 	},
 };
-
 function findVisibleElement(selector: string): HTMLElement | null {
 	const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
 	if (elements.length === 0) return null;
@@ -207,6 +207,7 @@ function findVisibleElement(selector: string): HTMLElement | null {
 const TourContext = createContext<TourContextValue | null>(null);
 
 export function TourProvider({ children }: { children: ReactNode }) {
+	const { t } = useTranslation();
 	const [activeTour, setActiveTour] = useState<TourDefinition | null>(null);
 	const [currentStepIndex, setCurrentStepIndex] = useState(0);
 	const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
@@ -417,7 +418,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 							<div className="flex items-center justify-between border-b border-white/10 pb-2">
 								<div className="flex items-center gap-1.5 min-w-0">
 									<span className="text-[10px] uppercase font-bold tracking-widest text-accent shrink-0">
-										STEP {currentStepIndex + 1}/{activeTour.steps.length}
+										{t("tour.step")} {currentStepIndex + 1}/{activeTour.steps.length}
 									</span>
 									<span className="text-white/30">&middot;</span>
 									<span className="text-[11px] font-semibold text-white truncate">
@@ -427,7 +428,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 								<button
 									onClick={endTour}
 									className="rounded p-1 text-white/60 hover:text-white hover:bg-white/10 transition cursor-pointer shrink-0 ml-1"
-									title="Đóng hướng dẫn"
+									title={t("tour.close")}
 								>
 									<X className="size-3.5" />
 								</button>
@@ -456,19 +457,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
 										className="w-full inline-flex items-center justify-center gap-1.5 rounded-md bg-accent py-1.5 text-xs font-bold text-white shadow-xs hover:bg-accent/90 transition cursor-pointer"
 									>
 										<CheckCircle2 className="size-3.5" />
-										<span>Hoàn thành</span>
+										<span>{t("tour.complete")}</span>
 									</button>
 								) : (
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-1.5 font-mono text-[10px] text-accent font-medium">
 											<span className="size-1.5 rounded-full bg-accent animate-ping shrink-0" />
-											<span className="truncate">Nhấp vào ô khoanh viền</span>
+											<span className="truncate">{t("tour.clickToContinue")}</span>
 										</div>
 										<button
 											onClick={endTour}
 											className="text-[10.5px] text-white/50 hover:text-white transition cursor-pointer shrink-0"
 										>
-											Bỏ qua
+											{t("tour.skip")}
 										</button>
 									</div>
 								)}
