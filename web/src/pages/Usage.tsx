@@ -108,7 +108,7 @@ export default function UsagePage() {
 				) : (
 					<StatStrip
 						cells={[
-							{ label: t("credits.totalCredits"), value: `${Number(data?.totals.credits ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} cr`, highlight: true },
+							{ label: t("credits.totalCredits"), value: Number(data?.totals.credits ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }), highlight: true },
 							{ label: t("overview.totalTokens"), value: fmtCompact((data?.totals.promptTokens ?? 0) + (data?.totals.completionTokens ?? 0)) },
 							{ label: t("usage.input"), value: fmtCompact(data?.totals.promptTokens ?? 0) },
 							{ label: t("usage.output"), value: fmtCompact(data?.totals.completionTokens ?? 0) },

@@ -2,37 +2,62 @@ import { useTranslation } from "react-i18next";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
 export function StatStrip({ cells }: { cells: { label: string; value: string; highlight?: boolean }[] }) {
+	const firstValLen = cells[0]?.value.length ?? 0;
+	const isFirstExtraWide = firstValLen >= 9;
+
 	return (
-		<div className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3 lg:grid-cols-6">
-			{cells.map((cell) => {
-				const valLen = cell.value.length;
-				const fontSizeClass =
-					valLen > 11
-						? "text-[20px] sm:text-[22px]"
+		<div
+			className="grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3"
+			style={{
+				gridTemplateColumns: isFirstExtraWide
+					? "repeat(auto-fit, minmax(130px, 1fr))"
+					: undefined,
+			}}
+		>
+			<div
+				className={`grid col-span-2 sm:col-span-3 lg:col-span-6 gap-px bg-line ${
+					isFirstExtraWide
+						? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-[1.35fr_1fr_1fr_1fr_1fr_0.85fr]"
+						: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+				}`}
+			>
+				{cells.map((cell, idx) => {
+					const isFirst = idx === 0;
+					const valLen = cell.value.length;
+
+					const fontSizeClass = isFirst
+						? valLen > 13
+							? "text-[23px] sm:text-[25px]"
+							: valLen > 10
+							? "text-[26px] sm:text-[29px]"
+							: "text-[30px] sm:text-[34px]"
 						: valLen > 8
 						? "text-[24px] sm:text-[26px]"
-						: "text-[28px] sm:text-[32px]";
+						: "text-[30px] sm:text-[34px]";
 
-				return (
-					<div
-						key={cell.label}
-						className="flex min-h-[96px] flex-col justify-between gap-2 p-3 sm:p-4 sm:min-h-[104px] overflow-hidden"
-						style={cell.highlight ? { background: "var(--color-accent)" } : { background: "var(--color-paper)" }}
-					>
+					return (
 						<div
-							className={`stat-number font-semibold leading-tight tracking-tight whitespace-nowrap truncate ${fontSizeClass} ${
-								cell.highlight ? "text-white" : "text-ink"
+							key={cell.label}
+							className={`flex min-h-[96px] flex-col justify-between gap-2 p-4 sm:min-h-[104px] overflow-hidden ${
+								isFirst && isFirstExtraWide ? "px-4 sm:px-5" : ""
 							}`}
-							title={cell.value}
+							style={cell.highlight ? { background: "var(--color-accent)" } : { background: "var(--color-paper)" }}
 						>
-							{cell.value}
+							<div
+								className={`stat-number font-semibold leading-none tracking-tight whitespace-nowrap truncate ${fontSizeClass} ${
+									cell.highlight ? "text-white" : "text-ink"
+								}`}
+								title={cell.value}
+							>
+								{cell.value}
+							</div>
+							<div className={"label-mono text-[10px] sm:text-[11px] truncate " + (cell.highlight ? "text-white/80" : "text-ink-2")}>
+								{cell.label}
+							</div>
 						</div>
-						<div className={"label-mono text-[10px] sm:text-[11px] truncate " + (cell.highlight ? "text-white/80" : "text-ink-2")}>
-							{cell.label}
-						</div>
-					</div>
-				);
-			})}
+					);
+				})}
+			</div>
 		</div>
 	);
 }
