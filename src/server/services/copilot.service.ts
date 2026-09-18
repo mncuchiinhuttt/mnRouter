@@ -71,6 +71,26 @@ const FULL_WEB_CONTEXT_PROMPT = `You are mnRouter AI Copilot - an autonomous in-
 - OMP 1-Click: curl -s https://mnrouter.mncuchiinhuttt.dev/api/setup/omp | bash
 - Telegram Bot: @mnrouter_bot with /status, /usage, /quotas, /logs, /invite <email>
 
+--- NON-EXISTENT FEATURES & SYSTEM CONSTRAINTS (CRITICAL - DO NOT HALLUCINATE):
+The following features DO NOT EXIST on mnRouter. If a user asks about them, explicitly explain that the feature does not exist on mnRouter and set "tour": null:
+1. Passwords ("mật khẩu", "password", "đổi pass", "quên mật khẩu"):
+   - mnRouter is 100% passwordless. Users log in exclusively via Email Magic Links sent to admin-approved addresses, or via Access Pass. There are NO user passwords in the system.
+   - Set "tour": null.
+2. Public Sign-up / Self-registration ("đăng ký", "signup"):
+   - mnRouter is an internal private gateway. There is NO public signup page.
+   - Only administrators can invite new members via the Send Invitation feature.
+   - Set "tour": null (or if userRole == "admin", guide them to [data-tour="nav-users"]).
+3. Payments / Buy Credits / Card billing ("nạp tiền", "thanh toán thẻ", "mua credit"):
+   - mnRouter has NO payment checkout or billing gateway.
+   - Credits (Weekly Credit Budget) are allocated directly and free of charge by administrators on a weekly basis.
+   - Set "tour": null.
+4. Self Account Deletion ("xoá tài khoản của mình"):
+   - Regular users cannot delete their own account; account deactivation is managed by administrators.
+   - Set "tour": null.
+5. Mobile App on App Store / Google Play:
+   - mnRouter is a browser web-app, there are no native mobile apps on app stores.
+   - Set "tour": null.
+
 --- OUTPUT RULES:
 Analyze the user query, their current page (currentPath), their language (lang), and their role (userRole).
 Output ONLY valid JSON matching this schema (no markdown wrappers):
@@ -162,6 +182,58 @@ export class CopilotService {
 		const q = query.toLowerCase().trim();
 		const isVi = lang.startsWith("vi");
 
+		// ---------- Non-Existent Features & System Constraints ----------
+		// A. Password change / Reset password
+		if (q.includes("mật khẩu") || q.includes("password") || q.includes("đổi pass") || q.includes("quên pass") || q.includes("reset pass")) {
+			return {
+				content: isVi
+					? "mnRouter là hệ thống xác thực hoàn toàn không mật khẩu (Passwordless). Bạn đăng nhập qua liên kết Magic Link gửi về email hoặc Thẻ truy cập (Access Pass). Vì vậy hệ thống không có mật khẩu và không có tính năng đổi mật khẩu nha."
+					: "mnRouter uses 100% passwordless authentication via Email Magic Links or Access Pass. There are no passwords in the system, so password changes are not applicable.",
+			};
+		}
+
+		// B. Public registration / Sign up
+		if (q.includes("đăng ký") || q.includes("tạo tài khoản mới") || q.includes("sign up") || q.includes("register")) {
+			if (userRole === "admin") {
+				return {
+					content: isVi
+						? "mnRouter không mở đăng ký tự do. Là quản trị viên, bạn có thể mời thêm thành viên mới qua tính năng Gửi lời mời (Send invitation):"
+						: "mnRouter does not support public sign-ups. As an admin, you can invite new members via the Send Invitation feature:",
+					tour: {
+						title: isVi ? "Mời thành viên mới" : "Invite Members",
+						steps: [
+							{ targetSelector: '[data-tour="nav-users"]', title: isVi ? "Bước 1: Vào Quản lý Người dùng" : "Step 1: Open Users", instruction: isVi ? "Bấm vào mục USERS ở menu bên trái." : "Click USERS on the left sidebar menu." },
+							{ targetSelector: '[data-tour="invite-btn"]', title: isVi ? "Bước 2: Bấm Send invitation" : "Step 2: Click Send invitation", instruction: isVi ? "Bấm nút Send invitation ở góc trên bên phải." : "Click '+ Send invitation' at top right." },
+						],
+					},
+				};
+			}
+			return {
+				content: isVi
+					? "mnRouter là cổng AI Gateway nội bộ, không hỗ trợ tự do đăng ký tài khoản. Để tham gia, bạn cần liên hệ Quản trị viên (Admin) để nhận email thư mời kích hoạt tài khoản nha."
+					: "mnRouter is an internal AI gateway and does not support public registration. To join, please ask your administrator to send you an invitation email.",
+			};
+		}
+
+		// C. Billing / Payments / Buy credits
+		if (q.includes("nạp tiền") || q.includes("thanh toán") || q.includes("mua credit") || q.includes("buy credit") || q.includes("thẻ tín dụng") || q.includes("nạp credit")) {
+			return {
+				content: isVi
+					? "mnRouter không có cổng nạp tiền hay thanh toán qua thẻ. Hạn mức AI Credit (Weekly Credit Budget) được quản trị viên cấp phát định kỳ hàng tuần cho tài khoản của bạn để sử dụng hoàn toàn miễn phí."
+					: "mnRouter does not have payment or billing checkout gateways. AI credit budgets are allocated directly by administrators on a weekly basis.",
+			};
+		}
+
+		// D. Self Account Deletion
+		if (q.includes("xoá tài khoản") || q.includes("xóa tài khoản") || q.includes("delete account") || q.includes("hủy tài khoản")) {
+			return {
+				content: isVi
+					? "Người dùng không thể tự xoá tài khoản trên hệ thống. Nếu bạn không còn nhu cầu sử dụng, hãy liên hệ Quản trị viên (Admin) để vô hiệu hoá hoặc thu hồi quyền tài khoản nha."
+					: "Self-deletion of accounts is not available. Please contact your administrator if you need your account deactivated or revoked.",
+			};
+		}
+
+		// ---------- Core 17 Features ----------
 		// 1. API Keys (/keys)
 		if (q.includes("api key") || q.includes("tạo key") || q.includes("lấy key") || q.includes("khoá") || q.includes("create key")) {
 			const onKeysPage = currentPath === "/keys";
