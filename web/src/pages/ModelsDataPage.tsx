@@ -64,8 +64,16 @@ interface MarketDataResp {
 	dailyTimeline?: Array<{
 		date: string;
 		formattedDate: string;
+		top1: number;
+		top2: number;
+		top3: number;
+		others: number;
 		total: number;
-		[modelId: string]: string | number;
+	}>;
+	topThreeMeta?: Array<{
+		id: string;
+		displayName: string;
+		provider: string;
 	}>;
 	marketShare: Array<{
 		provider: string;
@@ -208,48 +216,67 @@ export default function ModelsDataPage() {
 				</div>
 			</section>
 
-			{/* Daily Model Usage Stacked Chart (Like opencode.ai/data) */}
-			<section className="space-y-3">
-				<div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+			{/* Top Models & Stacked Daily Usage Chart - Exact OpenCode.ai Layout */}
+			<section className="space-y-4">
+				<div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 border-b border-line pb-3">
 					<div>
-						<h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-							Top Models <span className="text-ink-2 font-normal text-lg sm:text-xl">· Daily Token Volume</span>
+						<h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
+							Top Models. <span className="text-ink-2 font-normal text-base sm:text-lg">Usage of models across mnRouter.</span>
 						</h2>
-						<p className="text-xs font-mono text-ink-2 mt-0.5">
-							Distribution and volume shifts across active models over the last 30 days
-						</p>
 					</div>
-					<div className="flex items-center gap-3 text-xs font-mono text-ink-2">
-						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#4338ca]" /> Gemini 3.8 Flash</span>
-						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#0284c7]" /> Muse Spark</span>
-						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#10b981]" /> Big Pickle</span>
-						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#f59e0b]" /> Others</span>
+					<div className="flex flex-wrap items-center gap-3 text-xs font-mono text-ink-2">
+						<span className="flex items-center gap-1.5">
+							<span className="size-2.5 rounded-xs bg-[#5b52f9]" />
+							{data?.topThreeMeta?.[0]?.displayName ?? "Top 1"}
+						</span>
+						<span className="flex items-center gap-1.5">
+							<span className="size-2.5 rounded-xs bg-[#00b4d8]" />
+							{data?.topThreeMeta?.[1]?.displayName ?? "Top 2"}
+						</span>
+						<span className="flex items-center gap-1.5">
+							<span className="size-2.5 rounded-xs bg-[#10b981]" />
+							{data?.topThreeMeta?.[2]?.displayName ?? "Top 3"}
+						</span>
+						<span className="flex items-center gap-1.5">
+							<span className="size-2.5 rounded-xs bg-[#f59e0b]" />
+							Others
+						</span>
 					</div>
 				</div>
 
+				{/* High-density stacked daily bar graph (tight bars like OpenCode) */}
 				<div className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-2xs">
 					{data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
-						<div className="h-64 sm:h-80 w-full">
+						<div className="h-64 sm:h-72 w-full">
 							<ResponsiveContainer width="100%" height="100%">
-								<BarChart data={data.dailyTimeline} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-									<CartesianGrid strokeDasharray="3 3" stroke="#e3e3dc" vertical={false} />
+								<BarChart
+									data={data.dailyTimeline}
+									barCategoryGap={2}
+									barGap={0}
+									margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+								>
+									<CartesianGrid strokeDasharray="2 2" stroke="#eaeae4" vertical={false} />
 									<XAxis
 										dataKey="formattedDate"
-										tick={{ fontSize: 11, fontFamily: "IBM Plex Mono", fill: "#55556b" }}
+										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#8f8fb8" }}
 										tickLine={false}
-										axisLine={{ stroke: "#d9d9d3" }}
+										axisLine={{ stroke: "#e3e3dc" }}
+										interval={4}
 									/>
 									<YAxis
 										tickFormatter={(v) => fmtCompact(v as number)}
-										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#55556b" }}
+										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#8f8fb8" }}
 										tickLine={false}
 										axisLine={false}
 									/>
 									<Tooltip
-										contentStyle={{ borderRadius: 8, border: "1px solid #d9d9d3", fontSize: 11, fontFamily: "IBM Plex Mono", background: "#fff" }}
+										contentStyle={{ borderRadius: 8, border: "1px solid #d9d9d3", fontSize: 11, fontFamily: "IBM Plex Mono", background: "#fff", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
 										formatter={(val: unknown, name: unknown) => [fmtNum(Number(val)) + " tok", String(name)]}
 									/>
-									<Bar dataKey="gemini-3.7-flash" name="Gemini 3.7 Flash" stackId="a" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+									<Bar dataKey="top1" name={data?.topThreeMeta?.[0]?.displayName ?? "Top 1"} stackId="a" fill="#5b52f9" radius={[0, 0, 0, 0]} />
+									<Bar dataKey="top2" name={data?.topThreeMeta?.[1]?.displayName ?? "Top 2"} stackId="a" fill="#00b4d8" radius={[0, 0, 0, 0]} />
+									<Bar dataKey="top3" name={data?.topThreeMeta?.[2]?.displayName ?? "Top 3"} stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+									<Bar dataKey="others" name="Others" stackId="a" fill="#f59e0b" radius={[2, 2, 0, 0]} />
 								</BarChart>
 							</ResponsiveContainer>
 						</div>
@@ -259,17 +286,9 @@ export default function ModelsDataPage() {
 						</div>
 					)}
 				</div>
-			</section>
 
-			{/* Top Models Spotlight Cards */}
-			<section className="space-y-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Top Models</h2>
-						<p className="text-xs font-mono text-ink-2 mt-0.5">Most consumed models across mnRouter users</p>
-					</div>
-				</div>
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+				{/* Top 3 Cards placed directly underneath the chart (OpenCode layout) */}
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 pt-1">
 					{topThree.map((m, idx) => (
 						<Link
 							key={m.id}

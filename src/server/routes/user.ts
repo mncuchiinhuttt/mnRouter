@@ -222,7 +222,13 @@ export function userRoutes() {
 		// Sort by popularity / token volume descending
 		enrichedModels.sort((a, b) => b.totalTokens - a.totalTokens);
 
-		// Daily stacked timeline by model (last 30 days) - like opencode.ai/data top chart
+		// Identify Top 3 Models across the platform for the stacked chart
+		const top1 = enrichedModels[0];
+		const top2 = enrichedModels[1];
+		const top3 = enrichedModels[2];
+		const top3Ids = new Set([top1?.id, top2?.id, top3?.id].filter(Boolean) as string[]);
+
+		// Daily stacked timeline by model (last 30 consecutive days)
 		const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000;
 		const dailyModelRows = await db
 			.select({
@@ -235,26 +241,61 @@ export function userRoutes() {
 			.groupBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`, usageRequests.model)
 			.orderBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`);
 
-		// Group by date for Recharts stacked bar chart
-		const timelineMap = new Map<string, Record<string, number>>();
+		// Build an activity lookup map by date
+		const dailyLookup = new Map<string, { top1: number; top2: number; top3: number; others: number; total: number }>();
 		for (const r of dailyModelRows) {
 			if (!r.date) continue;
-			let dayObj = timelineMap.get(r.date);
+			let dayObj = dailyLookup.get(r.date);
 			if (!dayObj) {
-				dayObj = { total: 0 };
-				timelineMap.set(r.date, dayObj);
+				dayObj = { top1: 0, top2: 0, top3: 0, others: 0, total: 0 };
+				dailyLookup.set(r.date, dayObj);
 			}
 			const tok = Number(r.tokens || 0);
-			dayObj[r.model] = (dayObj[r.model] || 0) + tok;
-			dayObj.total = (dayObj.total || 0) + tok;
+			dayObj.total += tok;
+			if (top1 && r.model === top1.id) {
+				dayObj.top1 += tok;
+			} else if (top2 && r.model === top2.id) {
+				dayObj.top2 += tok;
+			} else if (top3 && r.model === top3.id) {
+				dayObj.top3 += tok;
+			} else {
+				dayObj.others += tok;
+			}
 		}
 
-		const dailyTimeline = Array.from(timelineMap.entries()).map(([date, modelsMap]) => ({
-			date,
-			formattedDate: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-			...modelsMap,
-		}));
+		// Generate all 30 consecutive days up to today so the chart has high density like OpenCode
+		const dailyTimeline: Array<{
+			date: string;
+			formattedDate: string;
+			top1: number;
+			top2: number;
+			top3: number;
+			others: number;
+			total: number;
+		}> = [];
 
+		const now = new Date();
+		for (let i = 29; i >= 0; i--) {
+			const d = new Date(now);
+			d.setDate(d.getDate() - i);
+			const iso = d.toISOString().slice(0, 10);
+			const stat = dailyLookup.get(iso) || { top1: 0, top2: 0, top3: 0, others: 0, total: 0 };
+			dailyTimeline.push({
+				date: iso,
+				formattedDate: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+				top1: stat.top1,
+				top2: stat.top2,
+				top3: stat.top3,
+				others: stat.others,
+				total: stat.total,
+			});
+		}
+
+		const topThreeMeta = [
+			top1 ? { id: top1.id, displayName: top1.displayName, provider: top1.provider } : null,
+			top2 ? { id: top2.id, displayName: top2.displayName, provider: top2.provider } : null,
+			top3 ? { id: top3.id, displayName: top3.displayName, provider: top3.provider } : null,
+		].filter(Boolean);
 		// Provider market share
 		const providerShareMap: Record<string, { tokens: number; requests: number; credits: number }> = {};
 		for (const m of enrichedModels) {
@@ -292,6 +333,7 @@ export function userRoutes() {
 			},
 			models: enrichedModels,
 			dailyTimeline,
+			topThreeMeta,
 			marketShare,
 		});
 	});
