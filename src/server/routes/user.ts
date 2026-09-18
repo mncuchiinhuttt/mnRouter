@@ -216,6 +216,39 @@ export function userRoutes() {
 		// Sort by popularity / token volume descending
 		enrichedModels.sort((a, b) => b.totalTokens - a.totalTokens);
 
+		// Daily stacked timeline by model (last 30 days) - like opencode.ai/data top chart
+		const thirtyDaysAgoMs = Date.now() - 30 * 24 * 3600 * 1000;
+		const dailyModelRows = await db
+			.select({
+				date: sql<string>`DATE(${usageRequests.ts} / 1000, 'unixepoch')`,
+				model: usageRequests.model,
+				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+			})
+			.from(usageRequests)
+			.where(sql`${usageRequests.ts} >= ${thirtyDaysAgoMs}`)
+			.groupBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`, usageRequests.model)
+			.orderBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`);
+
+		// Group by date for Recharts stacked bar chart
+		const timelineMap = new Map<string, Record<string, number>>();
+		for (const r of dailyModelRows) {
+			if (!r.date) continue;
+			let dayObj = timelineMap.get(r.date);
+			if (!dayObj) {
+				dayObj = { total: 0 };
+				timelineMap.set(r.date, dayObj);
+			}
+			const tok = Number(r.tokens || 0);
+			dayObj[r.model] = (dayObj[r.model] || 0) + tok;
+			dayObj.total = (dayObj.total || 0) + tok;
+		}
+
+		const dailyTimeline = Array.from(timelineMap.entries()).map(([date, modelsMap]) => ({
+			date,
+			formattedDate: new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+			...modelsMap,
+		}));
+
 		// Provider market share
 		const providerShareMap: Record<string, { tokens: number; requests: number; credits: number }> = {};
 		for (const m of enrichedModels) {
@@ -252,6 +285,7 @@ export function userRoutes() {
 					: 150_000,
 			},
 			models: enrichedModels,
+			dailyTimeline,
 			marketShare,
 		});
 	});

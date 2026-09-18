@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import {
 	BarChart3,
 	Sparkles,
@@ -60,6 +61,12 @@ interface MarketDataResp {
 		avgTokensPerSession: number;
 	};
 	models: MarketModel[];
+	dailyTimeline?: Array<{
+		date: string;
+		formattedDate: string;
+		total: number;
+		[modelId: string]: string | number;
+	}>;
 	marketShare: Array<{
 		provider: string;
 		tokens: number;
@@ -183,7 +190,7 @@ export default function ModelsDataPage() {
 						{summary?.totalModels ?? models.length}
 					</div>
 					<div className="mt-1 text-[11px] font-mono text-ink-2">
-						Available on your account
+						Across mnRouter cluster
 					</div>
 				</div>
 
@@ -201,6 +208,59 @@ export default function ModelsDataPage() {
 				</div>
 			</section>
 
+			{/* Daily Model Usage Stacked Chart (Like opencode.ai/data) */}
+			<section className="space-y-3">
+				<div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+					<div>
+						<h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+							Top Models <span className="text-ink-2 font-normal text-lg sm:text-xl">· Daily Token Volume</span>
+						</h2>
+						<p className="text-xs font-mono text-ink-2 mt-0.5">
+							Distribution and volume shifts across active models over the last 30 days
+						</p>
+					</div>
+					<div className="flex items-center gap-3 text-xs font-mono text-ink-2">
+						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#4338ca]" /> Gemini 3.8 Flash</span>
+						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#0284c7]" /> Muse Spark</span>
+						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#10b981]" /> Big Pickle</span>
+						<span className="flex items-center gap-1.5"><span className="size-2.5 rounded-xs bg-[#f59e0b]" /> Others</span>
+					</div>
+				</div>
+
+				<div className="rounded-xl border border-line bg-white p-4 sm:p-5 shadow-2xs">
+					{data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
+						<div className="h-64 sm:h-80 w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<BarChart data={data.dailyTimeline} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+									<CartesianGrid strokeDasharray="3 3" stroke="#e3e3dc" vertical={false} />
+									<XAxis
+										dataKey="formattedDate"
+										tick={{ fontSize: 11, fontFamily: "IBM Plex Mono", fill: "#55556b" }}
+										tickLine={false}
+										axisLine={{ stroke: "#d9d9d3" }}
+									/>
+									<YAxis
+										tickFormatter={(v) => fmtCompact(v as number)}
+										tick={{ fontSize: 10, fontFamily: "IBM Plex Mono", fill: "#55556b" }}
+										tickLine={false}
+										axisLine={false}
+									/>
+									<Tooltip
+										contentStyle={{ borderRadius: 8, border: "1px solid #d9d9d3", fontSize: 11, fontFamily: "IBM Plex Mono", background: "#fff" }}
+										formatter={(val: unknown, name: unknown) => [fmtNum(Number(val)) + " tok", String(name)]}
+									/>
+									<Bar dataKey="gemini-3.7-flash" name="Gemini 3.7 Flash" stackId="a" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+								</BarChart>
+							</ResponsiveContainer>
+						</div>
+					) : (
+						<div className="h-48 flex items-center justify-center text-xs font-mono text-ink-2">
+							No daily telemetry recorded in this period yet.
+						</div>
+					)}
+				</div>
+			</section>
+
 			{/* Top Models Spotlight Cards */}
 			<section className="space-y-4">
 				<div className="flex items-center justify-between">
@@ -209,7 +269,6 @@ export default function ModelsDataPage() {
 						<p className="text-xs font-mono text-ink-2 mt-0.5">Most consumed models across mnRouter users</p>
 					</div>
 				</div>
-
 				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
 					{topThree.map((m, idx) => (
 						<Link

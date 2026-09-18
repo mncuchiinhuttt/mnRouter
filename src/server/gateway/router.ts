@@ -36,11 +36,18 @@ async function orderConnections(provider: ProviderId, strategy: string, modelId?
 		.where(and(eq(providerConnections.provider, provider), eq(providerConnections.isActive, true)));
 	let usable = rows.filter((r) => cooldownRemaining(r) === 0);
 
-	// Pre-route Quota Guard: Filter out accounts that have exhausted their quota for this model
+	// Pre-route Quota Guard: Filter out accounts that have exhausted their quota or are under 5% for this model
 	if (provider === "antigravity" && modelId) {
 		const checked = await Promise.all(
 			usable.map(async (conn) => {
 				const check = await isAntigravityExhaustedForModel(conn.id, dataOf(conn), modelId);
+				if (check.exhausted) {
+					// Set cooldown until reset time so telegram/system stops spamming attempts
+					const resetMs = check.resetTime ? new Date(check.resetTime).getTime() : 0;
+					const now = Date.now();
+					const cooldownMs = resetMs > now ? Math.min(resetMs - now, 3600 * 1000) : 300_000;
+					void patchConnData(conn.id, { cooldownUntil: now + cooldownMs, lastError: check.reason }, "cooldown");
+				}
 				return { conn, exhausted: check.exhausted, reason: check.reason };
 			}),
 		);
@@ -200,13 +207,19 @@ export async function openUpstreamWithFailover(
 			}
 			if (!succeeded) {
 				const cls = classifyUpstreamError(lastStatus, lastBody.slice(0, 300));
-				await markFailure(conn, cls.cooldownMs, `HTTP ${lastStatus}: ${lastBody.slice(0, 200)}`);
+				// If upstream returned 429 quota exhaustion, cool down for at least 30 minutes to prevent alert flooding
+				const isQuotaExhausted = lastStatus === 429 && (
+					lastBody.includes("RESOURCE_EXHAUSTED") ||
+					lastBody.includes("check quota") ||
+					lastBody.includes("quota")
+				);
+				const cooldown = isQuotaExhausted ? Math.max(cls.cooldownMs, 30 * 60 * 1000) : cls.cooldownMs;
+				await markFailure(conn, cooldown, `HTTP ${lastStatus}: ${lastBody.slice(0, 200)}`);
 				errors.push(`${conn.label}: HTTP ${lastStatus}`);
 				const canRetry = cls.retryable && (PROVIDERS[provider].retryStatuses.includes(lastStatus) || lastStatus >= 500 || lastStatus === 429);
 				if (canRetry && tried < maxAttempts) continue;
 				throw new UpstreamError(`upstream ${lastStatus}: ${lastBody.slice(0, 300)}`, lastStatus, "upstream_error", false);
 			}
-			void markSuccess(conn);
 			return { attempt: { conn, res: succeeded.res, parser: succeeded.parser }, connectionId: conn.id, connectionLabel: conn.label };
 		} catch (err) {
 			if (err instanceof UpstreamError && !err.retryable && err.httpStatus !== 401 && err.httpStatus !== 403) throw err;
