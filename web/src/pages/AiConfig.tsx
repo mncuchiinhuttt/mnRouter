@@ -104,7 +104,7 @@ export default function AiConfig() {
 			</div>
 
 			{activeTab === "tools" ? (
-				<div className="grid gap-6 lg:grid-cols-[250px_1fr]">
+				<div className="grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
 					{/* Harness List with Logos */}
 					<div data-tour="tool-tabs" className="flex flex-row overflow-x-auto gap-1 pb-2 lg:flex-col lg:overflow-x-visible lg:pb-0">
 						{HARNESSES.map((h) => {
@@ -130,7 +130,7 @@ export default function AiConfig() {
 					</div>
 
 					{/* Active Harness Config Details */}
-					<div className="space-y-4">
+					<div className="space-y-4 min-w-0">
 						{/* Agent Header & OS Toggle */}
 						<div className="flex flex-col gap-3 rounded-lg border border-line bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
 							<div className="flex items-center gap-3 min-w-0 flex-1">

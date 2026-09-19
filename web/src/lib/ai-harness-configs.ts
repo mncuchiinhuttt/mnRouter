@@ -139,7 +139,7 @@ export const HARNESSES: HarnessConfig[] = [
 	},
 	{
 		id: "dsh",
-		name: "DSH (DeepSeek Harness)",
+		name: "DSH",
 		icon: "/harnesses/deepseek-tui.png",
 		badge: "Official Web & Headless",
 		protocol: "DeepSeek Official Harness",
