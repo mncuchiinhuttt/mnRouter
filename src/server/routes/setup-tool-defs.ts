@@ -221,6 +221,16 @@ export function getToolDefs(
 				["OPENAI_BASE_URL", v1],
 				["OPENAI_API_KEY", key],
 			],
+			files: [
+				{
+					path: `${H}.dsh${S}settings.yaml`,
+					content: `llm-pi-ai:\n  providers:\n    mnrouter:\n      displayName: "MNRouter Gateway"\n      api: "openai-completions"\n      baseURL: "${v1}"\n      apiKeyEnv: "MNROUTER_API_KEY"\n      models:\n${mList.map((m) => `      - id: "${m.id}"\n        name: "${m.displayName || m.id}"`).join("\n")}\n`,
+				},
+				{
+					path: `${H}.dsh${S}.credentials.yaml`,
+					content: `version: 1\nrefs:\n  MNROUTER_API_KEY: "${key}"\n`,
+				},
+			],
 		},
 		pi: {
 			id: "pi",
