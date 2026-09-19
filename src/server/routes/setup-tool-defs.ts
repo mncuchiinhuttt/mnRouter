@@ -212,6 +212,16 @@ export function getToolDefs(
 				},
 			],
 		},
+		dsh: {
+			id: "dsh",
+			name: "DSH (DeepSeek Harness)",
+			vars: [
+				["DEEPSEEK_BASE_URL", v1],
+				["DEEPSEEK_API_KEY", key],
+				["OPENAI_BASE_URL", v1],
+				["OPENAI_API_KEY", key],
+			],
+		},
 		pi: {
 			id: "pi",
 			name: "Pi",

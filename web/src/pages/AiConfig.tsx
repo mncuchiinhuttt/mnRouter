@@ -61,8 +61,8 @@ export default function AiConfig() {
 			</header>
 
 			{/* API Key input & Gateway URL bar */}
-			<div className="flex flex-col gap-3 rounded-lg border border-line bg-white p-4 shadow-xs md:flex-row md:items-center md:justify-between">
-				<div className="flex flex-1 flex-wrap items-center gap-2 sm:gap-3">
+			<div className="flex flex-col gap-3 rounded-lg border border-line bg-white p-4 shadow-xs lg:flex-row lg:items-center lg:justify-between">
+				<div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
 					<div className="flex items-center gap-1.5 font-mono text-xs font-medium text-ink shrink-0">
 						<KeyRound className="size-3.5 text-accent" />
 						<span>{t("aiConfig.apiKey")}:</span>
@@ -71,10 +71,9 @@ export default function AiConfig() {
 						value={apiKey}
 						onChange={(e) => setApiKey(e.target.value)}
 						placeholder="mr_..."
-						className="h-8 w-full max-w-sm font-mono text-xs"
+						className="h-8 flex-1 font-mono text-xs min-w-[240px] truncate"
 					/>
 				</div>
-
 				<div className="flex items-center gap-2 text-xs text-ink-2 shrink-0">
 					<Globe className="size-3.5" />
 					<span>Gateway:</span>

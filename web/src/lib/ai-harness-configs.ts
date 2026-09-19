@@ -138,6 +138,18 @@ export const HARNESSES: HarnessConfig[] = [
 		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
 	},
 	{
+		id: "dsh",
+		name: "DSH (DeepSeek Harness)",
+		icon: "/harnesses/deepseek-tui.png",
+		badge: "Official Web & Headless",
+		protocol: "DeepSeek Official Harness",
+		descEn: "DeepSeek Harness official CLI & Web UI environment. Routes via DEEPSEEK_BASE_URL.",
+		descVi: "Môi trường chính thức của DeepSeek Harness (dsh web & headless). Tự động kết nối qua biến DEEPSEEK_BASE_URL.",
+		quickRun: (base, key) => `export DEEPSEEK_BASE_URL="${base}/v1"\nexport DEEPSEEK_API_KEY="${key}"\ndsh web`,
+		persistZsh: (base, key) => `echo 'export DEEPSEEK_BASE_URL="${base}/v1"' >> ~/.zshrc\necho 'export DEEPSEEK_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
+		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
+	},
+	{
 		id: "pi",
 		name: "Pi",
 		icon: "/harnesses/pi.svg",
