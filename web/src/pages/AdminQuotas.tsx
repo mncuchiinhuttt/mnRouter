@@ -62,6 +62,29 @@ export default function AdminQuotas() {
 		});
 	}, [accounts, search, provider, status]);
 
+	// Group accounts by provider for clean sectioning
+	const groupedByProvider = useMemo(() => {
+		const order = ["antigravity", "kiro", "opencode", "claude", "codex", "grok"];
+		const groups = new Map<string, AccountQuotaData[]>();
+		for (const acc of filteredAccounts) {
+			const list = groups.get(acc.provider) || [];
+			list.push(acc);
+			groups.set(acc.provider, list);
+		}
+		// Sort providers by priority order
+		const sortedEntries: { provider: string; accounts: AccountQuotaData[] }[] = [];
+		for (const p of order) {
+			const accs = groups.get(p);
+			if (accs && accs.length > 0) {
+				sortedEntries.push({ provider: p, accounts: accs });
+				groups.delete(p);
+			}
+		}
+		for (const [p, accs] of groups.entries()) {
+			sortedEntries.push({ provider: p, accounts: accs });
+		}
+		return sortedEntries;
+	}, [filteredAccounts]);
 	return (
 		<div className="space-y-6">
 			{/* Header */}
@@ -122,12 +145,68 @@ export default function AdminQuotas() {
 				</div>
 			</div>
 
-			{/* Account Cards Grid */}
-			{filteredAccounts.length > 0 ? (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{filteredAccounts.map((acc) => (
-						<AccountQuotaCard key={acc.id} account={acc} onReset={(id) => resetMutation.mutate(id)} isResetting={resetMutation.isPending} />
-					))}
+			{/* Account Cards Grouped by Provider Section */}
+			{groupedByProvider.length > 0 ? (
+				<div className="space-y-8">
+					{groupedByProvider.map(({ provider: prov, accounts: accs }) => {
+						const activeInGroup = accs.filter((a) => a.isActive && a.status === "active").length;
+						const cooldownInGroup = accs.filter((a) => a.status === "cooldown").length;
+						const iconMap: Record<string, string> = {
+							antigravity: "/harnesses/antigravity.png",
+							kiro: "/harnesses/kiro.png",
+							opencode: "/harnesses/opencode.png",
+							claude: "/harnesses/claude.png",
+							codex: "/harnesses/codex.png",
+							grok: "/harnesses/grok.png",
+						};
+
+						return (
+							<section key={prov} className="space-y-3.5">
+								{/* Section Header */}
+								<div className="flex items-center justify-between border-b border-line/60 pb-2">
+									<div className="flex items-center gap-2.5">
+										{iconMap[prov] ? (
+											<img src={iconMap[prov]} alt={prov} className="size-5 rounded-sm object-contain" />
+										) : null}
+										<h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-ink">
+											{prov === "antigravity"
+												? "Google Antigravity"
+												: prov === "kiro"
+												? "AWS Kiro (CodeWhisperer)"
+												: prov === "opencode"
+												? "OpenCode Free"
+												: prov}
+										</h2>
+										<span className="rounded-xs bg-paper-2 px-1.5 py-0.5 font-mono text-[10px] text-ink-2">
+											{accs.length} {accs.length === 1 ? "account" : "accounts"}
+										</span>
+									</div>
+									<div className="flex items-center gap-3 font-mono text-[11px]">
+										<span className="text-ink-2">
+											Ready: <strong className="font-semibold text-[#1d7a33]">{activeInGroup}</strong>
+										</span>
+										{cooldownInGroup > 0 && (
+											<span className="text-[#c6293b]">
+												Cooldown: <strong>{cooldownInGroup}</strong>
+											</span>
+										)}
+									</div>
+								</div>
+
+								{/* Cards Grid */}
+								<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+									{accs.map((acc) => (
+										<AccountQuotaCard
+											key={acc.id}
+											account={acc}
+											onReset={(id) => resetMutation.mutate(id)}
+											isResetting={resetMutation.isPending}
+										/>
+									))}
+								</div>
+							</section>
+						);
+					})}
 				</div>
 			) : (
 				<div className="rounded-lg border border-line bg-white p-12 text-center text-ink-2 font-mono text-xs">

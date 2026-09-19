@@ -5,6 +5,7 @@ import { providerConnections, usageRequests, type ProviderConnection } from "@db
 import { requireAdmin } from "../auth/guards.js";
 import { connectionService } from "../services/connection.service.js";
 import { getAntigravityRealQuota } from "../services/antigravity-quota.service.js";
+import { getKiroRealQuota, type RealKiroQuota } from "../services/kiro-quota.service.js";
 // Estimated reference 5-hour quota limits per account
 const PROVIDER_5H_LIMITS: Record<string, number> = {
 	claude: 200_000,
@@ -40,6 +41,7 @@ export interface AccountQuotaItem {
 		claudeResetInMinutes?: number;
 		claudeWindow?: "5h" | "7d" | "daily";
 	} | null;
+	kiroQuota?: RealKiroQuota | null;
 	lastUsedAt: string | null;
 	tokens5h: number;
 	requests5h: number;
@@ -115,6 +117,7 @@ export function adminQuotaRoutes() {
 				const cooldownUntilMs = typeof connData.cooldownUntil === "number" ? connData.cooldownUntil : null;
 				const isCooldown = cooldownUntilMs !== null && cooldownUntilMs > now;
 				const realQuota = conn.provider === "antigravity" ? await getAntigravityRealQuota(conn.id, connData) : null;
+				const kiroQuota = conn.provider === "kiro" ? await getKiroRealQuota(conn.id, connData) : null;
 
 				return {
 					id: conn.id,
@@ -125,6 +128,7 @@ export function adminQuotaRoutes() {
 					isActive: conn.isActive,
 					isUnlimited,
 					realQuota,
+					kiroQuota,
 					lastUsedAt: u5h?.lastUsed ? new Date(u5h.lastUsed).toISOString() : conn.updatedAt ? new Date(conn.updatedAt).toISOString() : null,
 					tokens5h,
 					requests5h: Number(u5h?.requests || 0),
