@@ -10,18 +10,18 @@ export class ModelRepository {
 
 	async findEnabledById(id: string): Promise<ModelRow | null> {
 		const [m] = await db.select().from(models).where(and(eq(models.id, id), eq(models.enabled, true)));
-		if (!m || m.provider === "kiro" || m.provider === "grok") return null;
+		if (!m || m.provider === "grok") return null;
 		return m;
 	}
 
 	async listAll(): Promise<ModelRow[]> {
 		const rows = await db.select().from(models).orderBy(asc(models.priority));
-		return rows.filter((m) => m.provider !== "kiro" && m.provider !== "grok");
+		return rows.filter((m) => m.provider !== "grok");
 	}
 
 	async listEnabled(): Promise<ModelRow[]> {
 		const rows = await db.select().from(models).where(eq(models.enabled, true)).orderBy(asc(models.priority));
-		return rows.filter((m) => m.provider !== "kiro" && m.provider !== "grok");
+		return rows.filter((m) => m.provider !== "grok");
 	}
 
 	async insertMissing(items: (typeof models.$inferInsert)[]): Promise<number> {

@@ -86,7 +86,7 @@ describe("default model catalog", () => {
 			claude: ["claude-fable-5-1", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6"],
 			codex: ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-luna", "gpt-5.3-codex"],
 			antigravity: ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite", "gemini-3-flash-preview"],
-			kiro: ["gpt-5.6-sol-kiro", "gpt-5.6-terra-kiro", "gpt-5.6-luna-kiro", "claude-opus-4.8-kiro"],
+			kiro: ["qwen3-coder-next", "deepseek-3.2", "minimax-m2.5", "glm-5", "claude-sonnet-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
 			grok: ["grok-4.6", "grok-4.5", "grok-4.3", "grok-4.20-0309-reasoning"],
 		};
 		for (const [provider, ids] of Object.entries(required)) {

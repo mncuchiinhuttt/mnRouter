@@ -10,6 +10,7 @@ const sqlitePath = process.argv[2] ?? `${process.env.HOME}/.9router/db/data.sqli
 const TARGET_PROVIDER: Record<string, string> = {
 	"gemini-cli": "antigravity",
 	antigravity: "antigravity",
+	kiro: "kiro",
 };
 
 let rows: Record<string, any>[] = [];
@@ -46,10 +47,11 @@ for (const row of rows) {
 	})();
 
 	const email = row.email || data.email || row.name || "account";
+	const psd = data.providerSpecificData || {};
 	await connectionRepo.create({
 		id: crypto.randomUUID(),
-		provider: provider as "antigravity",
-		label: `ag-${email}`.slice(0, 80),
+		provider: provider as any,
+		label: `${provider === "kiro" ? "kiro" : "ag"}-${email}`.slice(0, 80),
 		authType: "oauth",
 		priority: row.priority ?? 50,
 		isActive: true,
@@ -58,8 +60,13 @@ for (const row of rows) {
 			accessToken,
 			refreshToken,
 			expiresAt,
-			projectId: data.projectId || data.providerSpecificData?.projectId || undefined,
+			projectId: data.projectId || psd.projectId || undefined,
 			email: row.email || data.email || undefined,
+			ssoOnly: provider === "kiro" ? true : undefined,
+			ssoClientId: provider === "kiro" ? psd.clientId : undefined,
+			ssoClientSecret: provider === "kiro" ? psd.clientSecret : undefined,
+			ssoRegion: provider === "kiro" ? (psd.region || "us-east-1") : undefined,
+			authMethod: psd.authMethod || undefined,
 		},
 	});
 	imported++;

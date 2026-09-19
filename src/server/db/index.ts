@@ -31,7 +31,7 @@ sqlite.run("PRAGMA busy_timeout = 5000;");
 initSqliteSchema(sqlite);
 initChatSqliteSchema(sqlite);
 initMcpSqliteSchema(sqlite);
-try { sqlite.run("UPDATE models SET enabled = 0 WHERE provider IN ('kiro', 'grok');"); } catch {}
+try { sqlite.run("UPDATE models SET enabled = 0 WHERE provider IN ('grok');"); } catch {}
 
 export const db = drizzle(sqlite, { schema });
 export { schema };

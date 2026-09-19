@@ -90,9 +90,9 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 		id: "kiro",
 		display: "AWS Kiro (OAuth)",
 		baseUrls: [
-			"https://runtime.us-east-1.kiro.dev",
-			"https://codewhisperer.us-east-1.amazonaws.com",
 			"https://q.us-east-1.amazonaws.com",
+			"https://codewhisperer.us-east-1.amazonaws.com",
+			"https://runtime.us-east-1.kiro.dev",
 		],
 		format: "kiro",
 		oauth: {

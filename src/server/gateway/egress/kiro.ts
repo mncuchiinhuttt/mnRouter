@@ -151,9 +151,15 @@ export function buildKiroRequest(cfg: ProviderConfig, req: CanonicalRequest, tok
 	const url = `${cfg.baseUrls[0]}/generateAssistantResponse`;
 	const headers: Record<string, string> = {
 		authorization: `Bearer ${token}`,
+		"x-amz-sso-bearer": token,
 		"content-type": "application/json",
 		accept: "application/vnd.amazon.eventstream",
 		"user-agent": cfg.userAgent,
+		"x-amz-user-agent": "aws-sdk-js/3.0.0 kiro-ide/1.0.0",
+		"amz-sdk-request": "attempt=1; max=3",
+		"amz-sdk-invocation-id": randomUUID(),
+		"x-amzn-kiro-agent-mode": "spec",
+		"x-amzn-codewhisperer-machine-id": "kiro-desktop",
 		...cfg.headers,
 	};
 	return { url, headers, body: JSON.stringify(body) };
