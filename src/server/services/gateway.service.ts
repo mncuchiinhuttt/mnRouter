@@ -106,7 +106,7 @@ export class GatewayService {
 		const ttftTracker = { value: undefined as number | undefined };
 		const usageBox = { usage: emptyUsage() };
 		const issueUrl = `${env.APP_URL.replace(/\/+$/, "")}/issues`;
-		const issueNotice = `\n\n> Gặp lỗi hoặc sự cố? Báo cáo ngay tại: ${issueUrl}`;
+		const issueNotice = `\n\n> Cảm ơn bạn đã sử dụng mnRouter! Nếu gặp lỗi hoặc sự cố, hãy báo cáo ngay tại: ${issueUrl}`;
 
 		const stream = new ReadableStream<Uint8Array>({
 			async start(controller) {
@@ -216,7 +216,7 @@ export class GatewayService {
 			if (!result) throw new UpstreamError(error?.message ?? "upstream error", 502, error?.code ?? "upstream_error", false);
 
 			const issueUrl = `${env.APP_URL.replace(/\/+$/, "")}/issues`;
-			const issueNotice = `\n\n> Gặp lỗi hoặc sự cố? Báo cáo ngay tại: ${issueUrl}`;
+			const issueNotice = `\n\n> Cảm ơn bạn đã sử dụng mnRouter! Nếu gặp lỗi hoặc sự cố, hãy báo cáo ngay tại: ${issueUrl}`;
 			const textBlock = result.content.find((b) => b.type === "text") as { type: "text"; text: string } | undefined;
 			if (textBlock && textBlock.text) {
 				textBlock.text += issueNotice;

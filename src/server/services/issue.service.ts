@@ -4,7 +4,7 @@ import path from "node:path";
 import { issueRepo } from "../repositories/issue.repository.js";
 import type { Issue, IssueImage } from "@db/schema";
 
-export const MAX_ISSUE_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB per screenshot
+export const MAX_ISSUE_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per screenshot
 const ALLOWED_MIME_TYPES: Record<string, true> = {
 	"image/jpeg": true,
 	"image/png": true,

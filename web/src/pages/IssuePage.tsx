@@ -149,14 +149,14 @@ export default function IssuePage() {
 				toast.error(`${f.name} không phải là file hình ảnh hợp lệ`);
 				return false;
 			}
-			if (f.size > 5 * 1024 * 1024) {
-				toast.error(`${f.name} vượt quá dung lượng tối đa 5MB`);
+			if (f.size > 10 * 1024 * 1024) {
+				toast.error(`${f.name} vượt quá dung lượng tối đa 10MB`);
 				return false;
 			}
 			return true;
 		});
 
-		setSelectedFiles((prev) => [...prev, ...valid].slice(0, 6));
+		setSelectedFiles((prev) => [...prev, ...valid].slice(0, 8));
 		if (fileInputRef.current) fileInputRef.current.value = "";
 	};
 
@@ -165,25 +165,22 @@ export default function IssuePage() {
 	};
 
 	return (
-		<div className="mx-auto max-w-5xl space-y-8 py-2 pb-16">
-			{/* Hero Header */}
-			<header className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-br from-paper via-paper-2 to-paper p-6 sm:p-8 shadow-xs">
-				<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div className="space-y-2">
-						<div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-mono font-medium text-accent">
-							<AlertTriangle className="size-3.5" />
-							<span>mnRouter Incident & Issue Reporter</span>
-						</div>
-						<h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-							{isVi ? "Báo cáo sự cố & lỗi AI" : "Report Issue & AI Error"}
-						</h1>
-						<p className="max-w-2xl text-sm leading-relaxed text-ink-2">
-							{isVi
-								? "Bạn gặp lỗi quota, rớt kết nối, mô hình trả lời sai định dạng hoặc token không load khi dùng mnRouter? Hãy gửi báo cáo chi tiết kèm ảnh chụp màn hình để admin xử lý ngay."
-								: "Encountered a quota error, broken connection, model hallucination, or unexpected token drop? Submit a detailed incident report with screenshots for swift resolution."}
-						</p>
+		<div className="mx-auto max-w-5xl space-y-8 py-4 pb-20">
+			{/* Luxury Minimalist Hero Header */}
+			<header className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-b from-white via-paper to-paper p-7 sm:p-9 shadow-xs">
+				<div className="flex flex-col gap-3">
+					<div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1 text-xs font-mono font-medium text-accent w-fit">
+						<span className="size-1.5 rounded-full bg-accent animate-pulse" />
+						<span>mnRouter Incident Dispatch</span>
 					</div>
-
+					<h1 className="text-3xl font-bold tracking-tight text-ink sm:text-[38px] leading-tight">
+						{isVi ? "Báo cáo sự cố & Lỗi kỹ thuật" : "Submit Incident Report"}
+					</h1>
+					<p className="max-w-2xl text-sm leading-relaxed text-ink-2">
+						{isVi
+							? "Hỗ trợ xử lý lỗi kết nối, hạn mức quota, timeout hoặc phản hồi không mong muốn từ các CLI & Agent. Đội ngũ quản trị viên tiếp nhận và xử lý sự cố trong thời gian sớm nhất."
+							: "Report quota drops, gateway timeouts, connection aborts, or CLI environment issues. Operational tickets are triaged directly by system administrators."}
+					</p>
 				</div>
 			</header>
 
@@ -366,31 +363,31 @@ export default function IssuePage() {
 							</div>
 						</div>
 
-						{/* Step 4: Screenshot Uploads */}
+						{/* Step 4: Screenshot Uploads (Up to 10MB per image) */}
 						<div className="space-y-3">
 							<div className="flex items-center justify-between">
 								<label className="block text-xs font-mono font-semibold uppercase tracking-wider text-ink">
-									5. {isVi ? "Đính kèm ảnh chụp màn hình (Tối đa 6 ảnh, 5MB/ảnh)" : "Attach Screenshots (Max 6, 5MB each)"}
+									4. {isVi ? "Ảnh chụp màn hình (Tối đa 8 ảnh, 10MB/ảnh)" : "Screenshots (Max 8, 10MB each)"}
 								</label>
 								<span className="text-[11px] font-mono text-ink-2">
-									{selectedFiles.length}/6 ảnh
+									{selectedFiles.length}/8 ảnh
 								</span>
 							</div>
 
 							{/* Dropzone trigger */}
 							<div
 								onClick={() => fileInputRef.current?.click()}
-								className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-hover bg-paper-2/50 p-6 text-center hover:bg-paper-2 hover:border-accent cursor-pointer transition-all"
+								className="group flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-line hover:border-accent bg-paper/50 hover:bg-white p-7 text-center cursor-pointer transition-all duration-200"
 							>
-								<div className="rounded-full bg-white p-2.5 shadow-xs border border-line">
-									<UploadCloud className="size-5 text-accent" />
+								<div className="rounded-full bg-white group-hover:bg-accent/10 p-3 shadow-xs border border-line group-hover:border-accent/30 transition-all">
+									<UploadCloud className="size-5 text-ink-2 group-hover:text-accent transition-colors" />
 								</div>
 								<div className="space-y-1">
-									<p className="text-xs font-medium text-ink">
-										{isVi ? "Bấm vào đây để chọn ảnh chụp màn hình" : "Click to select or upload screenshots"}
+									<p className="text-xs font-medium text-ink group-hover:text-accent transition-colors">
+										{isVi ? "Kéo thả hoặc bấm để chọn ảnh chụp màn hình" : "Click or drag to upload error screenshots"}
 									</p>
-									<p className="text-[11px] text-ink-2">
-										Hỗ trợ định dạng PNG, JPG, WebP. Tự động xoá vĩnh viễn khi ticket đóng.
+									<p className="text-[11px] text-ink-2 font-mono">
+										PNG, JPG, WebP &middot; Tối đa 10MB mỗi file
 									</p>
 								</div>
 								<input
@@ -402,7 +399,6 @@ export default function IssuePage() {
 									className="hidden"
 								/>
 							</div>
-
 							{/* File preview list */}
 							{selectedFiles.length > 0 && (
 								<div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
@@ -459,10 +455,10 @@ export default function IssuePage() {
 							mnRouter cam kết bảo vệ dữ liệu cá nhân. Toàn bộ hình ảnh đính kèm minh chứng lỗi sẽ được{" "}
 							<span className="font-bold text-ink">xoá hoàn toàn khỏi ổ đĩa server</span> ngay khi quản trị viên chuyển trạng thái sang <span className="font-mono text-[#1d7a33] font-semibold">Resolved</span>.
 						</p>
-						<div className="rounded-lg bg-paper p-3 text-[11.5px] font-mono text-ink-2 space-y-1">
-							<div>• File ảnh tối đa 5MB mỗi ảnh</div>
-							<div>• Hỗ trợ tải tối đa 6 ảnh một lúc</div>
-							<div>• Token/API Key nhạy cảm nên che lại</div>
+						<div className="rounded-lg bg-paper p-3 text-[11.5px] font-mono text-ink-2 space-y-1.5">
+							<div>• Hỗ trợ tải ảnh lên tới 10MB mỗi file</div>
+							<div>• Đính kèm tối đa 8 ảnh chụp màn hình</div>
+							<div>• Che bớt token hoặc thông tin nhạy cảm</div>
 						</div>
 					</div>
 
