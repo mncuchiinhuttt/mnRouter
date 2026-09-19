@@ -84,7 +84,8 @@ export function getToolDefs(
 	key: string,
 	modelsList?: Array<{ id: string; displayName?: string; contextWindow?: number; maxOutput?: number; priceIn?: number; priceOut?: number; priceCacheRead?: number; priceCacheWrite?: number }>,
 	isWindows = false,
-	selectedModel?: string
+	selectedModel?: string,
+	subagentModels?: { explore?: string; plan?: string; "general-purpose"?: string }
 ): Record<string, ToolDef> {
 	const v1 = `${base}/v1`;
 	const mList = modelsList && modelsList.length > 0 ? modelsList : DEFAULT_MODELS;
@@ -104,6 +105,8 @@ export function getToolDefs(
 	const H = isWindows ? "$userProfile\\" : "$HOME/";
 	const S = isWindows ? "\\" : "/";
 	const chosenModel = selectedModel || "gemini-3.8-flash";
+	const exploreModel = subagentModels?.explore || chosenModel;
+	const planModel = subagentModels?.plan || chosenModel;
 
 	return {
 		"claude-code": {
@@ -226,7 +229,7 @@ export function getToolDefs(
 			files: [
 				{
 					path: `${H}.grok${S}config.toml`,
-					content: `[models]\ndefault = "mnrouter"\n\n[model.mnrouter]\nmodel = "${chosenModel}"\nbase_url = "${v1}"\nname = "mnRouter"\ndescription = "Routed via mnRouter gateway"\napi_backend = "chat_completions"\napi_key = "${key}"\n`,
+					content: `[models]\ndefault = "mnrouter"\n\n[model.mnrouter]\nmodel = "${chosenModel}"\nbase_url = "${v1}"\nname = "mnRouter"\ndescription = "Routed via mnRouter gateway"\napi_backend = "chat_completions"\napi_key = "${key}"\n\n[subagents.models]\ngeneral-purpose = "mnrouter-general-purpose"\nexplore = "mnrouter-explore"\nplan = "mnrouter-plan"\n\n[model.mnrouter-general-purpose]\nmodel = "${chosenModel}"\nbase_url = "${v1}"\nname = "mnRouter general-purpose"\ndescription = "Routed via mnRouter gateway (general-purpose)"\napi_backend = "chat_completions"\napi_key = "${key}"\n\n[model.mnrouter-explore]\nmodel = "${exploreModel}"\nbase_url = "${v1}"\nname = "mnRouter explore"\ndescription = "Routed via mnRouter gateway (explore)"\napi_backend = "chat_completions"\napi_key = "${key}"\n\n[model.mnrouter-plan]\nmodel = "${planModel}"\nbase_url = "${v1}"\nname = "mnRouter plan"\ndescription = "Routed via mnRouter gateway (plan)"\napi_backend = "chat_completions"\napi_key = "${key}"\n`,
 				},
 			],
 		},

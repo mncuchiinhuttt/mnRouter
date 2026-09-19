@@ -29,6 +29,9 @@ export function setupScriptRoutes() {
 		const apiKey = c.req.query("key")?.trim() || "";
 		const tool = c.req.query("tool")?.trim() || "";
 		const requestedModel = c.req.query("model")?.trim() || "";
+		const exploreModel = c.req.query("explore_model")?.trim() || "";
+		const planModel = c.req.query("plan_model")?.trim() || "";
+		const subagentModels = { explore: exploreModel, plan: planModel };
 		let modelsList: any[] = [];
 		try {
 			if (apiKey) {
@@ -43,7 +46,7 @@ export function setupScriptRoutes() {
 				modelsList = await modelRepo.listEnabled();
 			}
 		} catch {}
-		const script = renderBashSetup(baseUrl, apiKey, tool, modelsList, requestedModel);
+		const script = renderBashSetup(baseUrl, apiKey, tool, modelsList, requestedModel, subagentModels);
 		return c.text(script, 200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache, no-store, must-revalidate" });
 	};
 	app.get("/setup.sh", handleSetupSh);
@@ -64,6 +67,9 @@ export function setupScriptRoutes() {
 		const apiKey = c.req.query("key")?.trim() || "";
 		const tool = c.req.query("tool")?.trim() || "";
 		const requestedModel = c.req.query("model")?.trim() || "";
+		const exploreModel = c.req.query("explore_model")?.trim() || "";
+		const planModel = c.req.query("plan_model")?.trim() || "";
+		const subagentModels = { explore: exploreModel, plan: planModel };
 		let modelsList: any[] = [];
 		try {
 			if (apiKey) {
@@ -78,7 +84,7 @@ export function setupScriptRoutes() {
 				modelsList = await modelRepo.listEnabled();
 			}
 		} catch {}
-		const script = renderPowerShellSetup(baseUrl, apiKey, tool, modelsList, requestedModel);
+		const script = renderPowerShellSetup(baseUrl, apiKey, tool, modelsList, requestedModel, subagentModels);
 		return c.text(script, 200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache, no-store, must-revalidate" });
 	};
 	app.get("/setup.ps1", handleSetupPs1);

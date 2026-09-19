@@ -5,8 +5,8 @@ import { getToolDefs } from "./setup-tool-defs.js";
  * Supports tool-specific setup or all-in-one setup via toolId.
  */
 
-export function renderBashSetup(baseUrl: string, apiKey: string, toolId?: string, modelsList?: Array<any>, selectedModel?: string): string {
-	const tools = getToolDefs(baseUrl, apiKey, modelsList, false, selectedModel);
+export function renderBashSetup(baseUrl: string, apiKey: string, toolId?: string, modelsList?: Array<any>, selectedModel?: string, subagentModels?: { explore?: string; plan?: string }): string {
+	const tools = getToolDefs(baseUrl, apiKey, modelsList, false, selectedModel, subagentModels);
 	const targetTools = toolId && tools[toolId] ? [tools[toolId]!] : Object.values(tools);
 	const tag = toolId && tools[toolId] ? `mnrouter ${toolId}` : "mnrouter config";
 	const label = toolId && tools[toolId] ? tools[toolId]!.name : "all 11 AI harnesses";

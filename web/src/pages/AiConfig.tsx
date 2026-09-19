@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, Globe } from "lucide-react";
 import { api } from "@web/lib/api";
 import { Badge, Input } from "@web/components/ui/primitives";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
 import { SnippetCard } from "@web/components/snippet-card";
 import { ZCodeCopyCard } from "@web/components/zcode-copy-card";
 import { ModelDirectoryView } from "@web/components/model-directory-view";
@@ -37,12 +38,19 @@ export default function AiConfig() {
 	const [selectedHarnessId, setSelectedHarnessId] = useState("claude-code");
 	const [activeTab, setActiveTab] = useState<"tools" | "models">("tools");
 	const [customSelectedModel, setCustomSelectedModel] = useState("gemini-3.8-flash");
+	const [grokExploreModel, setGrokExploreModel] = useState("muse-spark-1.3-contributor-free");
+	const [grokPlanModel, setGrokPlanModel] = useState("claude-sonnet-4-6-ag");
 	const { data: modelsData } = useQuery({ queryKey: ["chat-models"], queryFn: () => api<{ models: ModelItem[] }>("/api/chat/models") });
 	const models = modelsData?.models ?? [];
 
 	const effectiveKey = apiKey.trim() || "mr_YOUR_API_KEY";
 	const currentHarness = HARNESSES.find((h) => h.id === selectedHarnessId) ?? HARNESSES[0]!;
-	const modelParam = (currentHarness.id === "grok-build" || currentHarness.id === "deepseek-tui") && customSelectedModel ? `&model=${encodeURIComponent(customSelectedModel)}` : "";
+	let modelParam = "";
+	if (currentHarness.id === "grok-build") {
+		modelParam = `&model=${encodeURIComponent(customSelectedModel)}&explore_model=${encodeURIComponent(grokExploreModel)}&plan_model=${encodeURIComponent(grokPlanModel)}`;
+	} else if (currentHarness.id === "deepseek-tui") {
+		modelParam = `&model=${encodeURIComponent(customSelectedModel)}`;
+	}
 	const setupCmd =
 		os === "mac"
 			? `curl -fsSL "${baseUrl}/setup.sh?tool=${currentHarness.id}&key=${effectiveKey}${modelParam}" | bash`
@@ -153,30 +161,113 @@ export default function AiConfig() {
 							</div>
 						</div>
 
-						{/* Optional Model Selector for configurable CLI agents like Grok Build / DeepSeek TUI */}
-						{(currentHarness.id === "grok-build" || currentHarness.id === "deepseek-tui") && (
-							<div className="flex flex-col gap-2 rounded-lg border border-line bg-paper/60 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+						{/* Multi-role Model Selectors for Grok Build */}
+						{currentHarness.id === "grok-build" && (
+							<div className="rounded-xl border border-line bg-paper/60 p-4 space-y-4 shadow-2xs">
+								<div className="flex items-center justify-between border-b border-line pb-2.5">
+									<div>
+										<h3 className="font-mono text-xs font-semibold text-ink uppercase tracking-wider">
+											{isVi ? "Cấu hình 3 Model Subagents cho Grok Build" : "Configure 3 Subagent Models for Grok Build"}
+										</h3>
+										<p className="text-[11px] text-ink-2 mt-0.5">
+											{isVi
+												? "Grok Build phân quyền 3 vai trò: Main (General), Explore (Đọc repo) và Plan (Lên kế hoạch)."
+												: "Grok Build splits execution across 3 roles: General Main, Explore research, and Plan architect."}
+										</p>
+									</div>
+								</div>
+
+								<div className="grid gap-3.5 sm:grid-cols-3">
+									{/* 1. Main / General-purpose */}
+									<div className="space-y-1.5">
+										<label className="text-[11px] font-mono font-semibold uppercase text-ink flex items-center justify-between">
+											<span>1. Main / General</span>
+											<span className="text-[10px] text-accent font-normal">Primary</span>
+										</label>
+										<Select value={customSelectedModel} onValueChange={setCustomSelectedModel}>
+											<SelectTrigger className="h-9 font-mono text-xs bg-white border-line">
+												<SelectValue placeholder="Select model..." />
+											</SelectTrigger>
+											<SelectContent className="max-h-64 font-mono text-xs">
+												{models.map((m) => (
+													<SelectItem key={m.id} value={m.id} className="text-xs">
+														{m.id}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* 2. Explore */}
+									<div className="space-y-1.5">
+										<label className="text-[11px] font-mono font-semibold uppercase text-ink flex items-center justify-between">
+											<span>2. Explore</span>
+											<span className="text-[10px] text-[#1d7a33] font-normal">Read-only</span>
+										</label>
+										<Select value={grokExploreModel} onValueChange={setGrokExploreModel}>
+											<SelectTrigger className="h-9 font-mono text-xs bg-white border-line">
+												<SelectValue placeholder="Select model..." />
+											</SelectTrigger>
+											<SelectContent className="max-h-64 font-mono text-xs">
+												{models.map((m) => (
+													<SelectItem key={m.id} value={m.id} className="text-xs">
+														{m.id}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* 3. Plan */}
+									<div className="space-y-1.5">
+										<label className="text-[11px] font-mono font-semibold uppercase text-ink flex items-center justify-between">
+											<span>3. Plan</span>
+											<span className="text-[10px] text-[#b45309] font-normal">Reasoning</span>
+										</label>
+										<Select value={grokPlanModel} onValueChange={setGrokPlanModel}>
+											<SelectTrigger className="h-9 font-mono text-xs bg-white border-line">
+												<SelectValue placeholder="Select model..." />
+											</SelectTrigger>
+											<SelectContent className="max-h-64 font-mono text-xs">
+												{models.map((m) => (
+													<SelectItem key={m.id} value={m.id} className="text-xs">
+														{m.id}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Single Model Selector for DeepSeek TUI */}
+						{currentHarness.id === "deepseek-tui" && (
+							<div className="flex flex-col gap-2 rounded-xl border border-line bg-paper/60 p-4 sm:flex-row sm:items-center sm:justify-between shadow-2xs">
 								<div className="space-y-0.5">
-									<span className="font-mono text-xs font-semibold text-ink">
-										{isVi ? "Chọn model mặc định cho công cụ này:" : "Select default model for this tool:"}
+									<span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider">
+										{isVi ? "Model mặc định cho DeepSeek TUI:" : "Default model for DeepSeek TUI:"}
 									</span>
 									<p className="text-[11px] text-ink-2">
 										{isVi
-											? "Model bạn chọn sẽ được ghi trực tiếp vào config.toml và lệnh setup bên dưới."
-											: "The selected model will be written directly into config.toml and the setup command below."}
+											? "Model đã chọn sẽ được ghi vào config.toml và câu lệnh bên dưới."
+											: "Selected model is written directly to config.toml and the commands below."}
 									</p>
 								</div>
-								<select
-									value={customSelectedModel}
-									onChange={(e) => setCustomSelectedModel(e.target.value)}
-									className="h-8 rounded border border-line bg-white px-2.5 font-mono text-xs text-ink focus:border-accent focus:outline-none shrink-0 cursor-pointer"
-								>
-									{models.map((m) => (
-										<option key={m.id} value={m.id}>
-											{m.id} ({m.displayName || m.provider})
-										</option>
-									))}
-								</select>
+								<div className="w-full sm:w-64 shrink-0">
+									<Select value={customSelectedModel} onValueChange={setCustomSelectedModel}>
+										<SelectTrigger className="h-9 font-mono text-xs bg-white border-line">
+											<SelectValue placeholder="Select model..." />
+										</SelectTrigger>
+										<SelectContent className="max-h-64 font-mono text-xs">
+											{models.map((m) => (
+												<SelectItem key={m.id} value={m.id} className="text-xs">
+													{m.id}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
 							</div>
 						)}
 						{currentHarness.id === "zcode" ? (
