@@ -119,14 +119,6 @@ export class GatewayService {
 						let outgoing = rawEv;
 						if (rawEv.type === "start") ttftTracker.value ??= Date.now() - startedAt;
 						if (rawEv.type === "done") {
-							// Append issue report notice to user before finalizing stream
-							if (!emittedFooter && !hadError && completionChars > 0) {
-								emittedFooter = true;
-								for (const chunk of formatter.format({ type: "text_delta", delta: issueNotice })) {
-									controller.enqueue(encoder.encode(chunk));
-								}
-								completionChars += issueNotice.length;
-							}
 							let doneUsage = rawEv.usage;
 							if (usageIsEmpty(doneUsage) && !hadError) {
 								doneUsage = estimateUsage(canonical, completionChars);
@@ -145,6 +137,16 @@ export class GatewayService {
 						controller.enqueue(encoder.encode(chunk));
 					}
 				}
+
+				// Append issue report notice to user once stream completes
+				if (!emittedFooter && !hadError && completionChars > 0) {
+					emittedFooter = true;
+					for (const chunk of formatter.format({ type: "text_delta", delta: issueNotice })) {
+						controller.enqueue(encoder.encode(chunk));
+					}
+					completionChars += issueNotice.length;
+				}
+
 				controller.close();
 				const finalUsage = estimated ? estimateUsage(canonical, completionChars) : usageBox.usage;
 				recordUsage({
