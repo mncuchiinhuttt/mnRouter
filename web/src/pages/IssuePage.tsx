@@ -56,6 +56,8 @@ const PLATFORM_OPTIONS = [
 	{ id: "hermes", name: "Hermes Agent", category: "Autonomous Agent", icon: "/harnesses/hermes.png", desc: "Hermes Multi-Agent Framework" },
 	{ id: "cursor", name: "Cursor / Windsurf", category: "Editor & IDE", icon: "/harnesses/cursor.png", desc: "Cursor IDE OpenAI Base URL override" },
 	{ id: "deepseek_tui", name: "DeepSeek TUI", category: "Rust TUI Agent", icon: "/harnesses/deepseek-tui.png", desc: "DeepSeek Terminal Coding Agent" },
+	{ id: "grok_build", name: "Grok Build", category: "xAI Terminal Agent", icon: "/harnesses/grok.png", desc: "xAI Grok Build CLI coding agent" },
+	{ id: "dsh", name: "DSH", category: "Official Web & Headless", icon: "/harnesses/deepseek-tui.png", desc: "DeepSeek Harness official CLI & Web UI" },
 	{ id: "pi", name: "Pi", category: "CLI Harness", icon: "/harnesses/pi.svg", desc: "Pi CLI coding agent harness" },
 	{ id: "omp", name: "Oh My Pi (OMP)", category: "Multi-Agent Harness", icon: "/harnesses/omp.svg", desc: "OMP multi-agent runtime & extensions" },
 	{ id: "zcode", name: "ZCode", category: "Editor & IDE", icon: "/harnesses/zcode.webp", desc: "Custom model provider in ZCode" },

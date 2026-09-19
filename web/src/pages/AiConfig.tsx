@@ -36,15 +36,17 @@ export default function AiConfig() {
 	}, []);
 	const [selectedHarnessId, setSelectedHarnessId] = useState("claude-code");
 	const [activeTab, setActiveTab] = useState<"tools" | "models">("tools");
+	const [customSelectedModel, setCustomSelectedModel] = useState("gemini-3.8-flash");
 	const { data: modelsData } = useQuery({ queryKey: ["chat-models"], queryFn: () => api<{ models: ModelItem[] }>("/api/chat/models") });
 	const models = modelsData?.models ?? [];
 
 	const effectiveKey = apiKey.trim() || "mr_YOUR_API_KEY";
 	const currentHarness = HARNESSES.find((h) => h.id === selectedHarnessId) ?? HARNESSES[0]!;
+	const modelParam = (currentHarness.id === "grok-build" || currentHarness.id === "deepseek-tui") && customSelectedModel ? `&model=${encodeURIComponent(customSelectedModel)}` : "";
 	const setupCmd =
 		os === "mac"
-			? `curl -fsSL "${baseUrl}/setup.sh?tool=${currentHarness.id}&key=${effectiveKey}" | bash`
-			: `irm "${baseUrl}/setup.ps1?tool=${currentHarness.id}&key=${effectiveKey}" | iex`;
+			? `curl -fsSL "${baseUrl}/setup.sh?tool=${currentHarness.id}&key=${effectiveKey}${modelParam}" | bash`
+			: `irm "${baseUrl}/setup.ps1?tool=${currentHarness.id}&key=${effectiveKey}${modelParam}" | iex`;
 
 	const resetCmd =
 		os === "mac"
@@ -151,6 +153,32 @@ export default function AiConfig() {
 							</div>
 						</div>
 
+						{/* Optional Model Selector for configurable CLI agents like Grok Build / DeepSeek TUI */}
+						{(currentHarness.id === "grok-build" || currentHarness.id === "deepseek-tui") && (
+							<div className="flex flex-col gap-2 rounded-lg border border-line bg-paper/60 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+								<div className="space-y-0.5">
+									<span className="font-mono text-xs font-semibold text-ink">
+										{isVi ? "Chọn model mặc định cho công cụ này:" : "Select default model for this tool:"}
+									</span>
+									<p className="text-[11px] text-ink-2">
+										{isVi
+											? "Model bạn chọn sẽ được ghi trực tiếp vào config.toml và lệnh setup bên dưới."
+											: "The selected model will be written directly into config.toml and the setup command below."}
+									</p>
+								</div>
+								<select
+									value={customSelectedModel}
+									onChange={(e) => setCustomSelectedModel(e.target.value)}
+									className="h-8 rounded border border-line bg-white px-2.5 font-mono text-xs text-ink focus:border-accent focus:outline-none shrink-0 cursor-pointer"
+								>
+									{models.map((m) => (
+										<option key={m.id} value={m.id}>
+											{m.id} ({m.displayName || m.provider})
+										</option>
+									))}
+								</select>
+							</div>
+						)}
 						{currentHarness.id === "zcode" ? (
 							<ZCodeCopyCard baseUrl={baseUrl} apiKey={effectiveKey} />
 						) : (

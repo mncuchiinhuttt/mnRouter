@@ -83,7 +83,8 @@ export function getToolDefs(
 	base: string,
 	key: string,
 	modelsList?: Array<{ id: string; displayName?: string; contextWindow?: number; maxOutput?: number; priceIn?: number; priceOut?: number; priceCacheRead?: number; priceCacheWrite?: number }>,
-	isWindows = false
+	isWindows = false,
+	selectedModel?: string
 ): Record<string, ToolDef> {
 	const v1 = `${base}/v1`;
 	const mList = modelsList && modelsList.length > 0 ? modelsList : DEFAULT_MODELS;
@@ -102,6 +103,7 @@ export function getToolDefs(
 
 	const H = isWindows ? "$userProfile\\" : "$HOME/";
 	const S = isWindows ? "\\" : "/";
+	const chosenModel = selectedModel || "gemini-3.8-flash";
 
 	return {
 		"claude-code": {
@@ -209,6 +211,22 @@ export function getToolDefs(
 				{
 					path: `${H}.deepseek${S}config.toml`,
 					content: `provider = "openai"\ndefault_text_model = "gemini-3.8-flash"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
+				},
+			],
+		},
+		"grok-build": {
+			id: "grok-build",
+			name: "Grok Build",
+			vars: [
+				["GROK_API_BASE", v1],
+				["GROK_API_KEY", key],
+				["OPENAI_BASE_URL", v1],
+				["OPENAI_API_KEY", key],
+			],
+			files: [
+				{
+					path: `${H}.grok${S}config.toml`,
+					content: `[models]\ndefault = "mnrouter"\n\n[model.mnrouter]\nmodel = "${chosenModel}"\nbase_url = "${v1}"\nname = "mnRouter"\ndescription = "Routed via mnRouter gateway"\napi_backend = "chat_completions"\napi_key = "${key}"\n`,
 				},
 			],
 		},

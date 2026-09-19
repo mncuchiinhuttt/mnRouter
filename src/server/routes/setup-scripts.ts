@@ -28,6 +28,7 @@ export function setupScriptRoutes() {
 		const baseUrl = getBaseUrl(c);
 		const apiKey = c.req.query("key")?.trim() || "";
 		const tool = c.req.query("tool")?.trim() || "";
+		const requestedModel = c.req.query("model")?.trim() || "";
 		let modelsList: any[] = [];
 		try {
 			if (apiKey) {
@@ -42,7 +43,7 @@ export function setupScriptRoutes() {
 				modelsList = await modelRepo.listEnabled();
 			}
 		} catch {}
-		const script = renderBashSetup(baseUrl, apiKey, tool, modelsList);
+		const script = renderBashSetup(baseUrl, apiKey, tool, modelsList, requestedModel);
 		return c.text(script, 200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache, no-store, must-revalidate" });
 	};
 	app.get("/setup.sh", handleSetupSh);
@@ -62,6 +63,7 @@ export function setupScriptRoutes() {
 		const baseUrl = getBaseUrl(c);
 		const apiKey = c.req.query("key")?.trim() || "";
 		const tool = c.req.query("tool")?.trim() || "";
+		const requestedModel = c.req.query("model")?.trim() || "";
 		let modelsList: any[] = [];
 		try {
 			if (apiKey) {
@@ -76,7 +78,7 @@ export function setupScriptRoutes() {
 				modelsList = await modelRepo.listEnabled();
 			}
 		} catch {}
-		const script = renderPowerShellSetup(baseUrl, apiKey, tool, modelsList);
+		const script = renderPowerShellSetup(baseUrl, apiKey, tool, modelsList, requestedModel);
 		return c.text(script, 200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-cache, no-store, must-revalidate" });
 	};
 	app.get("/setup.ps1", handleSetupPs1);

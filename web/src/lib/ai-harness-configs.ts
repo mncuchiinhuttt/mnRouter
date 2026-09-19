@@ -138,6 +138,23 @@ export const HARNESSES: HarnessConfig[] = [
 		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
 	},
 	{
+		id: "grok-build",
+		name: "Grok Build",
+		icon: "/harnesses/grok.png",
+		badge: "xAI Terminal Agent",
+		protocol: "Grok CLI / Build Agent",
+		descEn: "xAI Grok Build CLI coding agent. Routes completions via mnRouter OpenAI endpoint.",
+		descVi: "Công cụ dòng lệnh Grok Build (xAI). Tự động cấu hình model trong ~/.grok/config.toml trỏ về mnRouter.",
+		quickRun: (base, key) => `export GROK_API_BASE="${base}/v1"\nexport GROK_API_KEY="${key}"\nexport OPENAI_BASE_URL="${base}/v1"\nexport OPENAI_API_KEY="${key}"\ngrok`,
+		persistZsh: (base, key) => `echo 'export GROK_API_BASE="${base}/v1"' >> ~/.zshrc\necho 'export GROK_API_KEY="${key}"' >> ~/.zshrc\necho 'export OPENAI_BASE_URL="${base}/v1"' >> ~/.zshrc\necho 'export OPENAI_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
+		configFile: {
+			path: "~/.grok/config.toml",
+			lang: "toml",
+			content: (base, key) => `[models]\ndefault = "mnrouter"\n\n[model.mnrouter]\nmodel = "gemini-3.8-flash"\nbase_url = "${base}/v1"\nname = "mnRouter"\ndescription = "Routed via mnRouter gateway"\napi_backend = "chat_completions"\napi_key = "${key}"\n`,
+		},
+		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
+	},
+	{
 		id: "dsh",
 		name: "DSH",
 		icon: "/harnesses/deepseek-tui.png",
