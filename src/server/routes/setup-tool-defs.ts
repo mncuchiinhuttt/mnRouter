@@ -96,7 +96,9 @@ export function getToolDefs(
 		})
 		.join("\n");
 	const piModels = mList.map((m) => `          { "id": "${m.id}", "name": "${m.displayName || m.id}" }`).join(",\n");
-	const opencodeModels = mList.map((m) => `    "${m.id}"`).join(",\n");
+	const opencodeModelsObj = mList
+		.map((m) => `        "${m.id}": { "name": "${m.displayName || m.id}", "modalities": { "input": ["text", "image"], "output": ["text"] } }`)
+		.join(",\n");
 
 	const H = isWindows ? "$userProfile\\" : "$HOME/";
 	const S = isWindows ? "\\" : "/";
@@ -151,8 +153,14 @@ export function getToolDefs(
 			name: "OpenCode",
 			vars: [["OPENCODE_BASE_URL", v1], ["OPENCODE_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
 			files: [
-				{ path: `${H}.config${S}opencode${S}config.json`, content: `{\n  "provider": "custom",\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "model": "claude-sonnet-4-6-ag",\n  "models": [\n${opencodeModels}\n  ]\n}` },
-				{ path: `${H}.opencode${S}config.json`, content: `{\n  "provider": "custom",\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "model": "claude-sonnet-4-6-ag",\n  "models": [\n${opencodeModels}\n  ]\n}` },
+				{
+					path: `${H}.config${S}opencode${S}opencode.json`,
+					content: `{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "mnrouter/gemini-3.8-flash",\n  "provider": {\n    "mnrouter": {\n      "npm": "@ai-sdk/openai-compatible",\n      "options": {\n        "baseURL": "${v1}",\n        "apiKey": "${key}"\n      },\n      "models": {\n${opencodeModelsObj}\n      }\n    }\n  }\n}\n`,
+				},
+				{
+					path: `${H}.opencode${S}opencode.json`,
+					content: `{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "mnrouter/gemini-3.8-flash",\n  "provider": {\n    "mnrouter": {\n      "npm": "@ai-sdk/openai-compatible",\n      "options": {\n        "baseURL": "${v1}",\n        "apiKey": "${key}"\n      },\n      "models": {\n${opencodeModelsObj}\n      }\n    }\n  }\n}\n`,
+				},
 			],
 		},
 		"hermes-agent": {

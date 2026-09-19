@@ -77,9 +77,13 @@ export const HARNESSES: HarnessConfig[] = [
 		protocol: "OpenCode CLI / Desktop",
 		descEn: "OpenCode CLI harness. Routes premium models and free stealth models seamlessly.",
 		descVi: "Bộ công cụ OpenCode CLI. Hỗ trợ cả model có phí lẫn dàn model free stealth.",
-		quickRun: (base, key) => `export OPENCODE_BASE_URL="${base}/v1"\nexport OPENCODE_API_KEY="${key}"\nopencode --model big-pickle`,
+		quickRun: (base, key) => `export OPENCODE_BASE_URL="${base}/v1"\nexport OPENCODE_API_KEY="${key}"\nexport OPENAI_BASE_URL="${base}/v1"\nexport OPENAI_API_KEY="${key}"\nopencode -m mnrouter/gemini-3.8-flash`,
 		persistZsh: (base, key) => `echo 'export OPENCODE_BASE_URL="${base}/v1"' >> ~/.zshrc\necho 'export OPENCODE_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
-		configFile: { path: "~/.config/opencode/config.json", lang: "json", content: (base, key) => `{\n  "provider": "custom",\n  "baseUrl": "${base}/v1",\n  "apiKey": "${key}",\n  "model": "claude-sonnet-5"\n}` },
+		configFile: {
+			path: "~/.config/opencode/opencode.json",
+			lang: "json",
+			content: (base, key) => `{\n  "$schema": "https://opencode.ai/config.json",\n  "model": "mnrouter/gemini-3.8-flash",\n  "provider": {\n    "mnrouter": {\n      "npm": "@ai-sdk/openai-compatible",\n      "options": {\n        "baseURL": "${base}/v1",\n        "apiKey": "${key}"\n      },\n      "models": {\n        "gemini-3.8-flash": { "name": "gemini-3.8-flash" },\n        "claude-sonnet-4-6-ag": { "name": "claude-sonnet-4-6-ag" },\n        "big-pickle": { "name": "big-pickle" }\n      }\n    }\n  }\n}`,
+		},
 		verify: (base, key) => `curl -fsSL "${base}/v1/models" -H "authorization: Bearer ${key}"`,
 	},
 	{
