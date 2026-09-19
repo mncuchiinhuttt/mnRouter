@@ -248,7 +248,7 @@ export default function IssuePage() {
 														<img
 															src={current.icon}
 															alt=""
-															className="size-5 shrink-0 object-contain rounded-xs"
+															className={`size-5 shrink-0 object-contain rounded-xs ${current.id === "pi" ? "brightness-0" : ""}`}
 															onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
 														/>
 													) : (
@@ -269,7 +269,7 @@ export default function IssuePage() {
 													<img
 														src={p.icon}
 														alt=""
-														className="size-4 shrink-0 object-contain rounded-xs"
+														className={`size-4 shrink-0 object-contain rounded-xs ${p.id === "pi" ? "brightness-0" : ""}`}
 														onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
 													/>
 												) : (

@@ -119,8 +119,8 @@ export default function AiConfig() {
 									}`}
 								>
 									<div className="flex items-center gap-2.5 min-w-0">
-										<div className={`flex size-5 shrink-0 items-center justify-center rounded-xs p-0.5 ${h.id === "pi" ? "bg-transparent" : "bg-white/10"}`}>
-											<img src={h.icon} alt="" className={`size-4 object-contain rounded-xs ${h.id === "pi" ? (active ? "brightness-0 invert" : "") : ""}`} onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
+										<div className="flex size-5 shrink-0 items-center justify-center rounded-xs bg-white/10 p-0.5">
+											<img src={h.icon} alt="" className={`size-4 object-contain rounded-xs ${h.id === "pi" ? (active ? "brightness-0 invert" : "brightness-0") : ""}`} onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
 										</div>
 										<span className="truncate">{h.name}</span>
 									</div>
@@ -136,7 +136,7 @@ export default function AiConfig() {
 						<div className="flex flex-col gap-3 rounded-lg border border-line bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
 							<div className="flex items-center gap-3 min-w-0 flex-1">
 								<div className="flex size-9 shrink-0 items-center justify-center rounded-md border border-line bg-paper-2 p-1">
-									<img src={currentHarness.icon} alt={currentHarness.name} className="size-6 object-contain" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
+									<img src={currentHarness.icon} alt={currentHarness.name} className={`size-6 object-contain ${currentHarness.id === "pi" ? "brightness-0" : ""}`} onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
 								</div>
 								<div className="min-w-0 flex-1">
 									<h2 className="text-lg font-semibold tracking-tight text-ink">{currentHarness.name}</h2>
