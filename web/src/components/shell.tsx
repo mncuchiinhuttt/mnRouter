@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Activity, BarChart3, Boxes, Database, History, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Boxes, Database, History, KeyRound, LayoutGrid, LineChart, Megaphone, Menu, MessageSquare, MessageSquareWarning, Plug, ScrollText, Settings, SlidersHorizontal, Terminal, Trophy, Users, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@web/lib/utils";
 import { setLang } from "@web/i18n";
@@ -107,6 +107,7 @@ function SidebarContent({ me, onNavigate, t, isMobile = false }: { me: Me; onNav
 					<NavItem to="/chat" icon={<MessageSquare className="h-3.5 w-3.5" />} label={t("nav.chat")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-chat"} />
 					<NavItem to="/mcp" icon={<Boxes className="h-3.5 w-3.5" />} label={t("nav.mcpSkills")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-mcp"} />
 					<NavItem to="/data" icon={<Database className="h-3.5 w-3.5" />} label={t("nav.dataModels")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-data"} />
+					<NavItem to="/issues" icon={<AlertTriangle className="h-3.5 w-3.5" />} label={t("nav.issues")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-issues"} />
 				</nav>
 
 				{me.role === "admin" && (
@@ -120,6 +121,7 @@ function SidebarContent({ me, onNavigate, t, isMobile = false }: { me: Me; onNav
 							<NavItem to="/admin/analytics" icon={<LineChart className="h-3.5 w-3.5" />} label={t("nav.analytics")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-analytics"} />
 							<NavItem to="/admin/logs" icon={<ScrollText className="h-3.5 w-3.5" />} label={t("nav.logs")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-logs"} />
 							<NavItem to="/admin/feedbacks" icon={<MessageSquareWarning className="h-3.5 w-3.5" />} label={t("nav.feedbacks")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-feedbacks"} />
+							<NavItem to="/admin/issues" icon={<AlertTriangle className="h-3.5 w-3.5" />} label={t("nav.adminIssues")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-admin-issues"} />
 							<NavItem to="/admin/announcements" icon={<Megaphone className="h-3.5 w-3.5" />} label={t("nav.announcements")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-announcements"} />
 							<NavItem to="/admin/settings" icon={<Settings className="h-3.5 w-3.5" />} label={t("nav.settings")} onNavigate={onNavigate} dataTour={isMobile ? undefined : "nav-settings"} />
 						</nav>

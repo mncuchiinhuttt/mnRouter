@@ -9,6 +9,7 @@ import { parseOpenAiChat, OpenAiChatFormatter } from "../gateway/ingress/openai-
 import { parseAnthropic, AnthropicFormatter } from "../gateway/ingress/anthropic.js";
 import { parseOpenAiResponses, OpenAiResponsesFormatter } from "../gateway/ingress/openai-responses.js";
 import { UpstreamError, emptyUsage, type CanonicalRequest, type CanonicalUsage, type StreamEvent } from "../gateway/canonical.js";
+import { env } from "../env.js";
 
 export type IngressKind = "openai-chat" | "anthropic" | "openai-responses";
 
@@ -104,17 +105,28 @@ export class GatewayService {
 	private handleStream(upstream: any, formatter: any, auth: any, resolved: any, kind: IngressKind, startedAt: number, canonical: CanonicalRequest) {
 		const ttftTracker = { value: undefined as number | undefined };
 		const usageBox = { usage: emptyUsage() };
+		const issueUrl = `${env.APP_URL.replace(/\/+$/, "")}/issues`;
+		const issueNotice = `\n\n> Gặp lỗi hoặc sự cố? Báo cáo ngay tại: ${issueUrl}`;
 
 		const stream = new ReadableStream<Uint8Array>({
 			async start(controller) {
 				let hadError = false;
 				let completionChars = 0;
 				let estimated = false;
+				let emittedFooter = false;
 				try {
 					for await (const rawEv of translateUpstreamStream(upstream.attempt.res.body!, upstream.attempt.parser, resolved.provider)) {
 						let outgoing = rawEv;
 						if (rawEv.type === "start") ttftTracker.value ??= Date.now() - startedAt;
 						if (rawEv.type === "done") {
+							// Append issue report notice to user before finalizing stream
+							if (!emittedFooter && !hadError && completionChars > 0) {
+								emittedFooter = true;
+								for (const chunk of formatter.format({ type: "text_delta", delta: issueNotice })) {
+									controller.enqueue(encoder.encode(chunk));
+								}
+								completionChars += issueNotice.length;
+							}
 							let doneUsage = rawEv.usage;
 							if (usageIsEmpty(doneUsage) && !hadError) {
 								doneUsage = estimateUsage(canonical, completionChars);
@@ -202,6 +214,15 @@ export class GatewayService {
 			}
 			const { result, error } = aggregateEvents(events);
 			if (!result) throw new UpstreamError(error?.message ?? "upstream error", 502, error?.code ?? "upstream_error", false);
+
+			const issueUrl = `${env.APP_URL.replace(/\/+$/, "")}/issues`;
+			const issueNotice = `\n\n> Gặp lỗi hoặc sự cố? Báo cáo ngay tại: ${issueUrl}`;
+			const textBlock = result.content.find((b) => b.type === "text") as { type: "text"; text: string } | undefined;
+			if (textBlock && textBlock.text) {
+				textBlock.text += issueNotice;
+				completionChars += issueNotice.length;
+			}
+
 			const finalUsage = usageIsEmpty(result.usage) ? estimateUsage(canonical, completionChars) : result.usage;
 			result.usage = finalUsage;
 			recordUsage({

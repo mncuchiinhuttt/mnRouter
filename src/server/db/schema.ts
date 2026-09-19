@@ -198,6 +198,43 @@ export const announcements = sqliteTable(
 	(t) => [index("announcements_active_ix").on(t.active, t.expiresAt)],
 );
 
+export const issues = sqliteTable(
+	"issues",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+		userEmail: text("user_email"),
+		tool: text("tool").notNull(), // 'api' | 'claude_code' | 'codex' | 'omp' | 'chat' | 'cursor' | 'opencode' | 'other'
+		customTool: text("custom_tool"),
+		title: text("title").notNull(),
+		description: text("description").notNull(),
+		model: text("model"),
+		status: text("status", { enum: ["open", "investigating", "resolved"] }).notNull().default("open"),
+		adminNote: text("admin_note"),
+		resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
+		createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+		updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+	},
+	(t) => [
+		index("issues_user_ix").on(t.userId),
+		index("issues_status_ix").on(t.status, t.createdAt),
+	],
+);
+
+export const issueImages = sqliteTable(
+	"issue_images",
+	{
+		id: text("id").primaryKey(),
+		issueId: text("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+		filename: text("filename").notNull(),
+		mimeType: text("mime_type").notNull(),
+		sizeBytes: integer("size_bytes").notNull(),
+		storagePath: text("storage_path").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+	},
+	(t) => [index("issue_images_issue_ix").on(t.issueId)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Invitation = typeof invitations.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
@@ -206,5 +243,7 @@ export type ModelRow = typeof models.$inferSelect;
 export type UsageDailyRow = typeof usageDaily.$inferSelect;
 export type UsageRequestRow = typeof usageRequests.$inferSelect;
 export type Announcement = typeof announcements.$inferSelect; export type NewAnnouncement = typeof announcements.$inferInsert;
+export type Issue = typeof issues.$inferSelect; export type NewIssue = typeof issues.$inferInsert;
+export type IssueImage = typeof issueImages.$inferSelect; export type NewIssueImage = typeof issueImages.$inferInsert;
 export * from "./chat-schema.js";
 export * from "./mcp-schema.js";

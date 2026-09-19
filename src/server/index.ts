@@ -45,6 +45,7 @@ import { mcpRoutes } from "./routes/mcp.js";
 import { customSkillRoutes } from "./routes/custom-skills.js";
 import { statusRoutes } from "./routes/status.js";
 import { copilotRoutes } from "./routes/copilot.js";
+import { issueRoutes } from "./routes/issue.js";
 import { sessionMiddleware } from "./auth/guards.js";
 import { startRefresher, stopRefresher } from "./gateway/refresher.js";
 import { startChatSweeper, stopChatSweeper } from "./chat/sweeper.js";
@@ -71,6 +72,7 @@ app.route("/", mcpRoutes());
 app.route("/", customSkillRoutes());
 app.route("/", statusRoutes());
 app.route("/", copilotRoutes());
+app.route("/", issueRoutes());
 const webDist = path.resolve(process.cwd(), "web-dist");
 if (existsSync(webDist)) {
 	app.use("*", serveStatic({ root: path.relative(process.cwd(), webDist) }));

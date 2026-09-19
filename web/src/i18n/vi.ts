@@ -49,6 +49,8 @@ const vi = {
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Kỹ năng",
 		dataModels: "Data & Models",
+		issues: "Báo cáo sự cố",
+		adminIssues: "Quản lý sự cố",
 		announcements: "Thông báo",
 		settings: "Cài đặt",
 		system: "Hệ thống",

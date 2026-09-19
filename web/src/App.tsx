@@ -27,6 +27,9 @@ import ServerStatusPage from "@web/pages/ServerStatusPage";
 import ChangelogPage from "@web/pages/ChangelogPage";
 import ModelsDataPage from "@web/pages/ModelsDataPage";
 import ModelDetailPage from "@web/pages/ModelDetailPage";
+import IssuePage from "@web/pages/IssuePage";
+import AdminIssues from "@web/pages/AdminIssues";
+
 export function useMe() {
 	return useQuery({
 		queryKey: ["me"],
@@ -57,6 +60,8 @@ export default function App() {
 			<Route path="/auth/verify" element={<Verify />} />
 			<Route path="/invite/accept" element={<Verify />} />
 			<Route path="/share/:token" element={<SharedChatPage />} />
+			<Route path="/issues" element={<IssuePage />} />
+			<Route path="/issue" element={<Navigate to="/issues" replace />} />
 			<Route
 				path="/"
 				element={
@@ -76,6 +81,8 @@ export default function App() {
 				<Route path="data/:provider/:modelId" element={<ModelDetailPage />} />
 				<Route path="status" element={<ServerStatusPage />} />
 				<Route path="changelog" element={<ChangelogPage />} />
+				<Route path="issues" element={<IssuePage />} />
+				<Route path="issue" element={<Navigate to="/issues" replace />} />
 				<Route path="admin/users" element={<AdminUsers />} />
 				<Route path="admin/connections" element={<AdminConnections />} />
 				<Route path="admin/models" element={<AdminModels />} />
@@ -85,8 +92,8 @@ export default function App() {
 				<Route path="admin/logs" element={<AdminLogs />} />
 				<Route path="admin/settings" element={<AdminSettings />} />
 				<Route path="admin/announcements" element={<AdminAnnouncements />} />
+				<Route path="admin/issues" element={<AdminIssues />} />
 			</Route>
-			<Route path="*" element={<Navigate to="/" replace />} />
 		</Routes>
 	);
 }

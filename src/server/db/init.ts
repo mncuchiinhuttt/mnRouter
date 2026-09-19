@@ -178,6 +178,36 @@ export function initSqliteSchema(sqlite: Database): void {
 		CREATE INDEX IF NOT EXISTS usage_requests_user_id_ix ON usage_requests(user_id, id DESC);
 		CREATE INDEX IF NOT EXISTS usage_requests_status_id_ix ON usage_requests(status, id DESC);
 		CREATE INDEX IF NOT EXISTS announcements_active_ix ON announcements(active, expires_at);
+
+		CREATE TABLE IF NOT EXISTS issues (
+			id TEXT PRIMARY KEY,
+			user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+			user_email TEXT,
+			tool TEXT NOT NULL,
+			custom_tool TEXT,
+			title TEXT NOT NULL,
+			description TEXT NOT NULL,
+			model TEXT,
+			status TEXT NOT NULL DEFAULT 'open',
+			admin_note TEXT,
+			resolved_at INTEGER,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		);
+
+		CREATE TABLE IF NOT EXISTS issue_images (
+			id TEXT PRIMARY KEY,
+			issue_id TEXT NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+			filename TEXT NOT NULL,
+			mime_type TEXT NOT NULL,
+			size_bytes INTEGER NOT NULL,
+			storage_path TEXT NOT NULL,
+			created_at INTEGER NOT NULL
+		);
+
+		CREATE INDEX IF NOT EXISTS issues_user_ix ON issues(user_id);
+		CREATE INDEX IF NOT EXISTS issues_status_ix ON issues(status, created_at);
+		CREATE INDEX IF NOT EXISTS issue_images_issue_ix ON issue_images(issue_id);
 	`);
 
 	try { sqlite.run("ALTER TABLE users ADD COLUMN username TEXT;"); } catch {}

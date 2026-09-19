@@ -51,6 +51,8 @@ const en: Dict = {
 		chat: "Chat & Agent",
 		mcpSkills: "MCP & Skills",
 		dataModels: "Data & Models",
+		issues: "Report Issue",
+		adminIssues: "Issue Reports",
 		announcements: "Announcements",
 		settings: "Settings",
 		system: "System",
