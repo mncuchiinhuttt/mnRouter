@@ -197,26 +197,6 @@ export function getToolDefs(
 				["OPENAI_API_KEY", key],
 			],
 		},
-		"deepseek-tui": {
-			id: "deepseek-tui",
-			name: "DeepSeek TUI",
-			vars: [
-				["DEEPSEEK_API_KEY", key],
-				["DEEPSEEK_BASE_URL", v1],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-			],
-			files: [
-				{
-					path: `${H}.codewhale${S}config.toml`,
-					content: `provider = "openai"\ndefault_text_model = "gemini-3.8-flash"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
-				},
-				{
-					path: `${H}.deepseek${S}config.toml`,
-					content: `provider = "openai"\ndefault_text_model = "gemini-3.8-flash"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
-				},
-			],
-		},
 		"grok-build": {
 			id: "grok-build",
 			name: "Grok Build",

@@ -48,8 +48,6 @@ export default function AiConfig() {
 	let modelParam = "";
 	if (currentHarness.id === "grok-build") {
 		modelParam = `&model=${encodeURIComponent(customSelectedModel)}&explore_model=${encodeURIComponent(grokExploreModel)}&plan_model=${encodeURIComponent(grokPlanModel)}`;
-	} else if (currentHarness.id === "deepseek-tui") {
-		modelParam = `&model=${encodeURIComponent(customSelectedModel)}`;
 	}
 	const setupCmd =
 		os === "mac"
@@ -241,35 +239,6 @@ export default function AiConfig() {
 							</div>
 						)}
 
-						{/* Single Model Selector for DeepSeek TUI */}
-						{currentHarness.id === "deepseek-tui" && (
-							<div className="flex flex-col gap-2 rounded-xl border border-line bg-paper/60 p-4 sm:flex-row sm:items-center sm:justify-between shadow-2xs">
-								<div className="space-y-0.5">
-									<span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider">
-										{isVi ? "Model mặc định cho DeepSeek TUI:" : "Default model for DeepSeek TUI:"}
-									</span>
-									<p className="text-[11px] text-ink-2">
-										{isVi
-											? "Model đã chọn sẽ được ghi vào config.toml và câu lệnh bên dưới."
-											: "Selected model is written directly to config.toml and the commands below."}
-									</p>
-								</div>
-								<div className="w-full sm:w-64 shrink-0">
-									<Select value={customSelectedModel} onValueChange={setCustomSelectedModel}>
-										<SelectTrigger className="h-9 font-mono text-xs bg-white border-line">
-											<SelectValue placeholder="Select model..." />
-										</SelectTrigger>
-										<SelectContent className="max-h-64 font-mono text-xs">
-											{models.map((m) => (
-												<SelectItem key={m.id} value={m.id} className="text-xs">
-													{m.id}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-						)}
 						{currentHarness.id === "zcode" ? (
 							<ZCodeCopyCard baseUrl={baseUrl} apiKey={effectiveKey} />
 						) : (
