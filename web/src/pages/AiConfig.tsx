@@ -119,8 +119,8 @@ export default function AiConfig() {
 									}`}
 								>
 									<div className="flex items-center gap-2.5 min-w-0">
-										<div className="flex size-5 shrink-0 items-center justify-center rounded-xs bg-white/10 p-0.5">
-											<img src={h.icon} alt="" className="size-4 object-contain rounded-xs" onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
+										<div className={`flex size-5 shrink-0 items-center justify-center rounded-xs p-0.5 ${h.id === "pi" ? "bg-transparent" : "bg-white/10"}`}>
+											<img src={h.icon} alt="" className={`size-4 object-contain rounded-xs ${h.id === "pi" ? (active ? "brightness-0 invert" : "") : ""}`} onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }} />
 										</div>
 										<span className="truncate">{h.name}</span>
 									</div>

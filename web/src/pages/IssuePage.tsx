@@ -23,8 +23,8 @@ import {
 import { api, apiJson } from "@web/lib/api";
 import { Button } from "@web/components/ui/button";
 import { Badge, Input } from "@web/components/ui/primitives";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@web/components/ui/select";
 import { cn } from "@web/lib/utils";
-
 interface IssueImage {
 	id: string;
 	filename: string;
@@ -47,15 +47,24 @@ interface IssueItem {
 	images: IssueImage[];
 }
 
-const TOOL_PRESETS = [
-	{ id: "api", name: "Direct API", desc: "Curl, Python SDK, LangChain, OpenAI/Anthropic SDK", icon: Terminal },
-	{ id: "claude_code", name: "Claude Code", desc: "Anthropic Claude Code CLI workspace", icon: Wrench },
-	{ id: "codex", name: "Codex CLI", desc: "OpenAI Codex CLI or CLI responses proxy", icon: Sparkles },
-	{ id: "omp", name: "Oh My Pi (OMP)", desc: "OMP agent runtime or extensions", icon: ShieldCheck },
-	{ id: "chat", name: "Chat & Agent Web", desc: "mnRouter internal web chat interface", icon: ExternalLink },
-	{ id: "cursor", name: "Cursor / Windsurf", desc: "Custom base URL in IDE extensions", icon: Terminal },
-	{ id: "opencode", name: "OpenCode", desc: "OpenCode CLI / Zen coding runner", icon: Wrench },
-	{ id: "other", name: "Khác / Khác loại", desc: "Công cụ hoặc môi trường client khác", icon: HelpCircle },
+const PLATFORM_OPTIONS = [
+	{ id: "claude_code", name: "Claude Code", category: "CLI Harness", icon: "/harnesses/claude.png", desc: "Anthropic Claude Code CLI workspace" },
+	{ id: "claude_cowork", name: "Claude Cowork", category: "Desktop & Agent", icon: "/harnesses/claude.png", desc: "Claude Desktop and Cowork agent" },
+	{ id: "codex", name: "OpenAI Codex", category: "CLI Harness", icon: "/harnesses/codex.png", desc: "OpenAI Codex CLI & /v1/responses" },
+	{ id: "openclaw", name: "OpenClaw", category: "Autonomous Agent", icon: "/harnesses/openclaw.png", desc: "OpenClaw autonomous coding agent" },
+	{ id: "opencode", name: "OpenCode", category: "CLI Harness", icon: "/harnesses/opencode.png", desc: "OpenCode CLI / Zen coding runner" },
+	{ id: "hermes", name: "Hermes Agent", category: "Autonomous Agent", icon: "/harnesses/hermes.png", desc: "Hermes Multi-Agent Framework" },
+	{ id: "cursor", name: "Cursor / Windsurf", category: "Editor & IDE", icon: "/harnesses/cursor.png", desc: "Cursor IDE OpenAI Base URL override" },
+	{ id: "devin", name: "Devin CLI", category: "Autonomous Agent", icon: "/harnesses/devin-cli.png", desc: "Devin autonomous coding agent CLI" },
+	{ id: "pi", name: "Pi", category: "CLI Harness", icon: "/harnesses/pi.svg", desc: "Pi CLI coding agent harness" },
+	{ id: "omp", name: "Oh My Pi (OMP)", category: "Multi-Agent Harness", icon: "/harnesses/omp.svg", desc: "OMP multi-agent runtime & extensions" },
+	{ id: "zcode", name: "ZCode", category: "Editor & IDE", icon: "/harnesses/zcode.webp", desc: "Custom model provider in ZCode" },
+	{ id: "antigravity", name: "Antigravity (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/antigravity.png", desc: "Google Cloud Code interception proxy" },
+	{ id: "github_copilot", name: "GitHub Copilot (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/copilot.png", desc: "VSCode Copilot extension interception" },
+	{ id: "kiro", name: "Kiro (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/kiro.png", desc: "AWS CodeWhisperer interception proxy" },
+	{ id: "chat", name: "Chat & Agent Web", category: "Web Interface", icon: "/harnesses/openclaw.png", desc: "mnRouter internal web chat interface" },
+	{ id: "api", name: "Direct API", category: "Direct API", icon: "/harnesses/openclaw.png", desc: "cURL, Python SDK, OpenAI/Anthropic SDK" },
+	{ id: "other", name: "Khác / Custom Tool", category: "Khác", icon: "", desc: "Công cụ, script hoặc môi trường client khác" },
 ];
 
 export default function IssuePage() {
@@ -175,11 +184,6 @@ export default function IssuePage() {
 						</p>
 					</div>
 
-					<div className="flex shrink-0 items-center gap-2">
-						<Badge className="h-8 font-mono text-xs px-3 border-line bg-white/60">
-							Privacy: Ảnh tự động xoá khi Resolve
-						</Badge>
-					</div>
 				</div>
 			</header>
 
@@ -226,44 +230,67 @@ export default function IssuePage() {
 						}}
 						className="space-y-6 rounded-xl border border-line bg-white p-6 shadow-xs"
 					>
-						{/* Step 1: Tool Selection */}
-						<div className="space-y-3">
+						{/* Step 1: Platform / Tool Selection (Select Dropdown) */}
+						<div className="space-y-2">
 							<label className="block text-xs font-mono font-semibold uppercase tracking-wider text-ink">
-								1. {isVi ? "Bạn đang sử dụng công cụ gì?" : "Which tool were you using?"}
+								1. {isVi ? "Nền tảng / Công cụ bạn đang sử dụng" : "Platform / Tool you were using"}
 							</label>
-							<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-								{TOOL_PRESETS.map((p) => {
-									const active = tool === p.id;
-									const Icon = p.icon;
-									return (
-										<button
-											type="button"
-											key={p.id}
-											onClick={() => setTool(p.id)}
-											className={cn(
-												"flex flex-col items-start p-3 rounded-lg border text-left transition-all cursor-pointer relative",
-												active
-													? "border-accent bg-accent/5 ring-1 ring-accent"
-													: "border-line bg-paper hover:bg-paper-2 hover:border-line-hover"
-											)}
-										>
-											<div className="flex items-center justify-between w-full">
-												<Icon className={cn("size-4", active ? "text-accent" : "text-ink-2")} />
-												{active && <span className="size-1.5 rounded-full bg-accent" />}
+
+							<Select value={tool} onValueChange={(val) => setTool(val)}>
+								<SelectTrigger className="h-12 text-xs font-mono bg-paper hover:bg-paper-2/70 border-line">
+									<SelectValue placeholder={isVi ? "Chọn công cụ / platform..." : "Select tool / platform..."}>
+										{(() => {
+											const current = PLATFORM_OPTIONS.find((p) => p.id === tool);
+											if (!current) return tool;
+											return (
+												<div className="flex items-center gap-2.5 min-w-0">
+													{current.icon ? (
+														<img
+															src={current.icon}
+															alt=""
+															className="size-5 shrink-0 object-contain rounded-xs"
+															onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+														/>
+													) : (
+														<Wrench className="size-4 shrink-0 text-accent" />
+													)}
+													<span className="font-semibold text-ink text-xs truncate">{current.name}</span>
+													<span className="text-[11px] text-ink-2 truncate hidden sm:inline">&middot; {current.desc}</span>
+												</div>
+											);
+										})()}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent className="max-h-80">
+									{PLATFORM_OPTIONS.map((p) => (
+										<SelectItem key={p.id} value={p.id} className="py-2">
+											<div className="flex items-center gap-2.5 min-w-0">
+												{p.icon ? (
+													<img
+														src={p.icon}
+														alt=""
+														className="size-4 shrink-0 object-contain rounded-xs"
+														onError={(e) => { (e.currentTarget as HTMLElement).style.display = "none"; }}
+													/>
+												) : (
+													<Wrench className="size-3.5 shrink-0 text-accent" />
+												)}
+												<div className="flex flex-col min-w-0 text-left">
+													<span className="font-medium text-xs text-ink">{p.name}</span>
+													<span className="text-[10.5px] text-ink-2 truncate">{p.desc}</span>
+												</div>
 											</div>
-											<span className="mt-2 text-xs font-semibold text-ink line-clamp-1">{p.name}</span>
-											<span className="mt-0.5 text-[10.5px] leading-snug text-ink-2 line-clamp-2">{p.desc}</span>
-										</button>
-									);
-								})}
-							</div>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 
 							{tool === "other" && (
-								<div className="pt-1">
+								<div className="pt-2">
 									<Input
 										value={customTool}
 										onChange={(e) => setCustomTool(e.target.value)}
-										placeholder={isVi ? "Tên công cụ / CLI / Script bạn đang dùng..." : "Custom tool or framework name..."}
+										placeholder={isVi ? "Nhập tên công cụ / CLI / Framework bạn đang sử dụng..." : "Enter custom tool or framework name..."}
 										className="h-9 text-xs font-mono"
 									/>
 								</div>
