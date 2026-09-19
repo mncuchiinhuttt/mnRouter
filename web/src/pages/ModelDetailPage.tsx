@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
+import { getModelBenchmark } from "@web/lib/model-benchmarks";
 import { Badge } from "@web/components/ui/primitives";
 import { Button } from "@web/components/ui/button";
 
@@ -206,10 +207,9 @@ export default function ModelDetailPage() {
 			</section>
 
 			{/* Architecture & Pricing Specifications */}
-			<section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+			<section className="grid grid-cols-1 md:grid-cols-3 gap-5">
 				<div className="rounded-xl border border-line bg-white p-5 shadow-2xs space-y-4">
 					<div className="flex items-center gap-2">
-						<Cpu className="size-4 text-accent" />
 						<h2 className="text-lg font-bold tracking-tight text-ink">Model Architecture</h2>
 					</div>
 					<div className="divide-y divide-line/60 font-mono text-xs">
@@ -253,6 +253,32 @@ export default function ModelDetailPage() {
 						<div className="py-2.5 flex items-center justify-between">
 							<span className="text-ink-2">Prompt Cache Write</span>
 							<span className="font-bold text-ink">{m.priceCacheWrite} credits</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Benchmark Scores Card */}
+				<div className="rounded-xl border border-line bg-white p-5 shadow-2xs space-y-4">
+					<div className="flex items-center gap-2">
+						<Sparkles className="size-4 text-accent" />
+						<h2 className="text-lg font-bold tracking-tight text-ink">Benchmark Scores</h2>
+					</div>
+					<div className="divide-y divide-line/60 font-mono text-xs">
+						<div className="py-2.5 flex items-center justify-between">
+							<span className="text-ink-2">SWE-bench Verified</span>
+							<span className="font-bold text-accent">{getModelBenchmark(m.id).sweBench}</span>
+						</div>
+						<div className="py-2.5 flex items-center justify-between">
+							<span className="text-ink-2">HumanEval (Code)</span>
+							<span className="font-bold text-ink">{getModelBenchmark(m.id).humaneval}</span>
+						</div>
+						<div className="py-2.5 flex items-center justify-between">
+							<span className="text-ink-2">GPQA (Reasoning)</span>
+							<span className="font-bold text-ink">{getModelBenchmark(m.id).gpqa}</span>
+						</div>
+						<div className="py-2.5 flex items-center justify-between">
+							<span className="text-ink-2">MMLU-Pro</span>
+							<span className="font-bold text-ink">{getModelBenchmark(m.id).mmluPro}</span>
 						</div>
 					</div>
 				</div>

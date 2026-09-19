@@ -21,9 +21,11 @@ import {
 import { Link } from "react-router";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
+import { getModelBenchmark } from "@web/lib/model-benchmarks";
 import { Input } from "@web/components/ui/primitives";
 import { Badge } from "@web/components/ui/primitives";
 import { Button } from "@web/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@web/components/ui/dialog";
 
 interface MarketModel {
 	id: string;
@@ -432,7 +434,7 @@ export default function ModelsDataPage() {
 				</div>
 
 				{/* Top 3 Cards placed directly underneath the chart (OpenCode layout) */}
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 pt-1">
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 pt-0">
 					{topThree.map((m, idx) => (
 						<Link
 							key={m.id}
@@ -477,7 +479,7 @@ export default function ModelsDataPage() {
 			</section>
 
 			{/* Market Share & Provider Distribution */}
-			<section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+			<section className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
 				{/* Provider Market Share */}
 				<div className="lg:col-span-1 rounded-xl border border-line bg-white p-5 shadow-2xs space-y-4">
 					<div>
@@ -511,7 +513,7 @@ export default function ModelsDataPage() {
 				</div>
 
 				{/* Model Comparisons Quick Links */}
-				<div className="lg:col-span-2 rounded-xl border border-line bg-white p-5 shadow-2xs space-y-4">
+				<div className="lg:col-span-2 rounded-xl border border-line bg-white p-5 shadow-2xs space-y-3.5">
 					<div>
 						<h3 className="text-lg font-bold tracking-tight text-ink">Popular Model Comparisons</h3>
 						<p className="text-xs font-mono text-ink-2">Benchmark architectures, context windows, and cost efficiency</p>
@@ -526,17 +528,17 @@ export default function ModelsDataPage() {
 									const m1 = models[1];
 									if (m0 && m1) setComparePair([m0.id, m1.id]);
 								}}
-								className="flex flex-col justify-between p-3.5 rounded-lg border border-line hover:border-accent/40 hover:bg-paper text-left transition cursor-pointer"
+								className="flex flex-col justify-between p-3.5 rounded-lg border border-line hover:border-accent hover:bg-paper text-left transition cursor-pointer group"
 							>
 								<div>
 									<span className="label-mono text-[10px] text-accent">Top two by usage</span>
-									<div className="mt-1 font-mono text-xs font-bold text-ink">
+									<div className="mt-1 font-mono text-xs font-bold text-ink group-hover:text-accent transition-colors">
 										{models[0].displayName} <span className="text-ink-2 font-normal">vs</span> {models[1].displayName}
 									</div>
 								</div>
 								<div className="mt-3 flex items-center justify-between text-[10.5px] font-mono text-ink-2">
 									<span>Compare specs</span>
-									<ArrowUpRight className="size-3" />
+									<ArrowUpRight className="size-3 text-ink-2 group-hover:text-accent transition-colors" />
 								</div>
 							</button>
 						)}
@@ -549,56 +551,175 @@ export default function ModelsDataPage() {
 								<button
 									type="button"
 									onClick={() => setComparePair([c.id, g.id])}
-									className="flex flex-col justify-between p-3.5 rounded-lg border border-line hover:border-accent/40 hover:bg-paper text-left transition cursor-pointer"
+									className="flex flex-col justify-between p-3.5 rounded-lg border border-line hover:border-emerald-600 hover:bg-paper text-left transition cursor-pointer group"
 								>
 									<div>
 										<span className="label-mono text-[10px] text-emerald-600">Cross-Provider Rivalry</span>
-										<div className="mt-1 font-mono text-xs font-bold text-ink">{c.displayName} vs {g.displayName}</div>
+										<div className="mt-1 font-mono text-xs font-bold text-ink group-hover:text-emerald-600 transition-colors">
+											{c.displayName} vs {g.displayName}
+										</div>
 									</div>
 									<div className="mt-3 flex items-center justify-between text-[10.5px] font-mono text-ink-2">
 										<span>Compare specs</span>
-										<ArrowUpRight className="size-3" />
+										<ArrowUpRight className="size-3 text-ink-2 group-hover:text-emerald-600 transition-colors" />
 									</div>
 								</button>
 							);
 						})()}
 					</div>
-
-					{/* Inline Comparison Drawer if clicked */}
-					{compareModels && compareModels[0] && compareModels[1] && (
-						<div className="mt-4 p-4 rounded-lg bg-paper-2 border border-line/60 space-y-3 animate-in fade-in-50 duration-200">
-							<div className="flex items-center justify-between">
-								<span className="font-mono text-xs font-bold text-ink">
-									Comparison: {compareModels[0].displayName} vs {compareModels[1].displayName}
-								</span>
-								<button
-									type="button"
-									onClick={() => setComparePair(null)}
-									className="text-xs font-mono text-ink-2 hover:text-ink cursor-pointer"
-								>
-									Close [x]
-								</button>
-							</div>
-							<div className="grid grid-cols-2 gap-4 text-xs font-mono">
-								<div className="p-3 bg-white rounded border border-line">
-									<div className="font-bold text-accent">{compareModels[0].displayName}</div>
-									<div className="text-[11px] text-ink-2 mt-1">Context: {fmtCompact(compareModels[0].contextWindow)}</div>
-									<div className="text-[11px] text-ink-2">Max Output: {fmtCompact(compareModels[0].maxOutput)}</div>
-									<div className="text-[11px] text-ink-2">In: {compareModels[0].priceIn} cr / Out: {compareModels[0].priceOut} cr</div>
-									<div className="text-[11px] text-ink-2">Cache Read: {compareModels[0].priceCacheRead} cr</div>
-								</div>
-								<div className="p-3 bg-white rounded border border-line">
-									<div className="font-bold text-accent">{compareModels[1].displayName}</div>
-									<div className="text-[11px] text-ink-2 mt-1">Context: {fmtCompact(compareModels[1].contextWindow)}</div>
-									<div className="text-[11px] text-ink-2">Max Output: {fmtCompact(compareModels[1].maxOutput)}</div>
-									<div className="text-[11px] text-ink-2">In: {compareModels[1].priceIn} cr / Out: {compareModels[1].priceOut} cr</div>
-									<div className="text-[11px] text-ink-2">Cache Read: {compareModels[1].priceCacheRead} cr</div>
-								</div>
-							</div>
-						</div>
-					)}
 				</div>
 			</section>
+
+			{/* Modal Dialog for Model Comparison */}
+			{comparePair && compareModels && compareModels[0] && compareModels[1] && (
+				<Dialog open={true} onOpenChange={(open) => !open && setComparePair(null)}>
+					<DialogContent className="max-w-2xl bg-white border border-line rounded-xl shadow-2xl p-6 sm:p-7">
+						{(() => {
+							const b1 = getModelBenchmark(compareModels[0].id);
+							const b2 = getModelBenchmark(compareModels[1].id);
+							return (
+								<div className="space-y-6">
+									<DialogHeader>
+										<div className="flex items-center gap-2">
+											<Badge className="font-mono text-[10px] uppercase tracking-wider">Benchmark Spec</Badge>
+										</div>
+										<DialogTitle className="font-mono text-lg font-bold text-ink mt-1">
+											{compareModels[0].displayName} <span className="text-accent">vs</span> {compareModels[1].displayName}
+										</DialogTitle>
+										<DialogDescription className="text-xs font-mono text-ink-2">
+											Side-by-side benchmark comparison of architectures, context windows, and cost efficiency.
+										</DialogDescription>
+									</DialogHeader>
+
+									<div className="grid grid-cols-2 gap-4 font-mono text-xs">
+										{/* Left Model */}
+										<div className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
+											<div className="flex items-center justify-between">
+												<Badge className="capitalize text-[10px]">{compareModels[0].provider}</Badge>
+												<span className="text-[10.5px] font-bold text-accent">Model A</span>
+											</div>
+											<h4 className="font-bold text-sm text-ink truncate" title={compareModels[0].displayName}>
+												{compareModels[0].displayName}
+											</h4>
+											<div className="text-[10px] text-ink-2 truncate">{compareModels[0].id}</div>
+
+											<div className="space-y-2 pt-2 border-t border-line/60 text-[11px]">
+												<div className="flex justify-between">
+													<span className="text-ink-2">Context Window:</span>
+													<span className="font-bold text-ink">{fmtCompact(compareModels[0].contextWindow)}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Max Output:</span>
+													<span className="font-bold text-ink">{fmtCompact(compareModels[0].maxOutput)}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Price In / 1M:</span>
+													<span className="font-bold text-ink">{compareModels[0].priceIn} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Price Out / 1M:</span>
+													<span className="font-bold text-ink">{compareModels[0].priceOut} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Cache Read:</span>
+													<span className="font-bold text-emerald-600">{compareModels[0].priceCacheRead} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Cache Write:</span>
+													<span className="font-bold text-ink">{compareModels[0].priceCacheWrite} cr</span>
+												</div>
+												<div className="flex justify-between pt-1 border-t border-line/40">
+													<span className="text-ink-2">Total Volume:</span>
+													<span className="font-bold text-accent">{fmtCompact(compareModels[0].totalTokens)} tok</span>
+												</div>
+												<div className="pt-2 mt-2 border-t border-line/50 space-y-1.5">
+													<div className="text-[10px] text-accent font-bold uppercase tracking-wider">Benchmark Scores</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">SWE-bench:</span>
+														<span className="font-bold text-ink">{b1.sweBench}</span>
+													</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">HumanEval:</span>
+														<span className="font-bold text-ink">{b1.humaneval}</span>
+													</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">GPQA:</span>
+														<span className="font-bold text-ink">{b1.gpqa}</span>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										{/* Right Model */}
+										<div className="rounded-xl border border-line bg-paper-2/60 p-4 space-y-3">
+											<div className="flex items-center justify-between">
+												<Badge className="capitalize text-[10px]">{compareModels[1].provider}</Badge>
+												<span className="text-[10.5px] font-bold text-ink-2">Model B</span>
+											</div>
+											<h4 className="font-bold text-sm text-ink truncate" title={compareModels[1].displayName}>
+												{compareModels[1].displayName}
+											</h4>
+											<div className="text-[10px] text-ink-2 truncate">{compareModels[1].id}</div>
+
+											<div className="space-y-2 pt-2 border-t border-line/60 text-[11px]">
+												<div className="flex justify-between">
+													<span className="text-ink-2">Context Window:</span>
+													<span className="font-bold text-ink">{fmtCompact(compareModels[1].contextWindow)}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Max Output:</span>
+													<span className="font-bold text-ink">{fmtCompact(compareModels[1].maxOutput)}</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Price In / 1M:</span>
+													<span className="font-bold text-ink">{compareModels[1].priceIn} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Price Out / 1M:</span>
+													<span className="font-bold text-ink">{compareModels[1].priceOut} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Cache Read:</span>
+													<span className="font-bold text-emerald-600">{compareModels[1].priceCacheRead} cr</span>
+												</div>
+												<div className="flex justify-between">
+													<span className="text-ink-2">Cache Write:</span>
+													<span className="font-bold text-ink">{compareModels[1].priceCacheWrite} cr</span>
+												</div>
+												<div className="flex justify-between pt-1 border-t border-line/40">
+													<span className="text-ink-2">Total Volume:</span>
+													<span className="font-bold text-accent">{fmtCompact(compareModels[1].totalTokens)} tok</span>
+												</div>
+												<div className="pt-2 mt-2 border-t border-line/50 space-y-1.5">
+													<div className="text-[10px] text-ink-2 font-bold uppercase tracking-wider">Benchmark Scores</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">SWE-bench:</span>
+														<span className="font-bold text-ink">{b2.sweBench}</span>
+													</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">HumanEval:</span>
+														<span className="font-bold text-ink">{b2.humaneval}</span>
+													</div>
+													<div className="flex justify-between">
+														<span className="text-ink-2">GPQA:</span>
+														<span className="font-bold text-ink">{b2.gpqa}</span>
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<div className="flex justify-end pt-2">
+										<Button size="sm" variant="outline" onClick={() => setComparePair(null)} className="font-mono text-xs">
+											Close Comparison
+										</Button>
+									</div>
+								</div>
+							);
+						})()}
+					</DialogContent>
+				</Dialog>
+			)}
 			{/* Full Models Directory & Specs Table */}
 			<section className="space-y-4">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
