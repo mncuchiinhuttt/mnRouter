@@ -121,9 +121,8 @@ export function FloatingCopilot() {
 		}
 	};
 
-	// Hide floating bar if a tour is currently running
-	if (isTourActive) return null;
-
+	// Hide floating bar if a tour is currently running or on /chat route
+	if (isTourActive || location.pathname.startsWith("/chat")) return null;
 	return (
 		<div className="fixed bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 z-[9990] select-none">
 			<AnimatePresence mode="wait">
