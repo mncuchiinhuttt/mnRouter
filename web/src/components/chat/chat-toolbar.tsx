@@ -38,8 +38,8 @@ export function ChatToolbar({
 	const { t, i18n } = useTranslation();
 	const [skillsOpen, setSkillsOpen] = useState(false);
 
-	// Exclude Kiro models completely per user directive
-	const filteredModels = models.filter((m) => !m.id.toLowerCase().includes("kiro") && (m.provider ? m.provider !== "kiro" : true));
+	// Allow all models in chat including Kiro
+	const filteredModels = models.filter((m) => (m.provider ? m.provider !== "grok" : true));
 	const curModel = models.find((m) => m.id === selectedModel);
 	const availableLevels = useMemo(() => getModelThinkingLevels(selectedModel, curModel?.provider), [selectedModel, curModel]);
 	const visibleThinkingOptions = useMemo(() => THINKING_LEVELS.filter((tl) => availableLevels.includes(tl.id)), [availableLevels]);
