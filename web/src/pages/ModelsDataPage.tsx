@@ -130,8 +130,7 @@ export default function ModelsDataPage() {
 	}, [comparePair, models]);
 
 	return (
-		<div className="space-y-10 pb-16">
-			{/* Top Header */}
+		<div className="space-y-6 pb-16">
 			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<div className="flex items-center gap-2">

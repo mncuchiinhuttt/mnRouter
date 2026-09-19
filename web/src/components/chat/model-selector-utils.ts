@@ -1,10 +1,11 @@
 import type { ModelItem } from "./thread-sidebar";
 
-const PROVIDER_ORDER = ["claude", "codex", "antigravity", "opencode", "other"];
+const PROVIDER_ORDER = ["claude", "codex", "antigravity", "kiro", "opencode", "other"];
 const PROVIDER_LABELS: Record<string, string> = {
 	claude: "Anthropic Claude",
 	codex: "OpenAI Codex",
 	antigravity: "Google Antigravity",
+	kiro: "AWS Kiro",
 	opencode: "OpenCode",
 };
 

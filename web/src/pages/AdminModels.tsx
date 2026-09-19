@@ -38,7 +38,7 @@ export default function AdminModels() {
 	});
 
 	const rawModels = useMemo(() => {
-		return (data?.models ?? []).filter((m) => m.provider !== "kiro" && m.provider !== "grok");
+		return (data?.models ?? []).filter((m) => m.provider !== "grok");
 	}, [data]);
 
 	const providers = useMemo(() => {

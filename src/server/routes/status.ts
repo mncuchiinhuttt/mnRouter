@@ -64,6 +64,14 @@ export function statusRoutes() {
 				uptime: 99.85,
 			},
 			{
+				id: "kiro",
+				name: "AWS Kiro (CodeWhisperer / Q)",
+				description: "AWS SSO Token Auto-Refresh & EventStream Wire Parsing",
+				status: (providersMap.get("kiro")?.cooldown ?? 0) > 0 ? "degraded" : "operational",
+				activeAccounts: providersMap.get("kiro")?.active ?? 0,
+				uptime: 100.0,
+			},
+			{
 				id: "database",
 				name: "Database",
 				description: "Session Storage, Usage Telemetry & Credits Accounting",
