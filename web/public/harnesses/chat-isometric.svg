@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Gradients for 3D isometric lighting -->
+    <linearGradient id="chat-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="chat-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#3730a3"/>
+    </linearGradient>
+    <linearGradient id="chat-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4338ca"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+
+    <!-- Floating mini bubble gradient -->
+    <linearGradient id="bubble-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="bubble-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+    <linearGradient id="bubble-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+    
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1e1b4b" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <!-- Base Isometric Screen / Chat Box -->
+    <!-- Left Face -->
+    <path d="M6 31 L30 45 V57 L6 43 Z" fill="url(#chat-left)"/>
+    <!-- Right Face -->
+    <path d="M30 45 L58 29 V41 L30 57 Z" fill="url(#chat-right)"/>
+    <!-- Top Face -->
+    <path d="M30 17 L58 29 L30 45 L6 31 Z" fill="url(#chat-top)"/>
+
+    <!-- Tail for speech box (Isometric angle) -->
+    <path d="M12 44 L4 55 L20 48 Z" fill="#3730a3"/>
+    <path d="M12 44 L4 55 L16 41 Z" fill="#4338ca"/>
+
+    <!-- Screen Bevel Highlight -->
+    <path d="M30 19 L54 29 L30 43 L10 31 Z" fill="#4338ca" fill-opacity="0.25"/>
+
+    <!-- Chat Message Lines on Top Surface -->
+    <path d="M17 31 L29 37" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M19 27 L39 37" stroke="#e0e7ff" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M27 24 L45 33" stroke="#c7d2fe" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Secondary Floating Mini Isometric AI Bubble -->
+  <g>
+    <!-- Mini Left -->
+    <path d="M36 17 L46 22 V27 L36 22 Z" fill="url(#bubble-left)"/>
+    <!-- Mini Right -->
+    <path d="M46 22 L58 15 V20 L46 27 Z" fill="url(#bubble-right)"/>
+    <!-- Mini Top -->
+    <path d="M46 10 L58 15 L46 22 L36 17 Z" fill="url(#bubble-top)"/>
+    <!-- Sparkle / Dot -->
+    <circle cx="46" cy="16" r="1.5" fill="#ffffff"/>
+  </g>
+</svg>

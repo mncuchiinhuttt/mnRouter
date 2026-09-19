@@ -62,8 +62,8 @@ const PLATFORM_OPTIONS = [
 	{ id: "antigravity", name: "Antigravity (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/antigravity.png", desc: "Google Cloud Code interception proxy" },
 	{ id: "github_copilot", name: "GitHub Copilot (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/copilot.png", desc: "VSCode Copilot extension interception" },
 	{ id: "kiro", name: "Kiro (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/kiro.png", desc: "AWS CodeWhisperer interception proxy" },
-	{ id: "chat", name: "Chat & Agent Web", category: "Web Interface", icon: "/harnesses/openclaw.png", desc: "mnRouter internal web chat interface" },
-	{ id: "api", name: "Direct API", category: "Direct API", icon: "/harnesses/openclaw.png", desc: "cURL, Python SDK, OpenAI/Anthropic SDK" },
+	{ id: "chat", name: "Chat & Agent Web", category: "Web Interface", icon: "/harnesses/chat-isometric.svg", desc: "mnRouter internal web chat interface" },
+	{ id: "api", name: "Direct API", category: "Direct API", icon: "/harnesses/api-isometric.svg", desc: "cURL, Python SDK, OpenAI/Anthropic SDK" },
 	{ id: "other", name: "Khác / Custom Tool", category: "Khác", icon: "", desc: "Công cụ, script hoặc môi trường client khác" },
 ];
 

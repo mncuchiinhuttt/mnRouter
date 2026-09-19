@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <!-- Server / API Box Isometric Gradients -->
+    <linearGradient id="srv-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="srv-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="srv-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#075985"/>
+      <stop offset="100%" stop-color="#0c4a6e"/>
+    </linearGradient>
+
+    <!-- Base Plate Gradient -->
+    <linearGradient id="plate-top" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="plate-left" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="plate-right" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1329"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+
+    <filter id="api-shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#0369a1" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#api-shadow)">
+    <!-- Base Platform Block -->
+    <path d="M6 39 L32 54 V60 L6 45 Z" fill="url(#plate-left)"/>
+    <path d="M32 54 L58 39 V45 L32 60 Z" fill="url(#plate-right)"/>
+    <path d="M32 24 L58 39 L32 54 L6 39 Z" fill="url(#plate-top)"/>
+
+    <!-- Glowing Cyber Grid Accent on Base Plate -->
+    <path d="M12 40 L32 51 L52 40" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.4" fill="none"/>
+    <path d="M22 35 L32 41 L42 35" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.4" fill="none"/>
+
+    <!-- Main Server / API Cube -->
+    <!-- Left Face -->
+    <path d="M14 26 L32 36 V48 L14 38 Z" fill="url(#srv-left)"/>
+    <!-- Right Face -->
+    <path d="M32 36 L50 26 V38 L32 48 Z" fill="url(#srv-right)"/>
+    <!-- Top Face -->
+    <path d="M32 16 L50 26 L32 36 L14 26 Z" fill="url(#srv-top)"/>
+
+    <!-- Isometric Terminal / Code Brackets on Server Face: < / > -->
+    <!-- Left chevron < on left face -->
+    <path d="M27 30 L22 34 L26 39" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Slash / in center seam -->
+    <path d="M33 34 L31 43" stroke="#e0f2fe" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Right chevron > on right face -->
+    <path d="M38 31 L43 28 L39 37" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Neon Status LEDs -->
+    <circle cx="19" cy="27" r="1.5" fill="#4ade80"/>
+    <circle cx="23" cy="25" r="1.5" fill="#f59e0b"/>
+    <circle cx="27" cy="23" r="1.5" fill="#38bdf8"/>
+  </g>
+
+  <!-- Floating Data Cube (API Packet) -->
+  <g>
+    <path d="M42 8 L48 11 V15 L42 12 Z" fill="#38bdf8"/>
+    <path d="M48 11 L54 8 V12 L48 15 Z" fill="#0284c7"/>
+    <path d="M48 5 L54 8 L48 11 L42 8 Z" fill="#7dd3fc"/>
+  </g>
+</svg>
