@@ -40,7 +40,11 @@ export class ModelRepository {
 	}
 
 	async getUserModelIds(userId: string): Promise<string[]> {
-		const rows = await db.select({ modelId: userModels.modelId }).from(userModels).where(eq(userModels.userId, userId));
+		const rows = await db
+			.select({ modelId: userModels.modelId })
+			.from(userModels)
+			.innerJoin(models, eq(userModels.modelId, models.id))
+			.where(eq(userModels.userId, userId));
 		return rows.map((r) => r.modelId);
 	}
 
@@ -53,11 +57,12 @@ export class ModelRepository {
 		});
 	}
 
-	async validateModelIds(modelIds: string[]): Promise<string[] | null> {
+	async validateModelIds(modelIds: string[]): Promise<string[]> {
 		const unique = [...new Set(modelIds.filter(Boolean))];
 		if (unique.length === 0) return unique;
 		const rows = await db.select({ id: models.id }).from(models).where(inArray(models.id, unique));
-		return rows.length === unique.length ? unique : null;
+		const validSet = new Set(rows.map((r) => r.id));
+		return unique.filter((id) => validSet.has(id));
 	}
 }
 
