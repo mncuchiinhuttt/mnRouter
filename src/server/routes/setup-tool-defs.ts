@@ -129,8 +129,14 @@ export function getToolDefs(
 			name: "OpenClaw",
 			vars: [["OPENCLAW_API_BASE", v1], ["OPENCLAW_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
 			files: [
-				{ path: `${H}.openclaw${S}config.json`, content: `{\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "defaultModel": "claude-sonnet-4-6-ag"\n}` },
-				{ path: `${H}.config${S}openclaw${S}config.json`, content: `{\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "defaultModel": "claude-sonnet-4-6-ag"\n}` },
+				{
+					path: `${H}.openclaw${S}openclaw.json`,
+					content: `{\n  "models": {\n    "providers": {\n      "mnrouter": {\n        "baseUrl": "${v1}",\n        "apiKey": "${key}",\n        "api": "openai-completions",\n        "models": [\n${mList.map((m) => `          { "id": "${m.id}", "name": "${m.displayName || m.id}" }`).join(",\n")}\n        ]\n      }\n    }\n  },\n  "agents": {\n    "defaults": {\n      "model": { "primary": "mnrouter/gemini-3.8-flash" },\n      "models": {\n${mList.map((m) => `        "mnrouter/${m.id}": {}`).join(",\n")}\n      }\n    }\n  }\n}\n`,
+				},
+				{
+					path: `${H}.openclaw${S}config.json`,
+					content: `{\n  "baseUrl": "${v1}",\n  "apiKey": "${key}",\n  "defaultModel": "mnrouter/gemini-3.8-flash"\n}\n`,
+				},
 			],
 		},
 		"openai-codex": {

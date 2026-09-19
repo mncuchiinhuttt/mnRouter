@@ -51,10 +51,14 @@ export const HARNESSES: HarnessConfig[] = [
 		protocol: "OpenAI-compatible Chat",
 		descEn: "OpenClaw autonomous agent. Connects via OpenAI chat completions interface.",
 		descVi: "Agent tự động OpenClaw. Kết nối qua cổng chat completions chuẩn OpenAI.",
-		quickRun: (base, key) => `export OPENCLAW_API_BASE="${base}/v1"\nexport OPENCLAW_API_KEY="${key}"\nopenclaw --model claude-sonnet-5`,
+		quickRun: (base, key) => `export OPENCLAW_API_BASE="${base}/v1"\nexport OPENCLAW_API_KEY="${key}"\nexport OPENAI_BASE_URL="${base}/v1"\nexport OPENAI_API_KEY="${key}"\nopenclaw chat`,
 		persistZsh: (base, key) => `echo 'export OPENCLAW_API_BASE="${base}/v1"' >> ~/.zshrc\necho 'export OPENCLAW_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
-		configFile: { path: "~/.openclaw/config.json", lang: "json", content: (base, key) => `{\n  "baseUrl": "${base}/v1",\n  "apiKey": "${key}",\n  "defaultModel": "claude-sonnet-5"\n}` },
-		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"claude-sonnet-5","messages":[{"role":"user","content":"Ping"}]}'`,
+		configFile: {
+			path: "~/.openclaw/openclaw.json",
+			lang: "json",
+			content: (base, key) => `{\n  "models": {\n    "providers": {\n      "mnrouter": {\n        "baseUrl": "${base}/v1",\n        "apiKey": "${key}",\n        "api": "openai-completions",\n        "models": [\n          { "id": "gemini-3.8-flash", "name": "gemini-3.8-flash" },\n          { "id": "claude-sonnet-4-6-ag", "name": "claude-sonnet-4-6-ag" },\n          { "id": "big-pickle", "name": "big-pickle" }\n        ]\n      }\n    }\n  },\n  "agents": {\n    "defaults": {\n      "model": { "primary": "mnrouter/gemini-3.8-flash" },\n      "models": {\n        "mnrouter/gemini-3.8-flash": {},\n        "mnrouter/claude-sonnet-4-6-ag": {},\n        "mnrouter/big-pickle": {}\n      }\n    }\n  }\n}`,
+		},
+		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
 	},
 	{
 		id: "openai-codex",
