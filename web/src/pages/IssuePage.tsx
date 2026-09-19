@@ -55,7 +55,7 @@ const PLATFORM_OPTIONS = [
 	{ id: "opencode", name: "OpenCode", category: "CLI Harness", icon: "/harnesses/opencode.png", desc: "OpenCode CLI / Zen coding runner" },
 	{ id: "hermes", name: "Hermes Agent", category: "Autonomous Agent", icon: "/harnesses/hermes.png", desc: "Hermes Multi-Agent Framework" },
 	{ id: "cursor", name: "Cursor / Windsurf", category: "Editor & IDE", icon: "/harnesses/cursor.png", desc: "Cursor IDE OpenAI Base URL override" },
-	{ id: "devin", name: "Devin CLI", category: "Autonomous Agent", icon: "/harnesses/devin-cli.png", desc: "Devin autonomous coding agent CLI" },
+	{ id: "deepseek_tui", name: "DeepSeek TUI", category: "Rust TUI Agent", icon: "/harnesses/deepseek-tui.png", desc: "DeepSeek Terminal Coding Agent" },
 	{ id: "pi", name: "Pi", category: "CLI Harness", icon: "/harnesses/pi.svg", desc: "Pi CLI coding agent harness" },
 	{ id: "omp", name: "Oh My Pi (OMP)", category: "Multi-Agent Harness", icon: "/harnesses/omp.svg", desc: "OMP multi-agent runtime & extensions" },
 	{ id: "zcode", name: "ZCode", category: "Editor & IDE", icon: "/harnesses/zcode.webp", desc: "Custom model provider in ZCode" },

@@ -178,14 +178,20 @@ export function getToolDefs(
 				["OPENAI_API_KEY", key],
 			],
 		},
-		"devin-cli": {
-			id: "devin-cli",
-			name: "Devin CLI",
+		"deepseek-tui": {
+			id: "deepseek-tui",
+			name: "DeepSeek TUI",
 			vars: [
-				["DEVIN_API_BASE", v1],
-				["DEVIN_API_KEY", key],
+				["DEEPSEEK_API_KEY", key],
+				["DEEPSEEK_BASE_URL", v1],
 				["OPENAI_BASE_URL", v1],
 				["OPENAI_API_KEY", key],
+			],
+			files: [
+				{
+					path: `${H}.deepseek${S}config.toml`,
+					content: `provider = "openai"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
+				},
 			],
 		},
 		pi: {
