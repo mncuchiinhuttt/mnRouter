@@ -344,7 +344,7 @@ export default function AdminUsers() {
 			</section>
 
 			<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-				<DialogContent className="max-w-3xl">
+				<DialogContent className="max-w-4xl sm:max-w-4xl">
 					<DialogHeader>
 						<DialogTitle>{t("adminUsers.inviteTitle")}</DialogTitle>
 						<DialogDescription>{t("adminUsers.inviteDesc")}</DialogDescription>
@@ -367,16 +367,16 @@ export default function AdminUsers() {
 							/>
 						</div>
 
-						<div className="grid gap-3 sm:grid-cols-3">
-							<div className="flex flex-col gap-1.5">
+						<div className="grid gap-4 sm:grid-cols-12 items-start">
+							<div className="flex flex-col gap-1.5 sm:col-span-4">
 								<Label htmlFor="invite-package" className="truncate">{t("adminUsers.packageName")}</Label>
 								<Input id="invite-package" value={inviteForm.packageName} onChange={(event) => setInviteForm({ ...inviteForm, packageName: event.target.value })} placeholder={t("adminUsers.packagePlaceholder")} />
 							</div>
-							<div className="flex flex-col gap-1.5">
+							<div className="flex flex-col gap-1.5 sm:col-span-3">
 								<Label htmlFor="invite-keys" className="truncate">{t("adminUsers.maxKeys")}</Label>
 								<Input id="invite-keys" type="number" min={0} max={50} value={inviteForm.maxApiKeys} onChange={(event) => setInviteForm({ ...inviteForm, maxApiKeys: Number(event.target.value) })} />
 							</div>
-							<div className="flex flex-col gap-1.5">
+							<div className="flex flex-col gap-1.5 sm:col-span-5">
 								<div className="flex items-center justify-between">
 									<Label htmlFor="invite-credit-budget" className="truncate">{t("credits.creditBudget")}</Label>
 									<button
@@ -413,12 +413,12 @@ export default function AdminUsers() {
 											value={inviteForm.weeklyCreditBudget}
 											onChange={(event) => setInviteForm({ ...inviteForm, weeklyCreditBudget: event.target.value.replace(/\D/g, "") })}
 											placeholder="50000"
-											className="font-mono pr-24"
+											className="font-mono pr-28"
 										/>
 										<button
 											type="button"
 											onClick={() => setInviteForm((prev) => ({ ...prev, unlimitedBudget: true, weeklyCreditBudget: "" }))}
-											className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded bg-paper-2 px-2 py-1 font-mono text-[10.5px] text-ink-2 hover:text-ink cursor-pointer border border-line"
+											className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 rounded bg-paper-2 px-2.5 py-1 font-mono text-[11px] text-ink-2 hover:text-ink cursor-pointer border border-line"
 										>
 											<Infinity className="size-3 text-[#1d7a33]" /> {t("credits.unlimited")}
 										</button>
