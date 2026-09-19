@@ -85,7 +85,10 @@ export class ModelService {
 		return rows.filter((m) => connected.has(m.provider as any));
 	}
 
-	async listAllModels(): Promise<ModelRow[]> {
+	async listAllModels(onlyActive = false): Promise<ModelRow[]> {
+		if (onlyActive) {
+			return this.listModelsForUser(null);
+		}
 		return modelRepo.listAll();
 	}
 

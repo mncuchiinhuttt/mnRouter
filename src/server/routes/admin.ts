@@ -205,7 +205,10 @@ export function adminRoutes() {
 	});
 
 	// ---------- models, settings, logs ----------
-	app.get("/api/admin/models", async (c) => c.json({ models: await modelService.listAllModels() }));
+	app.get("/api/admin/models", async (c) => {
+		const onlyActive = c.req.query("active") === "true";
+		return c.json({ models: await modelService.listAllModels(onlyActive) });
+	});
 
 	app.patch("/api/admin/models/:id", async (c) => {
 		const schema = z.object({

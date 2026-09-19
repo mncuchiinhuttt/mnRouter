@@ -101,7 +101,7 @@ export default function AdminUsers() {
 	const { t } = useTranslation();
 	const qc = useQueryClient();
 	const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: () => api<UsersResp>("/api/admin/users") });
-	const modelsQuery = useQuery({ queryKey: ["models"], queryFn: () => api<ModelsResp>("/api/admin/models") });
+	const modelsQuery = useQuery({ queryKey: ["models", "active"], queryFn: () => api<ModelsResp>("/api/admin/models?active=true") });
 	const invitationsQuery = useQuery({ queryKey: ["admin-invitations"], queryFn: () => api<InvitationsResp>("/api/admin/invitations") });
 	const [inviteOpen, setInviteOpen] = useState(false);
 	const [inviteForm, setInviteForm] = useState(EMPTY_INVITE);
