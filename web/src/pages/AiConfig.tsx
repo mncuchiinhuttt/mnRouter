@@ -7,6 +7,7 @@ import { Badge, Input } from "@web/components/ui/primitives";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
 import { SnippetCard } from "@web/components/snippet-card";
 import { ZCodeCopyCard } from "@web/components/zcode-copy-card";
+import { CopilotExtensionCard } from "@web/components/copilot-extension-card";
 import { ModelDirectoryView } from "@web/components/model-directory-view";
 import { HARNESSES } from "@web/lib/ai-harness-configs";
 import type { ModelItem } from "@web/components/chat/thread-sidebar";
@@ -86,7 +87,6 @@ export default function AiConfig() {
 					<Globe className="size-3.5" />
 					<span>Gateway:</span>
 					<code className="rounded-xs bg-paper-2 px-1.5 py-0.5 font-mono text-[11px] text-ink">{baseUrl}</code>
-					<Badge className="border-[#bcd9c0] text-[#1d7a33]">AUTO-DETECTED</Badge>
 				</div>
 			</div>
 			{/* Main Tabs Navigation */}
@@ -241,6 +241,8 @@ export default function AiConfig() {
 
 						{currentHarness.id === "zcode" ? (
 							<ZCodeCopyCard baseUrl={baseUrl} apiKey={effectiveKey} />
+						) : currentHarness.id === "github-copilot" ? (
+							<CopilotExtensionCard baseUrl={baseUrl} apiKey={effectiveKey} />
 						) : (
 							<div data-tour="copy-script-btn" className="space-y-4">
 								<SnippetCard
