@@ -16,7 +16,7 @@ bun run build
 echo "==> 2. Compile standalone binary for Intel Atom (x64 baseline)…"
 bun build --compile --target=bun-linux-x64-baseline src/server/index.ts --outfile ./mnrouter
 
-echo "==> 3. Upload to $REMOTE…"
+echo "==> 3. Upload to ${REMOTE}..."
 ssh "$REMOTE" "mkdir -p $APP_DIR/data"
 tar -czf - ./mnrouter web-dist deploy | ssh "$REMOTE" "tar -xzf - -C $APP_DIR/"
 ssh "$REMOTE" "chmod +x $APP_DIR/mnrouter"
