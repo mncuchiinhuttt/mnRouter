@@ -203,8 +203,12 @@ export function getToolDefs(
 			],
 			files: [
 				{
+					path: `${H}.codewhale${S}config.toml`,
+					content: `provider = "openai"\ndefault_text_model = "gemini-3.8-flash"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
+				},
+				{
 					path: `${H}.deepseek${S}config.toml`,
-					content: `provider = "openai"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
+					content: `provider = "openai"\ndefault_text_model = "gemini-3.8-flash"\n\n[providers.openai]\nbase_url = "${v1}"\napi_key = "${key}"\nmodel = "gemini-3.8-flash"\n`,
 				},
 			],
 		},
