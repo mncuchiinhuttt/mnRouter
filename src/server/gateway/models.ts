@@ -73,14 +73,14 @@ export const DEFAULT_MODELS: DefaultModel[] = [
 	defineModel({ id: "claude-sonnet-4-6-ag", provider: "antigravity", upstreamModel: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6 (via AG)", contextWindow: 1_000_000, maxOutput: 128_000, priority: 50, priceIn: 300, priceOut: 1_500, priceCacheRead: 30, priceCacheWrite: 375 }),
 
 	// Kiro (AWS Kiro / CodeWhisperer) - Configured free models per user request
-	defineModel({ id: "qwen3-coder-next", provider: "kiro", upstreamModel: "qwen3-coder-next", displayName: "Qwen3 Coder Next (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 5, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "deepseek-3.2", provider: "kiro", upstreamModel: "deepseek-3.2", displayName: "DeepSeek 3.2 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 10, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "minimax-m2.5", provider: "kiro", upstreamModel: "minimax-m2.5", displayName: "MiniMax M2.5 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 15, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "glm-5", provider: "kiro", upstreamModel: "glm-5", displayName: "GLM 5 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 20, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "claude-sonnet-4.5-thinking", provider: "kiro", upstreamModel: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Thinking) (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 25, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "claude-sonnet-4.5", provider: "kiro", upstreamModel: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 30, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "claude-sonnet-4", provider: "kiro", upstreamModel: "claude-sonnet-4", displayName: "Claude Sonnet 4 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 35, priceIn: 0, priceOut: 0 }),
-	defineModel({ id: "claude-haiku-4.5", provider: "kiro", upstreamModel: "claude-haiku-4.5", displayName: "Claude Haiku 4.5 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 40, priceIn: 0, priceOut: 0 }),
+	defineModel({ id: "qwen3-coder-next", provider: "kiro", upstreamModel: "qwen3-coder-next", displayName: "Qwen3 Coder Next (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 5, priceIn: 20, priceOut: 60 }),
+	defineModel({ id: "deepseek-3.2", provider: "kiro", upstreamModel: "deepseek-3.2", displayName: "DeepSeek 3.2 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 10, priceIn: 25, priceOut: 80 }),
+	defineModel({ id: "minimax-m2.5", provider: "kiro", upstreamModel: "minimax-m2.5", displayName: "MiniMax M2.5 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 15, priceIn: 20, priceOut: 60 }),
+	defineModel({ id: "glm-5", provider: "kiro", upstreamModel: "glm-5", displayName: "GLM 5 (Kiro)", contextWindow: 200_000, maxOutput: 32_000, priority: 20, priceIn: 20, priceOut: 60 }),
+	defineModel({ id: "claude-sonnet-4.5-thinking", provider: "kiro", upstreamModel: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Thinking) (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 25, priceIn: 200, priceOut: 1_000 }),
+	defineModel({ id: "claude-sonnet-4.5", provider: "kiro", upstreamModel: "claude-sonnet-4.5", displayName: "Claude Sonnet 4.5 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 30, priceIn: 200, priceOut: 1_000 }),
+	defineModel({ id: "claude-sonnet-4", provider: "kiro", upstreamModel: "claude-sonnet-4", displayName: "Claude Sonnet 4 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 35, priceIn: 150, priceOut: 750 }),
+	defineModel({ id: "claude-haiku-4.5", provider: "kiro", upstreamModel: "claude-haiku-4.5", displayName: "Claude Haiku 4.5 (Kiro)", contextWindow: 200_000, maxOutput: 64_000, priority: 40, priceIn: 50, priceOut: 200 }),
 
 	// Grok OAuth — temporarily disabled per user instruction
 	defineModel({ id: "grok-4.6", provider: "grok", upstreamModel: "grok-4.6", displayName: "Grok 4.6", contextWindow: 500_000, maxOutput: 128_000, priority: 5, priceIn: 200, priceOut: 600, priceCacheRead: 50, priceCacheWrite: 250, enabled: false }),
