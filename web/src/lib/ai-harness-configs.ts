@@ -90,10 +90,14 @@ export const HARNESSES: HarnessConfig[] = [
 		protocol: "Hermes Multi-Agent Framework",
 		descEn: "Hermes autonomous agent loop. Routes via standard OpenAI chat completions.",
 		descVi: "Khung điều phối agent Hermes. Kết nối qua cổng chat completions chuẩn OpenAI.",
-		quickRun: (base, key) => `export HERMES_API_BASE="${base}/v1"\nexport HERMES_API_KEY="${key}"\nexport OPENAI_BASE_URL="${base}/v1"\nexport OPENAI_API_KEY="${key}"`,
-		persistZsh: (base, key) => `echo 'export HERMES_API_BASE="${base}/v1"' >> ~/.zshrc\necho 'export HERMES_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
-		configFile: { path: "~/.hermes/config.yaml", lang: "yaml", content: (base, key) => `api_base: "${base}/v1"\napi_key: "${key}"\ndefault_model: "claude-sonnet-5"\ntemperature: 0.2` },
-		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"claude-sonnet-5","messages":[{"role":"user","content":"Status?"}]}'`,
+		quickRun: (base, key) => `export HERMES_API_BASE="${base}/v1"\nexport HERMES_API_KEY="${key}"\nexport OPENAI_BASE_URL="${base}/v1"\nexport OPENAI_API_KEY="${key}"\nhermes -m gemini-3.8-flash`,
+		persistZsh: (base, key) => `echo 'export HERMES_API_BASE="${base}/v1"' >> ~/.zshrc\necho 'export HERMES_API_KEY="${key}"' >> ~/.zshrc\necho 'export OPENAI_BASE_URL="${base}/v1"' >> ~/.zshrc\necho 'export OPENAI_API_KEY="${key}"' >> ~/.zshrc\nsource ~/.zshrc`,
+		configFile: {
+			path: "~/.hermes/config.yaml",
+			lang: "yaml",
+			content: (base, key) => `model:\n  default: "gemini-3.8-flash"\n  provider: "custom:mnrouter"\n\nproviders:\n  mnrouter:\n    name: "mnrouter"\n    base_url: "${base}/v1"\n    api_key: "${key}"\n    api_mode: "chat_completions"\n`,
+		},
+		verify: (base, key) => `curl -fsSL "${base}/v1/chat/completions" \\\n  -H "authorization: Bearer ${key}" \\\n  -H "content-type: application/json" \\\n  -d '{"model":"gemini-3.8-flash","messages":[{"role":"user","content":"Ping"}]}'`,
 	},
 	{
 		id: "cursor",

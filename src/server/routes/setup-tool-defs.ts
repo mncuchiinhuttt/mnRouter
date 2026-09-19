@@ -165,8 +165,8 @@ export function getToolDefs(
 				["OPENAI_API_KEY", key],
 			],
 			files: [
-				{ path: `${H}.hermes${S}config.yaml`, content: `api_base: "${v1}"\napi_key: "${key}"\ndefault_model: "claude-sonnet-4-6-ag"` },
-				{ path: `${H}.config${S}hermes${S}config.yaml`, content: `api_base: "${v1}"\napi_key: "${key}"\ndefault_model: "claude-sonnet-4-6-ag"` },
+				{ path: `${H}.hermes${S}config.yaml`, content: `model:\n  default: "claude-sonnet-4-6-ag"\n  provider: "custom:mnrouter"\n\nproviders:\n  mnrouter:\n    name: "mnrouter"\n    base_url: "${v1}"\n    api_key: "${key}"\n    api_mode: "chat_completions"\n` },
+				{ path: `${H}.config${S}hermes${S}config.yaml`, content: `model:\n  default: "claude-sonnet-4-6-ag"\n  provider: "custom:mnrouter"\n\nproviders:\n  mnrouter:\n    name: "mnrouter"\n    base_url: "${v1}"\n    api_key: "${key}"\n    api_mode: "chat_completions"\n` },
 			],
 		},
 		cursor: {
