@@ -4,6 +4,7 @@
 import type { CanonicalRequest, StreamEvent, CanonicalResult } from "../canonical.js";
 import { UpstreamError } from "../canonical.js";
 import { randomId } from "./shared.js";
+import { stripIssueNotices } from "./openai-chat.js";
 
 export function parseAnthropic(body: Record<string, any>, upstreamModel: string): CanonicalRequest {
 	if (!Array.isArray(body.messages)) throw new UpstreamError("messages must be an array", 400, "invalid_request", false);
@@ -23,7 +24,10 @@ export function parseAnthropic(body: Record<string, any>, upstreamModel: string)
 		const blocks: CanonicalRequest["messages"][number]["content"] = [];
 		const raw = typeof msg.content === "string" ? [{ type: "text", text: msg.content }] : (msg.content ?? []);
 		for (const b of raw) {
-			if (b.type === "text" && b.text) blocks.push({ type: "text", text: b.text });
+			if (b.type === "text" && b.text) {
+				const cleaned = stripIssueNotices(b.text);
+				if (cleaned) blocks.push({ type: "text", text: cleaned });
+			}
 			else if (b.type === "image" && b.source?.type === "base64") {
 				blocks.push({ type: "image", mime: b.source.media_type, data: b.source.data });
 			} else if (b.type === "thinking") {

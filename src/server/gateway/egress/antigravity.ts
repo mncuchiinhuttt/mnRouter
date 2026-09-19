@@ -300,12 +300,6 @@ export function createAntigravityParser() {
 			}
 			if (candidate?.finishReason) {
 				this.state.finishReason = candidate.finishReason;
-				// In Antigravity stream, when finishReason is present, this is the terminal message chunk!
-				events.push({
-					type: "done",
-					stopReason: this.state.sawTool ? "toolUse" : candidate.finishReason === "MAX_TOKENS" ? "length" : "stop",
-					usage: this.state.usage,
-				});
 			}
 			return events;
 		},

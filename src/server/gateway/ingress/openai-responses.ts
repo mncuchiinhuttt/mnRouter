@@ -4,7 +4,7 @@
 import type { CanonicalRequest, StreamEvent, CanonicalResult } from "../canonical.js";
 import { UpstreamError } from "../canonical.js";
 import { aggregateEvents, randomId } from "./shared.js";
-import { usageToOpenAi } from "./openai-chat.js";
+import { usageToOpenAi, stripIssueNotices } from "./openai-chat.js";
 
 export function parseOpenAiResponses(body: Record<string, any>, upstreamModel: string): CanonicalRequest {
 	let system = body.instructions ?? "";
@@ -35,7 +35,8 @@ export function parseOpenAiResponses(body: Record<string, any>, upstreamModel: s
 				const content = typeof item.content === "string" ? [{ type: role === "user" ? "input_text" : "output_text", text: item.content }] : (item.content ?? []);
 				for (const part of content) {
 					if (part.type === "input_text" || part.type === "output_text" || part.type === "text") {
-						if (part.text) blocks.push({ type: "text", text: part.text });
+						const cleaned = stripIssueNotices(part.text);
+						if (cleaned) blocks.push({ type: "text", text: cleaned });
 					} else if (part.type === "input_image") {
 						const url: string = part.image_url ?? "";
 						const m = /^data:([^;]+);base64,(.*)$/s.exec(url);

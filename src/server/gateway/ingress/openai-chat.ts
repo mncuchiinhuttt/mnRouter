@@ -30,11 +30,14 @@ export function parseOpenAiChat(body: Record<string, any>, upstreamModel: string
 		if (role === "user") {
 			const blocks: CanonicalRequest["messages"][number]["content"] = [];
 			if (typeof msg.content === "string") {
-				if (msg.content) blocks.push({ type: "text", text: msg.content });
+				const cleaned = stripIssueNotices(msg.content);
+				if (cleaned) blocks.push({ type: "text", text: cleaned });
 			} else if (Array.isArray(msg.content)) {
 				for (const part of msg.content) {
-					if (part.type === "text" && part.text) blocks.push({ type: "text", text: part.text });
-					else if (part.type === "image_url" && part.image_url?.url) {
+					if (part.type === "text" && part.text) {
+						const cleaned = stripIssueNotices(part.text);
+						if (cleaned) blocks.push({ type: "text", text: cleaned });
+					} else if (part.type === "image_url" && part.image_url?.url) {
 						const m = /^data:([^;]+);base64,(.*)$/s.exec(part.image_url.url);
 						if (m) blocks.push({ type: "image", mime: m[1]!, data: m[2]! });
 					}
@@ -43,7 +46,7 @@ export function parseOpenAiChat(body: Record<string, any>, upstreamModel: string
 			messages.push({ role: "user", content: blocks.length ? blocks : [{ type: "text", text: "" }] });
 		} else if (role === "assistant") {
 			const blocks: CanonicalRequest["messages"][number]["content"] = [];
-			const text = contentToText(msg.content);
+			const text = stripIssueNotices(contentToText(msg.content));
 			if (text) blocks.push({ type: "text", text });
 			if (msg.reasoning_content) blocks.push({ type: "thinking", thinking: msg.reasoning_content });
 			for (const tc of msg.tool_calls ?? []) {
@@ -93,6 +96,13 @@ function contentToText(content: unknown): string {
 	return "";
 }
 
+export function stripIssueNotices(text: string): string {
+	if (!text || typeof text !== "string") return "";
+	return text
+		.replace(/(?:[\r\n]+[|>]\s*Cảm ơn bạn đã sử dụng mnRouter![^\r\n]*)+/gi, "")
+		.replace(/(?:[\r\n]+[|>]\s*Gặp lỗi hoặc sự cố\?[^\r\n]*)+/gi, "")
+		.trimEnd();
+}
 function safeParse(json: unknown): Record<string, unknown> {
 	if (typeof json !== "string") return (json as Record<string, unknown>) ?? {};
 	try {
