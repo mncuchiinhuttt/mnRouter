@@ -38,19 +38,36 @@ export function useMe() {
 	});
 }
 
-function Protected({ children }: { children: (me: Me) => React.ReactNode }) {
-	const { t } = useTranslation();
-	const { data, isLoading, isError } = useMe();
+function ShellRoute() {
+	const { data, isLoading } = useMe();
 	const location = useLocation();
+
 	if (isLoading) {
 		return (
 			<div className="flex h-[100dvh] items-center justify-center bg-paper">
-				<div className="font-mono text-xs uppercase tracking-[0.2em] text-ink-2">{t("common.loading")}</div>
+				<div className="font-mono text-xs uppercase tracking-[0.2em] text-ink-2">LOADING...</div>
 			</div>
 		);
 	}
-	if (isError || !data) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-	return <>{children(data.user)}</>;
+
+	// For guest on /issues or /issue, provide fallback guest object so sidebar renders cleanly
+	const isIssuePath = location.pathname === "/issues" || location.pathname === "/issue";
+	if (!data?.user) {
+		if (isIssuePath) {
+			const guestMe: Me = {
+				id: "guest",
+				email: "guest@mnrouter",
+				role: "user",
+				displayName: "Guest User",
+				packageName: "Guest",
+				monthlyTokenBudget: null,
+			};
+			return <Shell me={guestMe} />;
+		}
+		return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+	}
+
+	return <Shell me={data.user} />;
 }
 
 export default function App() {
@@ -60,16 +77,7 @@ export default function App() {
 			<Route path="/auth/verify" element={<Verify />} />
 			<Route path="/invite/accept" element={<Verify />} />
 			<Route path="/share/:token" element={<SharedChatPage />} />
-			<Route path="/issues" element={<IssuePage />} />
-			<Route path="/issue" element={<Navigate to="/issues" replace />} />
-			<Route
-				path="/"
-				element={
-					<Protected>
-						{(me) => <Shell me={me} />}
-					</Protected>
-				}
-			>
+			<Route path="/" element={<ShellRoute />}>
 				<Route index element={<Overview />} />
 				<Route path="usage" element={<UsagePage />} />
 				<Route path="leaderboard" element={<LeaderboardPage />} />
