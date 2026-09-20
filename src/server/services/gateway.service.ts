@@ -24,16 +24,22 @@ function usageIsEmpty(u: CanonicalUsage): boolean {
 	return u.promptTokens === 0 && u.completionTokens === 0;
 }
 
-export function openAiError(status: number, message: string, code: string) {
-	return Response.json({ error: { message, type: status >= 500 ? "server_error" : "invalid_request_error", code } }, { status });
+export function openAiError(status: number, message: string, code: string, headers?: Record<string, string>) {
+	return Response.json(
+		{ error: { message, type: status >= 500 ? "server_error" : "invalid_request_error", code } },
+		{ status, headers: { "cache-control": "no-cache", ...(headers ?? {}) } },
+	);
 }
 
-export function anthropicError(status: number, message: string, type = "api_error") {
-	return Response.json({ type: "error", error: { type, message } }, { status });
+export function anthropicError(status: number, message: string, type = "api_error", headers?: Record<string, string>) {
+	return Response.json(
+		{ type: "error", error: { type, message } },
+		{ status, headers: { "cache-control": "no-cache", ...(headers ?? {}) } },
+	);
 }
 
-export function errorResponse(kind: IngressKind, status: number, message: string, code: string) {
-	return kind === "anthropic" ? anthropicError(status, message, code) : openAiError(status, message, code);
+export function errorResponse(kind: IngressKind, status: number, message: string, code: string, headers?: Record<string, string>) {
+	return kind === "anthropic" ? anthropicError(status, message, code, headers) : openAiError(status, message, code, headers);
 }
 
 export class GatewayService {
@@ -104,12 +110,14 @@ export class GatewayService {
 			upstream = await openUpstreamWithFailover(resolved.provider, canonical, { sessionId });
 		} catch (err) {
 			const rawStatus = err instanceof UpstreamError ? err.httpStatus : 502;
-			// For transient upstream and connection errors, return 503 so OMP, Claude Code, and HTTP clients
-			// auto-retry cleanly without marking turn as terminal unrecoverable error.
+			// Normalize transient 502/504 errors into 503 with Retry-After header.
+			// OMP/Claude Code recognize 503 as transient and perform an automatic backoff retry,
+			// preventing aggressive credential hopping or sudden turn interruption.
 			const status = rawStatus === 502 || rawStatus === 504 ? 503 : rawStatus;
 			const code = err instanceof UpstreamError ? err.errorCode : "upstream_error";
+			const retryHeaders = status === 503 || status === 429 ? { "retry-after": "2" } : undefined;
 			recordUsage({ userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: null, model: resolved.id, endpoint: kind, status: "error", httpStatus: status, errorCode: code, latencyMs: Date.now() - startedAt, meta: { message: (err as Error).message.slice(0, 300) } });
-			return errorResponse(kind, status, (err as Error).message, code);
+			return errorResponse(kind, status, (err as Error).message, code, retryHeaders);
 		}
 		budgetService.acquireCreditHold(auth.user.id);
 		if (canonical.stream) return this.handleStream(upstream, formatter, auth, resolved, kind, startedAt, canonical);

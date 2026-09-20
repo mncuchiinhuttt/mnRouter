@@ -315,7 +315,7 @@ export async function openUpstreamWithFailover(
 				await markFailure(conn, cooldown, `HTTP ${lastStatus}: ${lastBody.slice(0, 200)}`);
 				errors.push(`${conn.label}: HTTP ${lastStatus}`);
 				const canRetry = cls.retryable && (PROVIDERS[provider].retryStatuses.includes(lastStatus) || lastStatus >= 500 || lastStatus === 429);
-				if (tried < maxAttempts && (canRetry || candidates.length > tried)) continue;
+				if (canRetry && tried < maxAttempts) continue;
 				throw new UpstreamError(`upstream ${lastStatus}: ${lastBody.slice(0, 300)}`, lastStatus, "upstream_error", false);
 			}
 			acquireConcurrency(conn.id, conn.label);
