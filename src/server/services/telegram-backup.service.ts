@@ -48,7 +48,7 @@ export class TelegramBackupService {
 			// 3. Prepare Multipart Form Data for Telegram sendDocument
 			const filename = `mnrouter_db_${dateStr}.db.gz`;
 			const caption =
-				`📦 <b>[mnRouter Database Backup]</b>\n\n` +
+				`📦 <b>[mnRouter Database Backup]</b> (Hourly)\n\n` +
 				`⏱ <b>Timestamp:</b> ${now.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n` +
 				`💾 <b>Compressed Size:</b> ${sizeKb} KB (Original: ${origSizeKb} KB)\n` +
 				`🌐 <b>Host:</b> <code>${env.APP_URL}</code>\n` +
@@ -87,32 +87,24 @@ export class TelegramBackupService {
 	}
 
 	/**
-	 * Start background schedule to backup daily at 03:00 AM local time.
+	 * Start background schedule to backup hourly (every 60 minutes).
 	 */
 	startSchedule(): void {
 		if (this.timer) return;
 
-		// Check every 30 minutes if it's 03:00 AM (03:00 - 03:30)
+		// Run hourly backup (every 60 minutes)
 		this.timer = setInterval(async () => {
-			const now = new Date();
-			// Asia/Ho_Chi_Minh is UTC+7
-			const localHour = (now.getUTCHours() + 7) % 24;
-			const localMinute = now.getUTCMinutes();
-
-			// Run between 03:00 and 03:29 once per day
-			if (localHour === 3 && localMinute < 30) {
-				const cfg = await telegramService.getConfig();
-				if (cfg.enabled) {
-					console.log("[backup] Executing scheduled daily database backup to Telegram...");
-					const res = await this.performBackup();
-					if (res.ok) {
-						console.log(`[backup] Scheduled backup succeeded: ${res.message}`);
-					} else {
-						console.error(`[backup] Scheduled backup failed: ${res.message}`);
-					}
+			const cfg = await telegramService.getConfig();
+			if (cfg.enabled) {
+				console.log("[backup] Executing scheduled hourly database backup to Telegram...");
+				const res = await this.performBackup();
+				if (res.ok) {
+					console.log(`[backup] Scheduled hourly backup succeeded: ${res.message}`);
+				} else {
+					console.error(`[backup] Scheduled hourly backup failed: ${res.message}`);
 				}
 			}
-		}, 30 * 60 * 1000);
+		}, 60 * 60 * 1000);
 	}
 
 	stopSchedule(): void {
