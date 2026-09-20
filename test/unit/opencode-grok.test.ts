@@ -83,8 +83,8 @@ describe("default model catalog", () => {
 	it("includes the latest text model families for every configured provider", () => {
 		const required: Record<string, string[]> = {
 			claude: ["claude-fable-5-1", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-6"],
-			codex: ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-luna", "gpt-5.3-codex"],
-			antigravity: ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview", "gemini-3.1-flash-lite", "gemini-3-flash-preview"],
+			codex: ["gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"],
+			antigravity: ["gemini-3.8-flash", "claude-sonnet-4-6-ag", "gemini-3.5-flash-lite", "gemini-3.1-pro", "claude-opus-4-6-ag"],
 			kiro: ["qwen3-coder-next", "deepseek-3.2", "minimax-m2.5", "glm-5", "claude-sonnet-4.5", "claude-sonnet-4", "claude-haiku-4.5"],
 			grok: ["grok-4.6", "grok-4.5", "grok-4.3", "grok-4.20-0309-reasoning"],
 		};

@@ -38,6 +38,11 @@ export class ModelRepository {
 		const [updated] = await db.update(models).set(data).where(eq(models.id, id)).returning();
 		return updated ?? null;
 	}
+	async delete(id: string): Promise<boolean> {
+		const [deleted] = await db.delete(models).where(eq(models.id, id)).returning({ id: models.id });
+		return Boolean(deleted);
+	}
+
 
 	async getUserModelIds(userId: string): Promise<string[]> {
 		const rows = await db

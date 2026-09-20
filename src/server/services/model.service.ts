@@ -19,6 +19,32 @@ export class ModelService {
 		try {
 			await modelRepo.update("claude-sonnet-5-ag", { enabled: false });
 		} catch {}
+		// Clean up deprecated Antigravity & Codex models removed per user request
+		const allowedAgIds = new Set([
+			"gemini-3.8-flash",
+			"claude-sonnet-4-6-ag",
+			"gemini-3.5-flash-lite",
+			"gemini-3.1-pro",
+			"claude-opus-4-6-ag",
+		]);
+		const allowedCodexIds = new Set([
+			"gpt-6-astra",
+			"gpt-5.6-sol",
+			"gpt-5.6-terra",
+			"gpt-5.6-luna",
+		]);
+		try {
+			const allModels = await modelRepo.listAll();
+			for (const m of allModels) {
+				if (m.provider === "antigravity" && !allowedAgIds.has(m.id)) {
+					await modelRepo.delete(m.id);
+				} else if (m.provider === "codex" && !allowedCodexIds.has(m.id)) {
+					await modelRepo.delete(m.id);
+				}
+			}
+		} catch (err) {
+			console.error("[seed] error cleaning up deprecated models:", err);
+		}
 		// Backfill only zero-valued legacy base prices
 		for (const m of defaults) {
 			if (m.priceIn > 0 || m.priceOut > 0) {
