@@ -36,8 +36,7 @@ for (const row of ompAgRows) {
 	try {
 		const d = JSON.parse(row.data);
 		const email = d.email || (row.identity_key ? row.identity_key.replace(/^email:/, "") : null);
-		if (!email) continue;
-
+		if (!email || email === "taylagoifr@gmail.com") continue;
 		const accessToken = d.access || d.accessToken;
 		const refreshToken = d.refresh || d.refreshToken;
 		const projectId = d.projectId || "aicode-consumers";
