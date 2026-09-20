@@ -268,36 +268,36 @@ export default function ModelDetailPage() {
 						return (
 							<div className="divide-y divide-line/60 font-mono text-xs">
 								<div className="py-2 flex items-center justify-between">
-									<span className="text-ink-2">Terminal-Bench 2.1</span>
-									<span className="font-bold text-accent">{b.terminalBench.toFixed(1)} pts</span>
+									<span className="text-ink-2">Terminal-Bench 2.1 / 4.0</span>
+									<span className="font-bold text-accent">{b.terminalBench !== null ? `${b.terminalBench.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">DeepSWE v1.1</span>
-									<span className="font-bold text-ink">{b.deepSwe.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.deepSwe !== null ? `${b.deepSwe.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">GPQA Diamond</span>
-									<span className="font-bold text-ink">{b.gpqaDiamond.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.gpqaDiamond !== null ? `${b.gpqaDiamond.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">HLE (With Tools)</span>
-									<span className="font-bold text-ink">{b.hleTools.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.hleTools !== null ? `${b.hleTools.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">NL2Repo-Bench</span>
-									<span className="font-bold text-ink">{b.nl2repo.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.nl2repo !== null ? `${b.nl2repo.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">MathArena Apex</span>
-									<span className="font-bold text-ink">{b.mathArena.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.mathArena !== null ? `${b.mathArena.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">CyberGym Security</span>
-									<span className="font-bold text-ink">{b.cyberGym.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.cyberGym !== null ? `${b.cyberGym.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">BabyVision / Chart</span>
-									<span className="font-bold text-ink">{b.visionMultimodal.toFixed(1)} pts</span>
+									<span className="font-bold text-ink">{b.visionMultimodal !== null ? `${b.visionMultimodal.toFixed(1)} pts` : "—"}</span>
 								</div>
 							</div>
 						);

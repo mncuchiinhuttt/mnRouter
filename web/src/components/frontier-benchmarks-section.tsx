@@ -28,9 +28,9 @@ const BENCHMARK_METRICS: Array<{
 }> = [
 	{
 		key: "terminalBench",
-		name: "Terminal-Bench 2.1",
+		name: "Terminal-Bench 2.1 / 4.0",
 		category: "Agentic Coding",
-		desc: "Thao tác dòng lệnh, debug mã nguồn và điều phối tác vụ terminal trong container",
+		desc: "Thao tác dòng lệnh, debug mã nguồn và giải quyết tác vụ kỹ thuật tự động trong container sandbox",
 		icon: Terminal,
 		color: "text-[#5858ff] bg-[#5858ff]/10 border-[#5858ff]/25",
 	},
@@ -107,20 +107,30 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 		const scored = filtered.map((m) => {
 			const bench = getDetailedBenchmark(m.id);
 			const score = bench[activeMetricKey];
+			// Clean display name by removing provider suffixes like (Kiro), (AG), (via AG)
+			const cleanName = m.displayName
+				.replace(/\s*\((?:via\s*)?(?:AG|Kiro|Antigravity|OpenCode|Codex)\)/gi, "")
+				.trim();
+
 			return {
 				...m,
+				cleanName,
 				benchmarks: bench,
 				currentScore: score,
 			};
 		});
 
-		// Sort by active metric descending
-		scored.sort((a, b) => b.currentScore - a.currentScore);
+		// Sort by active metric descending (models without scores go to bottom)
+		scored.sort((a, b) => {
+			if (a.currentScore === null && b.currentScore === null) return 0;
+			if (a.currentScore === null) return 1;
+			if (b.currentScore === null) return -1;
+			return b.currentScore - a.currentScore;
+		});
 		return scored;
 	}, [models, activeMetricKey, providerFilter]);
 
-	const highestScore = rankedModels[0]?.currentScore || 100;
-
+	const highestScoredModel = rankedModels.find((m) => m.currentScore !== null);
 	return (
 		<section className="space-y-4">
 			{/* Section Header */}
@@ -202,7 +212,7 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 				</div>
 
 				<div className="shrink-0 text-[11px] text-ink-2 bg-paper-2 px-3 py-1.5 rounded-lg border border-line/60">
-					Frontier Leader: <strong className="text-accent">{rankedModels[0]?.displayName} ({highestScore} pts)</strong>
+					Frontier Leader: <strong className="text-accent">{highestScoredModel ? `${highestScoredModel.cleanName} (${highestScoredModel.currentScore?.toFixed(1)} pts)` : "N/A"}</strong>
 				</div>
 			</div>
 
@@ -214,7 +224,6 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 							<tr className="border-b border-line bg-paper text-[10.5px] uppercase tracking-wider text-ink-2">
 								<th className="py-2.5 px-4 w-12 text-center">Rank</th>
 								<th className="py-2.5 px-4 min-w-[220px]">Model Name</th>
-								<th className="py-2.5 px-4 w-28">Provider</th>
 								<th className="py-2.5 px-4 min-w-[240px]">Score Visualization</th>
 								<th className="py-2.5 px-4 w-24 text-right">Points</th>
 								<th className="py-2.5 px-4 w-28 text-right">DeepSWE</th>
@@ -227,7 +236,7 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 								const isSilver = idx === 1;
 								const isBronze = idx === 2;
 
-								const barWidth = Math.max(8, (m.currentScore / 100) * 100);
+								const barWidth = m.currentScore !== null ? Math.max(6, (m.currentScore / 100) * 100) : 0;
 
 								return (
 									<tr key={m.id} className="hover:bg-paper/40 transition-colors">
@@ -244,15 +253,10 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 											)}
 										</td>
 
-										{/* Model Details */}
+										{/* Model Details without (Kiro) or (AG) tags */}
 										<td className="py-3 px-4">
-											<div className="font-bold text-ink text-xs truncate max-w-xs">{m.displayName}</div>
+											<div className="font-bold text-ink text-xs truncate max-w-xs">{m.cleanName}</div>
 											<div className="text-[10px] text-ink-2 truncate">{m.id}</div>
-										</td>
-
-										{/* Provider */}
-										<td className="py-3 px-4">
-											<Badge className="capitalize text-[10px] font-mono">{m.provider}</Badge>
 										</td>
 
 										{/* Score Bar */}
@@ -271,17 +275,21 @@ export function FrontierBenchmarksSection({ models }: { models: ModelItem[] }) {
 
 										{/* Points */}
 										<td className="py-3 px-4 text-right">
-											<span className="font-bold text-sm text-ink tabular-nums">{m.currentScore.toFixed(1)}</span>
+											{m.currentScore !== null ? (
+												<span className="font-bold text-sm text-ink tabular-nums">{m.currentScore.toFixed(1)}</span>
+											) : (
+												<span className="text-ink-2/50 text-xs font-normal">—</span>
+											)}
 										</td>
 
 										{/* Secondary DeepSWE */}
 										<td className="py-3 px-4 text-right text-ink-2 tabular-nums">
-											{m.benchmarks.deepSwe.toFixed(1)}%
+											{m.benchmarks.deepSwe !== null ? `${m.benchmarks.deepSwe.toFixed(1)}%` : "—"}
 										</td>
 
 										{/* Secondary GPQA */}
 										<td className="py-3 px-4 text-right text-ink-2 tabular-nums">
-											{m.benchmarks.gpqaDiamond.toFixed(1)}%
+											{m.benchmarks.gpqaDiamond !== null ? `${m.benchmarks.gpqaDiamond.toFixed(1)}%` : "—"}
 										</td>
 									</tr>
 								);
