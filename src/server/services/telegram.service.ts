@@ -192,6 +192,22 @@ export class TelegramService {
 	async notifyNewUser(email: string, packageName?: string | null): Promise<void> {
 		return this.notifyInvitationAccepted(email, packageName);
 	}
+	async notifyNewIssueReport(issue: { id: string; title: string; tool: string; userEmail?: string | null; description: string }): Promise<void> {
+		const cfg = await this.getConfig();
+		if (!cfg.enabled) return;
+
+		const emailStr = issue.userEmail || "Guest User";
+		const descExcerpt = issue.description.slice(0, 180) + (issue.description.length > 180 ? "..." : "");
+		const text = `🚨 <b>[mnRouter Incident] New Issue Reported</b>\n\n` +
+			`🆔 <b>ID:</b> <code>${issue.id.slice(0, 13)}</code>\n` +
+			`👤 <b>Reporter:</b> <code>${emailStr}</code>\n` +
+			`🛠 <b>Tool:</b> <code>${issue.tool}</code>\n` +
+			`📌 <b>Title:</b> <b>${issue.title}</b>\n` +
+			`📝 <b>Desc:</b> <i>${descExcerpt}</i>\n` +
+			`⏱ <b>Time:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n\n` +
+			`👉 <i>View & triage: https://mnrouter.mncuchiinhuttt.dev/admin/issues</i>`;
+		await this.sendMessage(text);
+	}
 
 	async registerCommands(tokenOverride?: string): Promise<{ ok: boolean; error?: string }> {
 		const cfg = await this.getConfig();

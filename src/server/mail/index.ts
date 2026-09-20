@@ -1,8 +1,8 @@
 import nodemailer from "nodemailer";
 import { env, isProd } from "../env.js";
-import { renderMagicLinkEmail, renderInvitationEmail, type MagicLinkEmailProps, type InvitationEmailProps } from "./templates.js";
+import { renderMagicLinkEmail, renderInvitationEmail, renderIssueResolvedEmail, type MagicLinkEmailProps, type InvitationEmailProps, type IssueResolvedEmailProps } from "./templates.js";
 
-export { renderMagicLinkEmail, renderInvitationEmail, type MagicLinkEmailProps, type InvitationEmailProps };
+export { renderMagicLinkEmail, renderInvitationEmail, renderIssueResolvedEmail, type MagicLinkEmailProps, type InvitationEmailProps, type IssueResolvedEmailProps };
 
 const transporter = nodemailer.createTransport({
 	host: env.SMTP_HOST,
@@ -61,5 +61,31 @@ export async function sendInvitation(to: string, url: string, packageName?: stri
 		console.log(`[mail] sent invitation email to ${to} via SMTP`);
 	} catch (err) {
 		console.error(`[mail] failed to send invitation to ${to}:`, (err as Error).message);
+	}
+}
+export async function sendIssueResolvedNotification(to: string, issue: { id: string; title: string; tool: string; adminNote?: string | null }): Promise<void> {
+	if (!isProd) {
+		console.log(`[mail:dev] issue resolved notification for ${to}: ticket ${issue.id}`);
+	}
+	if (!env.SMTP_PASS) return;
+
+	try {
+		const { html, text, subject } = renderIssueResolvedEmail({
+			email: to,
+			issueId: issue.id,
+			title: issue.title,
+			tool: issue.tool,
+			adminNote: issue.adminNote,
+		});
+		await transporter.sendMail({
+			from: env.MAIL_FROM,
+			to,
+			subject,
+			html,
+			text,
+		});
+		console.log(`[mail] sent issue resolved notification to ${to} via SMTP`);
+	} catch (err) {
+		console.error(`[mail] failed to send issue resolved email to ${to}:`, (err as Error).message);
 	}
 }

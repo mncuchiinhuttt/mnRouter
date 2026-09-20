@@ -2,6 +2,9 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { issueRepo } from "../repositories/issue.repository.js";
+import { userRepo } from "../repositories/user.repository.js";
+import { telegramService } from "./telegram.service.js";
+import { sendIssueResolvedNotification } from "../mail/index.js";
 import type { Issue, IssueImage } from "@db/schema";
 
 export const MAX_ISSUE_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB per screenshot
@@ -69,6 +72,14 @@ export class IssueService {
 				savedImages.push(saved);
 			}
 		}
+		// Dispatch real-time Telegram notification to admin
+		void telegramService.notifyNewIssueReport({
+			id: issue.id,
+			title: issue.title,
+			tool: issue.tool,
+			userEmail: issue.userEmail,
+			description: issue.description,
+		}).catch((err) => console.error("[issue] telegram notify failed:", (err as Error).message));
 
 		return { ...issue, images: savedImages };
 	}
@@ -102,6 +113,20 @@ export class IssueService {
 		// When marked resolved, delete all associated image files from disk and DB!
 		if (status === "resolved") {
 			await this.purgeIssueImages(id);
+
+			// Send email notification to user if email is known
+			const recipientEmail =
+				updated.userEmail ||
+				(updated.userId ? (await userRepo.findById(updated.userId))?.email : null);
+
+			if (recipientEmail) {
+				void sendIssueResolvedNotification(recipientEmail, {
+					id: updated.id,
+					title: updated.title,
+					tool: updated.tool,
+					adminNote: updated.adminNote,
+				}).catch((err) => console.error("[issue] resolved email notify failed:", (err as Error).message));
+			}
 		}
 
 		return updated;

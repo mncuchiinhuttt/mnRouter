@@ -25,6 +25,8 @@ import { Button } from "@web/components/ui/button";
 import { Badge, Input } from "@web/components/ui/primitives";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@web/components/ui/select";
 import { cn } from "@web/lib/utils";
+import { IssueResponseFeed } from "@web/components/issue-response-feed";
+
 interface IssueImage {
 	id: string;
 	filename: string;
@@ -444,6 +446,10 @@ export default function IssuePage() {
 							</Button>
 						</div>
 					</form>
+					{/* Direct In-Page Feed of User Issues with Admin Responses */}
+					{myIssuesData?.issues && myIssuesData.issues.length > 0 && (
+						<IssueResponseFeed issues={myIssuesData.issues as any} isVi={Boolean(isVi)} />
+					)}
 				</section>
 
 				{/* Sidebar: Guidelines & User's tickets */}
