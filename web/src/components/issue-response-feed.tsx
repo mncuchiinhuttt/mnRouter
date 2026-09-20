@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { MessageSquare, Clock, ChevronDown, ChevronUp, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@web/components/ui/primitives";
+import { Markdown } from "@web/components/chat/markdown";
 import { cn, fmtDate } from "@web/lib/utils";
-
 export interface UserIssueItem {
 	id: string;
 	title: string;
@@ -133,7 +133,7 @@ export function IssueResponseFeed({ issues, isVi }: IssueResponseFeedProps) {
 												<span>{isVi ? "Phản hồi & Hướng xử lý từ Quản trị viên:" : "Official Admin Response & Resolution:"}</span>
 											</div>
 											<div className="p-3.5 rounded-lg bg-accent/5 border border-accent/25 text-ink leading-relaxed font-sans text-xs sm:text-[13px] shadow-2xs">
-												{it.adminNote}
+												<Markdown content={it.adminNote} />
 											</div>
 										</div>
 									) : (

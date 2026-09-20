@@ -515,7 +515,7 @@ export default function IssuePage() {
 											<h4 className="text-xs font-semibold text-ink line-clamp-1">{it.title}</h4>
 											<p className="text-[11px] text-ink-2 line-clamp-2">{it.description}</p>
 											{it.adminNote && (
-												<div className="rounded bg-white p-2 text-[10.5px] border border-line text-ink">
+												<div className="rounded bg-white p-2 text-[10.5px] border border-line text-ink whitespace-pre-wrap leading-relaxed">
 													<span className="font-semibold text-accent">{isVi ? "Admin phản hồi: " : "Admin response: "}</span>
 													{it.adminNote}
 												</div>

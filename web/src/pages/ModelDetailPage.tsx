@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
-import { getModelBenchmark } from "@web/lib/model-benchmarks";
+import { getDetailedBenchmark } from "@web/lib/model-benchmarks";
 import { Badge } from "@web/components/ui/primitives";
 import { Button } from "@web/components/ui/button";
 
@@ -257,33 +257,53 @@ export default function ModelDetailPage() {
 					</div>
 				</div>
 
-				{/* Benchmark Scores Card */}
+				{/* Frontier Benchmark Scores Card */}
 				<div className="rounded-xl border border-line bg-white p-5 shadow-2xs space-y-4">
 					<div className="flex items-center gap-2">
 						<Sparkles className="size-4 text-accent" />
-						<h2 className="text-lg font-bold tracking-tight text-ink">Benchmark Scores</h2>
+						<h2 className="text-lg font-bold tracking-tight text-ink">Frontier Benchmarks</h2>
 					</div>
-					<div className="divide-y divide-line/60 font-mono text-xs">
-						<div className="py-2.5 flex items-center justify-between">
-							<span className="text-ink-2">SWE-bench Verified</span>
-							<span className="font-bold text-accent">{getModelBenchmark(m.id).sweBench}</span>
-						</div>
-						<div className="py-2.5 flex items-center justify-between">
-							<span className="text-ink-2">HumanEval (Code)</span>
-							<span className="font-bold text-ink">{getModelBenchmark(m.id).humaneval}</span>
-						</div>
-						<div className="py-2.5 flex items-center justify-between">
-							<span className="text-ink-2">GPQA (Reasoning)</span>
-							<span className="font-bold text-ink">{getModelBenchmark(m.id).gpqa}</span>
-						</div>
-						<div className="py-2.5 flex items-center justify-between">
-							<span className="text-ink-2">MMLU-Pro</span>
-							<span className="font-bold text-ink">{getModelBenchmark(m.id).mmluPro}</span>
-						</div>
-					</div>
+					{(() => {
+						const b = getDetailedBenchmark(m.id);
+						return (
+							<div className="divide-y divide-line/60 font-mono text-xs">
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">Terminal-Bench 2.1</span>
+									<span className="font-bold text-accent">{b.terminalBench.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">DeepSWE v1.1</span>
+									<span className="font-bold text-ink">{b.deepSwe.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">GPQA Diamond</span>
+									<span className="font-bold text-ink">{b.gpqaDiamond.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">HLE (With Tools)</span>
+									<span className="font-bold text-ink">{b.hleTools.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">NL2Repo-Bench</span>
+									<span className="font-bold text-ink">{b.nl2repo.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">MathArena Apex</span>
+									<span className="font-bold text-ink">{b.mathArena.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">CyberGym Security</span>
+									<span className="font-bold text-ink">{b.cyberGym.toFixed(1)} pts</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">BabyVision / Chart</span>
+									<span className="font-bold text-ink">{b.visionMultimodal.toFixed(1)} pts</span>
+								</div>
+							</div>
+						);
+					})()}
 				</div>
 			</section>
-
 			{/* Peer Models (Alternative models) */}
 			{peers.length > 0 && (
 				<section className="space-y-4">

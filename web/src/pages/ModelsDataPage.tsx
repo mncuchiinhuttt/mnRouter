@@ -22,6 +22,7 @@ import { Link } from "react-router";
 import { api } from "@web/lib/api";
 import { fmtCompact, fmtNum } from "@web/lib/utils";
 import { getModelBenchmark } from "@web/lib/model-benchmarks";
+import { FrontierBenchmarksSection } from "@web/components/frontier-benchmarks-section";
 import { Input } from "@web/components/ui/primitives";
 import { Badge } from "@web/components/ui/primitives";
 import { Button } from "@web/components/ui/button";
@@ -476,6 +477,8 @@ export default function ModelsDataPage() {
 					))}
 				</div>
 			</section>
+			{/* Frontier Benchmark Leaderboard (Terminal-Bench 2.1, DeepSWE, GPQA, HLE, etc.) */}
+			<FrontierBenchmarksSection models={models as any} />
 
 			{/* Market Share & Provider Distribution */}
 			<section className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">

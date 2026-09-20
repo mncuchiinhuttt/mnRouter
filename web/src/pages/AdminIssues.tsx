@@ -380,14 +380,18 @@ export default function AdminIssues() {
 								)}
 							</div>
 
-							{/* Admin note input */}
+							{/* Admin note input - Rich Markdown & Multi-line Textarea */}
 							<div className="space-y-1.5">
-								<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">Phản hồi / Ghi chú của Admin:</label>
-								<Input
+								<div className="flex items-center justify-between">
+									<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">Phản hồi / Ghi chú của Admin (Hỗ trợ Markdown):</label>
+									<span className="text-[10px] font-mono text-ink-2/60">Xuống dòng, gạch đầu dòng, format thoải mái</span>
+								</div>
+								<textarea
 									value={adminNoteInput}
 									onChange={(e) => setAdminNoteInput(e.target.value)}
-									placeholder="e.g. Đã kiểm tra và nạp thêm quota Antigravity / Token refresh bình thường."
-									className="h-9 text-xs"
+									placeholder="Nhập nội dung phản hồi, nguyên nhân và hướng xử lý (hỗ trợ xuống dòng, gạch đầu dòng, markdown)..."
+									rows={5}
+									className="w-full rounded-md border border-line bg-surface p-2.5 text-xs text-ink font-mono placeholder:text-ink-2/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-y leading-relaxed"
 								/>
 							</div>
 						</div>
