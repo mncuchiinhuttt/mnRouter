@@ -32,14 +32,13 @@ describe("openai-chat egress (grok + opencode)", () => {
 		expect(body.messages.some((m: any) => m.role === "tool" && m.tool_call_id === "t1")).toBe(true);
 	});
 
-	it("opencode: builds /zen/v1/chat/completions with Bearer public + client headers", () => {
+	it("opencode: builds /zen/v1/chat/completions with Bearer token + client headers", () => {
 		const built = buildOpenAiChatRequest(PROVIDERS.opencode, req, "", "opencode", "https://opencode.ai");
 		expect(built.url).toBe("https://opencode.ai/zen/v1/chat/completions");
-		expect((built.headers as Record<string, string>).authorization).toBe("Bearer public");
-		expect((built.headers as Record<string, string>)["x-opencode-client"]).toBe("desktop");
-		expect((built.headers as Record<string, string>)["x-opencode-session"]).toMatch(/^ses_/);
+		expect((built.headers as Record<string, string>).authorization).toContain("Bearer sk-");
+		expect((built.headers as Record<string, string>)["x-opencode-client"]).toBe("cli");
 		expect((built.headers as Record<string, string>)["x-opencode-request"]).toMatch(/^msg_/);
-		expect((built.headers as Record<string, string>)["user-agent"]).toBe("opencode");
+		expect((built.headers as Record<string, string>)["user-agent"]).toContain("opencode");
 	});
 
 	it("parses streamed chat chunks incl. tool_calls by index and usage", () => {

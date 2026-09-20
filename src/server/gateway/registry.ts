@@ -128,13 +128,12 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
 	},
 	opencode: {
 		id: "opencode",
-		display: "OpenCode Free (no auth)",
+		display: "OpenCode Zen",
 		baseUrls: ["https://opencode.ai"],
 		format: "openai-chat",
 		oauth: null,
-		noAuth: true,
-		userAgent: "opencode",
-		headers: { "x-opencode-client": "desktop" },
+		userAgent: "opencode/latest/2.0.3/cli",
+		headers: { "x-opencode-client": "cli" },
 		retryStatuses: [429, 500, 502, 503, 504],
 	},
 };

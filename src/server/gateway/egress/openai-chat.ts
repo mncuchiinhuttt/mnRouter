@@ -61,11 +61,11 @@ function endpointPath(provider: ProviderId): string {
 
 function authHeaders(provider: ProviderId, token: string): Record<string, string> {
 	if (provider === "opencode") {
-		// noAuth — "Bearer public" + headers đinh danh client như opencode desktop (theo 9router)
+		const authToken = token || process.env.OPENCODE_ZEN_TOKEN || "REDACTED_OPEN_CODE_TOKEN";
 		return {
-			authorization: "Bearer public",
-			"user-agent": "opencode",
-			"x-opencode-client": "desktop",
+			authorization: authToken.startsWith("Bearer ") ? authToken : `Bearer ${authToken}`,
+			"user-agent": "opencode/latest/2.0.3/cli",
+			"x-opencode-client": "cli",
 			"x-opencode-session": `ses_${randomUUID().replace(/-/g, "")}`,
 			"x-opencode-request": `msg_${randomUUID().replace(/-/g, "")}`,
 		};

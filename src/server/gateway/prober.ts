@@ -56,6 +56,8 @@ export async function probeConnection(conn: ConnRow): Promise<ProbeResult> {
 					? "claude-haiku-4-5"
 					: provider === "codex"
 					? "gpt-5.4-nano"
+					: provider === "opencode"
+					? "muse-spark-1.3-contributor-free"
 					: "gemini-3.8-flash",
 			messages: [{ role: "user", content: [{ type: "text", text: "p" }] }],
 			maxTokens: 1,
