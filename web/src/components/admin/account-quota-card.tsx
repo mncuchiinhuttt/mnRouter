@@ -5,6 +5,7 @@ import { Button } from "@web/components/ui/button";
 import { fmtCompact } from "@web/lib/utils";
 import { AntigravityQuotaView } from "./antigravity-quota-view";
 import { KiroQuotaView, type RealKiroQuotaData } from "./kiro-quota-view";
+import { CodexQuotaView, type RealCodexQuotaData } from "./codex-quota-view";
 
 export interface AccountQuotaData {
 	id: string;
@@ -25,6 +26,7 @@ export interface AccountQuotaData {
 		claudeWindow?: "5h" | "7d" | "daily";
 	} | null;
 	kiroQuota?: RealKiroQuotaData | null;
+	codexQuota?: RealCodexQuotaData | null;
 	lastUsedAt: string | null;
 	tokens5h: number;
 	requests5h: number;
@@ -51,11 +53,14 @@ export function AccountQuotaCard({ account, onReset, isResetting }: AccountQuota
 	const isCooldown = account.status === "cooldown";
 	const isAntigravity = account.provider === "antigravity" && !!account.realQuota;
 	const isKiro = account.provider === "kiro" && !!account.kiroQuota;
+	const isCodex = account.provider === "codex" && !!account.codexQuota;
 	const isWarning = !account.isUnlimited && (
 		isAntigravity
 			? ((account.realQuota?.geminiRemainingFraction ?? 1) <= 0.2 || (account.realQuota?.claudeRemainingFraction ?? 1) <= 0.2)
 			: isKiro
 			? (account.kiroQuota?.remainingFraction ?? 1) <= 0.2
+			: isCodex
+			? (account.codexQuota?.primaryRemainingPercent ?? 100) <= 20
 			: account.percent5h >= 80
 	);
 
@@ -108,6 +113,12 @@ export function AccountQuotaCard({ account, onReset, isResetting }: AccountQuota
 				) : isKiro && account.kiroQuota ? (
 					<KiroQuotaView
 						quota={account.kiroQuota}
+						requests5h={account.requests5h}
+						tokensWeek={account.tokensWeek}
+					/>
+				) : isCodex && account.codexQuota ? (
+					<CodexQuotaView
+						quota={account.codexQuota}
 						requests5h={account.requests5h}
 						tokensWeek={account.tokensWeek}
 					/>
