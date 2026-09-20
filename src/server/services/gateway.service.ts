@@ -103,7 +103,10 @@ export class GatewayService {
 		try {
 			upstream = await openUpstreamWithFailover(resolved.provider, canonical, { sessionId });
 		} catch (err) {
-			const status = err instanceof UpstreamError ? err.httpStatus : 502;
+			const rawStatus = err instanceof UpstreamError ? err.httpStatus : 502;
+			// For transient upstream and connection errors, return 503 so OMP, Claude Code, and HTTP clients
+			// auto-retry cleanly without marking turn as terminal unrecoverable error.
+			const status = rawStatus === 502 || rawStatus === 504 ? 503 : rawStatus;
 			const code = err instanceof UpstreamError ? err.errorCode : "upstream_error";
 			recordUsage({ userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: null, model: resolved.id, endpoint: kind, status: "error", httpStatus: status, errorCode: code, latencyMs: Date.now() - startedAt, meta: { message: (err as Error).message.slice(0, 300) } });
 			return errorResponse(kind, status, (err as Error).message, code);
