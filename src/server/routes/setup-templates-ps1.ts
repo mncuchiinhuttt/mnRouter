@@ -135,8 +135,8 @@ export function renderPowerShellReset(toolId?: string): string {
 	const targetTools = toolId && tools[toolId] ? [tools[toolId]!] : Object.values(tools);
 	const label = toolId && tools[toolId] ? tools[toolId]!.name : "all 11 AI harnesses";
 
-	const extraOmpVars = toolId === "omp" ? [["OPENAI_BASE_URL"], ["OPENAI_API_KEY"], ["ANTHROPIC_BASE_URL"], ["ANTHROPIC_API_KEY"]] : [];
-	const envNames = [...targetTools.flatMap((t) => t.vars.map(([k]) => [k])), ...extraOmpVars]
+	const envNames = targetTools
+		.flatMap((t) => t.vars.map(([k]) => [k]))
 		.map(([k]) => `    "${k}"`)
 		.filter((val, idx, arr) => arr.indexOf(val) === idx)
 		.join("\n");

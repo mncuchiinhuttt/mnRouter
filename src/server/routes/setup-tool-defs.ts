@@ -132,7 +132,7 @@ export function getToolDefs(
 		openclaw: {
 			id: "openclaw",
 			name: "OpenClaw",
-			vars: [["OPENCLAW_API_BASE", v1], ["OPENCLAW_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
+			vars: [["OPENCLAW_API_BASE", v1], ["OPENCLAW_API_KEY", key]],
 			files: [
 				{
 					path: `${H}.openclaw${S}openclaw.json`,
@@ -162,7 +162,7 @@ export function getToolDefs(
 		opencode: {
 			id: "opencode",
 			name: "OpenCode",
-			vars: [["OPENCODE_BASE_URL", v1], ["OPENCODE_API_KEY", key], ["OPENAI_BASE_URL", v1], ["OPENAI_API_KEY", key]],
+			vars: [["OPENCODE_BASE_URL", v1], ["OPENCODE_API_KEY", key]],
 			files: [
 				{
 					path: `${H}.config${S}opencode${S}opencode.json`,
@@ -180,8 +180,6 @@ export function getToolDefs(
 			vars: [
 				["HERMES_API_BASE", v1],
 				["HERMES_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
 			],
 			files: [
 				{ path: `${H}.hermes${S}config.yaml`, content: `model:\n  default: "claude-sonnet-4-6-ag"\n  provider: "custom:mnrouter"\n\nproviders:\n  mnrouter:\n    name: "mnrouter"\n    base_url: "${v1}"\n    api_key: "${key}"\n    api_mode: "chat_completions"\n` },
@@ -193,8 +191,6 @@ export function getToolDefs(
 			name: "Cursor",
 			vars: [
 				["CURSOR_OPENAI_BASE_URL", v1],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
 			],
 		},
 		"grok-build": {
@@ -203,8 +199,6 @@ export function getToolDefs(
 			vars: [
 				["GROK_API_BASE", v1],
 				["GROK_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
 			],
 			files: [
 				{
@@ -219,8 +213,6 @@ export function getToolDefs(
 			vars: [
 				["DEEPSEEK_BASE_URL", v1],
 				["DEEPSEEK_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
 			],
 			files: [
 				{
@@ -239,10 +231,6 @@ export function getToolDefs(
 			vars: [
 				["PI_API_BASE", v1],
 				["PI_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
-				["ANTHROPIC_BASE_URL", base],
-				["ANTHROPIC_API_KEY", key],
 			],
 			files: [
 				{ path: `${H}.pi${S}agent${S}models.json`, content: `{\n  "providers": {\n    "mnrouter": {\n      "baseUrl": "${v1}",\n      "apiKey": "${key}",\n      "api": "openai-completions",\n      "models": [\n${piModels}\n      ]\n    }\n  }\n}` },
@@ -271,8 +259,6 @@ export function getToolDefs(
 			vars: [
 				["ZCODE_API_BASE", v1],
 				["ZCODE_API_KEY", key],
-				["OPENAI_BASE_URL", v1],
-				["OPENAI_API_KEY", key],
 			],
 		},
 		antigravity: {
