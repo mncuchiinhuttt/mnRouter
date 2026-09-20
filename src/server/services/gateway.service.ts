@@ -3,7 +3,7 @@ import { budgetService } from "./budget.service.js";
 import { modelService } from "./model.service.js";
 import { modelRepo } from "../repositories/model.repository.js";
 import { recordUsage, computeCredits } from "../usage/index.js";
-import { openUpstreamWithFailover, translateUpstreamStream } from "../gateway/router.js";
+import { openUpstreamWithFailover, translateUpstreamStream, releaseConcurrency } from "../gateway/router.js";
 import { aggregateEvents } from "../gateway/ingress/shared.js";
 import { parseOpenAiChat, OpenAiChatFormatter } from "../gateway/ingress/openai-chat.js";
 import { parseAnthropic, AnthropicFormatter } from "../gateway/ingress/anthropic.js";
@@ -75,6 +75,17 @@ export class GatewayService {
 				return errorResponse(kind, 403, `Model '${resolved.id}' is not enabled for this account`, "model_forbidden");
 			}
 		}
+		// Extract session identifier for Sticky Prompt Caching (OMP, Claude Code, Cursor, Pi, etc.)
+		const rawHeaders = req.headers;
+		const sessionId =
+			rawHeaders.get("x-session-id") ||
+			rawHeaders.get("x-conversation-id") ||
+			rawHeaders.get("x-omp-session") ||
+			rawHeaders.get("session-id") ||
+			parsedBody.session_id ||
+			parsedBody.conversation_id ||
+			parsedBody.prompt_cache_key ||
+			(parsedBody.metadata?.user_id ? String(parsedBody.metadata.user_id) : undefined);
 
 		let canonical: CanonicalRequest;
 		const formatter = kind === "anthropic" ? new AnthropicFormatter(resolved.id) : kind === "openai-responses" ? new OpenAiResponsesFormatter(resolved.id) : new OpenAiChatFormatter(resolved.id);
@@ -90,7 +101,7 @@ export class GatewayService {
 
 		let upstream: { attempt: any; connectionId: string; connectionLabel: string };
 		try {
-			upstream = await openUpstreamWithFailover(resolved.provider, canonical);
+			upstream = await openUpstreamWithFailover(resolved.provider, canonical, { sessionId });
 		} catch (err) {
 			const status = err instanceof UpstreamError ? err.httpStatus : 502;
 			const code = err instanceof UpstreamError ? err.errorCode : "upstream_error";
@@ -144,10 +155,9 @@ export class GatewayService {
 					for (const chunk of formatter.format({ type: "error", errorCode: "stream_error", message: (err as Error).message, retryable: false })) {
 						controller.enqueue(encoder.encode(chunk));
 					}
+				} finally {
+					releaseConcurrency(upstream.connectionId);
 				}
-
-
-				controller.close();
 				const finalUsage = estimated ? estimateUsage(canonical, completionChars) : usageBox.usage;
 				recordUsage({
 					userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: upstream.connectionId, model: resolved.id,
@@ -214,6 +224,7 @@ export class GatewayService {
 				if (ev.type === "start") ttftTracker.value ??= Date.now() - startedAt;
 				if (ev.type === "text_delta") completionChars += ev.delta.length;
 			}
+			releaseConcurrency(upstream.connectionId);
 			const { result, error } = aggregateEvents(events);
 			if (!result) throw new UpstreamError(error?.message ?? "upstream error", 502, error?.code ?? "upstream_error", false);
 
@@ -276,6 +287,7 @@ export class GatewayService {
 			};
 			return new Response(JSON.stringify(formatter.formatNonStream(result, resolved.id)), { status: 200, headers: nonStreamHeaders });
 		} catch (err) {
+			releaseConcurrency(upstream.connectionId);
 			const status = err instanceof UpstreamError ? err.httpStatus : 502;
 			recordUsage({
 				userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: upstream.connectionId, model: resolved.id,

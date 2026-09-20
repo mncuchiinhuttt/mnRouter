@@ -13,6 +13,60 @@ import { refreshProviderToken } from "./oauth.js";
 import { isAntigravityExhaustedForModel } from "../services/antigravity-quota.service.js";
 export type RoutingSettings = typeof DEFAULT_SETTINGS.routing;
 
+// In-Flight Concurrency limits per connection by provider family
+const MAX_CONCURRENCY_BY_PROVIDER: Record<string, number> = {
+	antigravity: 3,
+	kiro: 2,
+	codex: 4,
+	claude: 3,
+	opencode: 5,
+};
+
+const inFlightMap = new Map<string, number>();
+const inFlightLabels = new Map<string, string>();
+let queuedWaitersCount = 0;
+
+export function getInFlightStats() {
+	const byConnection: Record<string, number> = {};
+	let totalActive = 0;
+	for (const [id, count] of inFlightMap.entries()) {
+		if (count > 0) {
+			const label = inFlightLabels.get(id) || id;
+			byConnection[label] = count;
+			totalActive += count;
+		}
+	}
+	return { totalActive, queuedRequests: queuedWaitersCount, byConnection };
+}
+
+export function acquireConcurrency(connId: string, label?: string) {
+	const current = inFlightMap.get(connId) || 0;
+	inFlightMap.set(connId, current + 1);
+	if (label) inFlightLabels.set(connId, label);
+}
+
+export function releaseConcurrency(connId: string) {
+	const current = inFlightMap.get(connId) || 0;
+	if (current <= 1) {
+		inFlightMap.delete(connId);
+	} else {
+		inFlightMap.set(connId, current - 1);
+	}
+}
+
+// Session Affinity Map: sessionId -> { connectionId, expiresAt }
+const sessionAffinity = new Map<string, { connectionId: string; expiresAt: number }>();
+const AFFINITY_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+export function recordSessionAffinity(sessionId: string, connectionId: string) {
+	if (!sessionId) return;
+	sessionAffinity.set(sessionId, { connectionId, expiresAt: Date.now() + AFFINITY_TTL_MS });
+}
+
+export function clearSessionAffinity(sessionId: string) {
+	if (sessionId) sessionAffinity.delete(sessionId);
+}
+
 export async function getRoutingSettings(): Promise<RoutingSettings> {
 	const [row] = await db.select().from(settingsTable).where(eq(settingsTable.key, "routing"));
 	return { ...DEFAULT_SETTINGS.routing, ...((row?.value as Partial<RoutingSettings>) ?? {}) };
@@ -29,7 +83,12 @@ function cooldownRemaining(conn: ConnRow): number {
 	return typeof until === "number" ? Math.max(0, until - Date.now()) : 0;
 }
 
-async function orderConnections(provider: ProviderId, strategy: string, modelId?: string): Promise<ConnRow[]> {
+async function orderConnections(
+	provider: ProviderId,
+	strategy: string,
+	modelId?: string,
+	sessionId?: string,
+): Promise<ConnRow[]> {
 	const rows = await db
 		.select()
 		.from(providerConnections)
@@ -57,11 +116,43 @@ async function orderConnections(provider: ProviderId, strategy: string, modelId?
 		}
 	}
 
-	if (strategy === "round-robin") {
-		usable.sort((a, b) => (dataOf(a).lastUsedAt ?? 0) - (dataOf(b).lastUsedAt ?? 0));
-	} else {
-		usable.sort((a, b) => a.priority - b.priority);
+	const maxLimit = MAX_CONCURRENCY_BY_PROVIDER[provider] || 3;
+
+	// Sort candidate accounts:
+	// 1. Least in-flight connections first (under saturation limit)
+	// 2. Round-robin or Priority
+	usable.sort((a, b) => {
+		const inFlightA = inFlightMap.get(a.id) || 0;
+		const inFlightB = inFlightMap.get(b.id) || 0;
+		const saturatedA = inFlightA >= maxLimit ? 1 : 0;
+		const saturatedB = inFlightB >= maxLimit ? 1 : 0;
+		if (saturatedA !== saturatedB) return saturatedA - saturatedB;
+		if (inFlightA !== inFlightB) return inFlightA - inFlightB;
+
+		if (strategy === "round-robin") {
+			return (dataOf(a).lastUsedAt ?? 0) - (dataOf(b).lastUsedAt ?? 0);
+		}
+		return a.priority - b.priority;
+	});
+
+	// Sticky Session Affinity: If incoming request belongs to an active session,
+	// prioritize the previously pinned connection to reuse its prompt cache!
+	if (sessionId) {
+		const pinned = sessionAffinity.get(sessionId);
+		if (pinned && pinned.expiresAt > Date.now()) {
+			const idx = usable.findIndex((c) => c.id === pinned.connectionId);
+			if (idx > 0) {
+				const pinnedConn = usable[idx]!;
+				const pinnedInFlight = inFlightMap.get(pinnedConn.id) || 0;
+				// Only pin if not heavily saturated
+				if (pinnedInFlight < maxLimit + 1) {
+					usable.splice(idx, 1);
+					usable.unshift(pinnedConn);
+				}
+			}
+		}
 	}
+
 	return usable;
 }
 
@@ -158,14 +249,18 @@ export interface UpstreamAttempt {
 export async function openUpstreamWithFailover(
 	provider: ProviderId,
 	canonical: CanonicalRequest,
-	opts?: { connIdHint?: string },
+	opts?: { connIdHint?: string; sessionId?: string },
 ): Promise<{ attempt: UpstreamAttempt; connectionId: string; connectionLabel: string }> {
 	const routing = await getRoutingSettings();
 	const maxAttempts = opts?.connIdHint ? 1 : (routing.maxConnectionAttempts ?? 3);
+	const sessionId = opts?.sessionId;
 
-	let candidates = await orderConnections(provider, routing.strategy, canonical.upstreamModel || canonical.model);
+	let candidates = await orderConnections(provider, routing.strategy, canonical.upstreamModel || canonical.model, sessionId);
 	if (opts?.connIdHint) candidates = candidates.filter((c) => c.id === opts.connIdHint);
 	if (candidates.length === 0) {
+		void import("../services/telegram.service.js").then(({ telegramService }) => {
+			void telegramService.notifyAllConnectionsDown(provider, canonical.model);
+		});
 		throw new UpstreamError(`no active connection for provider "${provider}" (all cooling down or none configured)`, 503, "no_connection", false);
 	}
 
@@ -220,8 +315,11 @@ export async function openUpstreamWithFailover(
 				if (canRetry && tried < maxAttempts) continue;
 				throw new UpstreamError(`upstream ${lastStatus}: ${lastBody.slice(0, 300)}`, lastStatus, "upstream_error", false);
 			}
+			acquireConcurrency(conn.id, conn.label);
+			if (sessionId) recordSessionAffinity(sessionId, conn.id);
 			return { attempt: { conn, res: succeeded.res, parser: succeeded.parser }, connectionId: conn.id, connectionLabel: conn.label };
 		} catch (err) {
+			if (sessionId) clearSessionAffinity(sessionId);
 			if (err instanceof UpstreamError && !err.retryable && err.httpStatus !== 401 && err.httpStatus !== 403) throw err;
 			errors.push(`${conn.label}: ${(err as Error).message}`);
 			if (tried >= maxAttempts) break;

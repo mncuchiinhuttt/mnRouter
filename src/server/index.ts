@@ -50,7 +50,7 @@ import { sessionMiddleware } from "./auth/guards.js";
 import { startRefresher, stopRefresher } from "./gateway/refresher.js";
 import { startChatSweeper, stopChatSweeper } from "./chat/sweeper.js";
 import { userRepo } from "./repositories/user.repository.js";
-
+import { telegramBackupService } from "./services/telegram-backup.service.js";
 const app = new Hono();
 
 app.use("*", sessionMiddleware());
@@ -118,6 +118,7 @@ void (async () => {
 	}
 	startRefresher();
 	startChatSweeper();
+	telegramBackupService.startSchedule();
 })();
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
@@ -125,6 +126,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 		console.log(`[mnrouter] ${sig} — shutting down`);
 		stopRefresher();
 		stopChatSweeper();
+		telegramBackupService.stopSchedule();
 		process.exit(0);
 	});
 }

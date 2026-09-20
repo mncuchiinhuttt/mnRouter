@@ -5,7 +5,8 @@ import { announcementService } from "./announcement.service.js";
 import { usageRepo } from "../repositories/usage.repository.js";
 import { userRepo } from "../repositories/user.repository.js";
 import { env } from "../env.js";
-
+import { telegramBackupService } from "./telegram-backup.service.js";
+import { getInFlightStats } from "../gateway/router.js";
 export const BOT_COMMANDS = [
 	{ command: "status", description: "Live server health, uptime & connections" },
 	{ command: "usage", description: "Today's request count & credits usage" },
@@ -16,6 +17,8 @@ export const BOT_COMMANDS = [
 	{ command: "invitations", description: "List pending invitations" },
 	{ command: "announce", description: "Post dashboard banner: /announce text" },
 	{ command: "cooldowns", description: "Check failed connections" },
+	{ command: "backup", description: "Snapshot & export database to Telegram" },
+	{ command: "active", description: "Inspect in-flight streaming requests" },
 	{ command: "help", description: "List all commands & syntax" },
 ];
 
@@ -47,6 +50,14 @@ export async function handleTelegramCommand(text: string, chatId: string): Promi
 		case "/cooldown":
 			return getCooldownsText();
 
+		case "/backup": {
+			const res = await telegramBackupService.performBackup(chatId);
+			return res.ok ? "✅ <b>Database snapshot sent to this chat!</b>" : `❌ <b>Backup failed:</b> ${res.message}`;
+		}
+
+		case "/active":
+		case "/streams":
+			return getActiveStreamsText();
 		case "/logs":
 		case "/log":
 			return getLogsText();
@@ -258,4 +269,18 @@ async function handleAnnounce(content: string): Promise<string> {
 	} catch (err) {
 		return `❌ Failed to post announcement: ${(err as Error).message}`;
 	}
+}
+async function getActiveStreamsText(): Promise<string> {
+	const stats = getInFlightStats();
+	const activeConns = Object.entries(stats.byConnection).filter(([, count]) => count > 0);
+
+	if (stats.totalActive === 0) {
+		return `⚡ <b>[Active Requests]</b>\n\n🟢 Server is idle. No in-flight streams right now.`;
+	}
+
+	const lines = activeConns.map(([label, count]) => `• <code>${label}</code>: <b>${count}</b> in-flight`);
+	return `⚡ <b>[Active In-Flight Requests]</b>\n\n` +
+		`📊 <b>Total Streams:</b> <b>${stats.totalActive}</b>\n` +
+		(stats.queuedRequests > 0 ? `⏳ <b>Queued:</b> <b>${stats.queuedRequests}</b> waiting\n\n` : "\n") +
+		`<b>By Connection:</b>\n${lines.join("\n")}`;
 }

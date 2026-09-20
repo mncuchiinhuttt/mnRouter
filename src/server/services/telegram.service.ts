@@ -123,7 +123,61 @@ export class TelegramService {
 			`<i>mnRouter is automatically failing over to healthy connections.</i>`;
 		await this.sendMessage(text);
 	}
+	async notifyAllConnectionsDown(provider: string, modelId?: string): Promise<void> {
+		const cfg = await this.getConfig();
+		if (!cfg.enabled || !cfg.notifyCooldown) return;
 
+		const now = Date.now();
+		const key = `all-down:${provider}`;
+		const last = this.lastCooldownAlerts.get(key) ?? 0;
+		if (now - last < 5 * 60 * 1000) return;
+		this.lastCooldownAlerts.set(key, now);
+
+		const text = `🚨 <b>[CRITICAL ALERT] All Connections Down!</b>\n\n` +
+			`🔌 <b>Provider:</b> <code>${provider.toUpperCase()}</code>\n` +
+			(modelId ? `🎯 <b>Model:</b> <code>${modelId}</code>\n` : "") +
+			`⚠️ <b>State:</b> Zero healthy connections available! All accounts are currently cooling down, expired, or rate-limited.\n` +
+			`⏱ <b>Time:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n\n` +
+			`<i>Please check provider quotas or login tokens on Admin dashboard.</i>`;
+		await this.sendMessage(text);
+	}
+
+	async notifyTokenRefreshFailed(provider: string, label: string, errorMsg: string): Promise<void> {
+		const cfg = await this.getConfig();
+		if (!cfg.enabled || !cfg.notifyErrors) return;
+
+		const now = Date.now();
+		const key = `refresh-fail:${provider}:${label}`;
+		const last = this.lastCooldownAlerts.get(key) ?? 0;
+		if (now - last < 15 * 60 * 1000) return; // 15m debounce
+		this.lastCooldownAlerts.set(key, now);
+
+		const text = `🔑 <b>[mnRouter Alert] Token Refresh Expired</b>\n\n` +
+			`🔌 <b>Provider:</b> <code>${provider}</code>\n` +
+			`🏷 <b>Account:</b> <code>${label}</code>\n` +
+			`❌ <b>Error:</b> <code>${errorMsg.slice(0, 250)}</code>\n` +
+			`⏱ <b>Time:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n\n` +
+			`<i>This account has been marked expired. Please re-authenticate via OAuth in Admin Connections.</i>`;
+		await this.sendMessage(text);
+	}
+
+	async notifyBudgetExceeded(email: string, used: number, budget: number): Promise<void> {
+		const cfg = await this.getConfig();
+		if (!cfg.enabled || !cfg.notifyErrors) return;
+
+		const now = Date.now();
+		const key = `budget:${email}`;
+		const last = this.lastCooldownAlerts.get(key) ?? 0;
+		if (now - last < 60 * 60 * 1000) return; // 1h debounce per user
+		this.lastCooldownAlerts.set(key, now);
+
+		const text = `⚠️ <b>[mnRouter Alert] User Budget Exceeded</b>\n\n` +
+			`👤 <b>User:</b> <code>${email}</code>\n` +
+			`🪙 <b>Used:</b> ${used.toLocaleString()} / ${budget.toLocaleString()} cr\n` +
+			`⏱ <b>Time:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n\n` +
+			`<i>User requests are temporarily throttled until reset next Monday.</i>`;
+		await this.sendMessage(text);
+	}
 	async notifyInvitationAccepted(email: string, packageName?: string | null): Promise<void> {
 		const cfg = await this.getConfig();
 		if (!cfg.enabled || !cfg.notifyNewUsers) return;
