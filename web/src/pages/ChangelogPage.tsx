@@ -34,6 +34,36 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "codex-quota-and-catalog-streamline",
+		commit: "8bb3094",
+		time: "02:25",
+		date: "2026-09-21",
+		fullDateTime: "21/09/2026 02:25 (GMT+7)",
+		type: "added",
+		scope: "core",
+		title: "feat: add real-time OpenAI Codex Wham quota tracking, streamline Antigravity & Codex models, and restore full i18n",
+		summary: "Integrated real-time quota telemetry for OpenAI Codex accounts directly from ChatGPT Wham API, synced 2 new Codex enterprise accounts, streamlined default catalog to active high-performing models, and restored comprehensive multilingual translations.",
+		highlights: [
+			"Real-Time OpenAI Codex Quota Tracking: integrated GET /backend-api/wham/usage to extract primary rolling 5-hour window, weekly quota, plan type (k12/plus), and live reset countdowns directly onto the admin quota dashboard",
+			"Visualized Codex Account Cards: added dedicated CodexQuotaView with multi-window progress bars, color-coded threshold alerts (warning at <20%), and live verified badges",
+			"Streamlined Antigravity Model Catalog: pruned deprecated Gemini variants down to 5 verified models (gemini-3.8-flash, claude-sonnet-4-6-ag, gemini-3.5-flash-lite, gemini-3.1-pro, claude-opus-4-6-ag)",
+			"Streamlined Codex Catalog: retained GPT-6 Astra and the full GPT-5.6 family (Sol, Terra, Luna) while removing legacy v5.4/v5.5 variants",
+			"Frontier Benchmarks Leaderboard: deployed a 2-row balanced grid layout with natural Vietnamese and English descriptions for all 9 international benchmarks",
+			"Complete i18n Restoration: verified and restored all namespaces across all 780+ dictionary lines in both English and Vietnamese"
+		],
+		files: [
+			"src/server/services/codex-quota.service.ts",
+			"src/server/routes/admin-quotas.ts",
+			"src/server/gateway/models.ts",
+			"src/server/services/model.service.ts",
+			"web/src/components/admin/account-quota-card.tsx",
+			"web/src/components/admin/codex-quota-view.tsx",
+			"web/src/components/frontier-benchmarks-section.tsx",
+			"web/src/i18n/vi.ts",
+			"web/src/i18n/en.ts"
+		],
+	},
+	{
 		id: "kiro-reliability-and-dark-mode",
 		commit: "b74c63c",
 		time: "23:45",
