@@ -25,8 +25,8 @@ rm -f ./mnrouter
 echo "==> 4. Restart service & health check…"
 ssh "$REMOTE" "
 pkill -9 mnrouter || true
-sleep 3
-curl -sf http://127.0.0.1:8787/healthz && echo ''
+sleep 5
+curl -sf --retry 5 --retry-connrefused --retry-delay 1 http://127.0.0.1:8787/healthz && echo ''
 "
 
 echo "==> ✅ Deployed successfully! Service running on $REMOTE."

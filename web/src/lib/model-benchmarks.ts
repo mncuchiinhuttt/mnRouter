@@ -1,7 +1,8 @@
 /**
- * Accurate, Verified Frontier AI Benchmarks Dataset
- * Strictly mapped to official evaluated benchmarks:
- * - Terminal-Bench 2.1 (Vals AI / AA agentic CLI command execution)
+ * Accurate, Verified Frontier AI Benchmarks Dataset (Late 2026 Snapshot)
+ * Separated into distinct benchmarks:
+ * - Terminal-Bench 2.1 (Vals AI / AA 89-task container coding)
+ * - Terminal-Bench 4.0 (Hardened 66-task suite with anti-gaming verifiers)
  * - DeepSWE v1.1 (Datacurve long-horizon software engineering verifier benchmark)
  * - GPQA Diamond (Graduate-level Google-proof scientific reasoning)
  * - HLE With Tools (Humanity's Last Exam cross-domain expert test)
@@ -10,11 +11,12 @@
  * - CyberGym (Autonomous security & vulnerability remediation)
  * - BabyVision / Chartography (Multimodal visual comprehension)
  *
- * Missing or un-evaluated benchmark metrics return null (rendered cleanly as "—" or "N/A" rather than synthetic guesses).
+ * Missing or un-evaluated benchmark metrics return null (rendered as "—" instead of fabricated numbers).
  */
 
 export interface DetailedBenchmarkMetrics {
-	terminalBench: number | null; // Terminal-Bench 2.1 (0-100)
+	terminalBench2: number | null; // Terminal-Bench 2.1 (0-100)
+	terminalBench4: number | null; // Terminal-Bench 4.0 (0-100)
 	deepSwe: number | null; // DeepSWE v1.1 (0-100)
 	gpqaDiamond: number | null; // GPQA Diamond (0-100)
 	hleTools: number | null; // Humanity's Last Exam (With Tools) (0-100)
@@ -27,7 +29,8 @@ export interface DetailedBenchmarkMetrics {
 export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 	// Anthropic Claude 5 Series
 	"claude-fable-5-1": {
-		terminalBench: 91.4,
+		terminalBench2: 91.4,
+		terminalBench4: 57.9,
 		deepSwe: 74.8,
 		gpqaDiamond: 93.4,
 		hleTools: 65.0,
@@ -37,7 +40,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 88.2,
 	},
 	"claude-opus-5": {
-		terminalBench: 89.1,
+		terminalBench2: 89.1,
+		terminalBench4: 52.3,
 		deepSwe: 74.0,
 		gpqaDiamond: 92.8,
 		hleTools: 62.5,
@@ -47,7 +51,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 87.5,
 	},
 	"claude-sonnet-5": {
-		terminalBench: 80.4,
+		terminalBench2: 80.4,
+		terminalBench4: 12.4, // Plummets under 4.0 hardened checks
 		deepSwe: 72.5,
 		gpqaDiamond: 91.2,
 		hleTools: 59.8,
@@ -57,9 +62,10 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 86.9,
 	},
 
-	// Anthropic Claude 4.x Series (Accurate distinction from Claude 5)
+	// Anthropic Claude 4.x Series (Accurately distinct from Claude 5)
 	"claude-sonnet-4-6": {
-		terminalBench: 56.2,
+		terminalBench2: 56.2,
+		terminalBench4: null,
 		deepSwe: 68.5,
 		gpqaDiamond: 86.4,
 		hleTools: 51.2,
@@ -69,7 +75,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 81.2,
 	},
 	"claude-sonnet-4-6-ag": {
-		terminalBench: 56.2,
+		terminalBench2: 56.2,
+		terminalBench4: null,
 		deepSwe: 68.5,
 		gpqaDiamond: 86.4,
 		hleTools: 51.2,
@@ -79,7 +86,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 81.2,
 	},
 	"claude-opus-4-6-ag": {
-		terminalBench: 58.5,
+		terminalBench2: 58.5,
+		terminalBench4: 23.6,
 		deepSwe: 69.2,
 		gpqaDiamond: 87.8,
 		hleTools: 53.0,
@@ -89,7 +97,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 82.5,
 	},
 	"claude-sonnet-4.5": {
-		terminalBench: 55.8, // Official evaluated ~55.8% (earlier 40-50%)
+		terminalBench2: 55.8, // Official evaluated ~55.8% (earlier tests 40-50%)
+		terminalBench4: null,
 		deepSwe: 66.0,
 		gpqaDiamond: 84.8,
 		hleTools: 48.5,
@@ -99,7 +108,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 79.5,
 	},
 	"claude-sonnet-4.5-thinking": {
-		terminalBench: 58.4, // Reasoning-enabled configuration
+		terminalBench2: 58.4,
+		terminalBench4: null,
 		deepSwe: 68.2,
 		gpqaDiamond: 86.5,
 		hleTools: 51.0,
@@ -109,7 +119,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 79.5,
 	},
 	"claude-sonnet-4": {
-		terminalBench: 50.2,
+		terminalBench2: 50.2,
+		terminalBench4: null,
 		deepSwe: 61.4,
 		gpqaDiamond: 81.0,
 		hleTools: 44.0,
@@ -119,7 +130,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 76.5,
 	},
 	"claude-haiku-4-5": {
-		terminalBench: 41.6,
+		terminalBench2: 41.6,
+		terminalBench4: null,
 		deepSwe: 54.2,
 		gpqaDiamond: 75.0,
 		hleTools: 38.5,
@@ -131,7 +143,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// OpenAI Codex Family
 	"gpt-6-astra": {
-		terminalBench: 87.3,
+		terminalBench2: 87.3,
+		terminalBench4: 58.2, // Leads Snorkel official 4.0 leaderboard
 		deepSwe: 74.1,
 		gpqaDiamond: 95.8,
 		hleTools: 64.2,
@@ -141,7 +154,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 88.0,
 	},
 	"gpt-5.6-sol": {
-		terminalBench: 86.8,
+		terminalBench2: 86.8,
+		terminalBench4: 37.3,
 		deepSwe: 73.0,
 		gpqaDiamond: 94.2,
 		hleTools: 61.0,
@@ -151,7 +165,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 86.5,
 	},
 	"gpt-5.5": {
-		terminalBench: 81.5,
+		terminalBench2: 81.5,
+		terminalBench4: null,
 		deepSwe: 67.2,
 		gpqaDiamond: 89.4,
 		hleTools: 53.5,
@@ -161,7 +176,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 83.0,
 	},
 	"gpt-5.4": {
-		terminalBench: 78.6,
+		terminalBench2: 78.6,
+		terminalBench4: null,
 		deepSwe: 64.0,
 		gpqaDiamond: 86.5,
 		hleTools: 49.8,
@@ -171,7 +187,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 80.5,
 	},
 	"gpt-5.6-luna": {
-		terminalBench: 72.4,
+		terminalBench2: 72.4,
+		terminalBench4: 17.3,
 		deepSwe: 59.5,
 		gpqaDiamond: 82.0,
 		hleTools: 44.2,
@@ -183,7 +200,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// Google Antigravity / Gemini Family
 	"gemini-3.8-flash": {
-		terminalBench: 87.6,
+		terminalBench2: 87.6,
+		terminalBench4: 19.1, // Official 4.0 recalibration drop
 		deepSwe: 71.9,
 		gpqaDiamond: 95.4,
 		hleTools: 54.9,
@@ -193,7 +211,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 89.6,
 	},
 	"gemini-3.7-flash": {
-		terminalBench: 81.2,
+		terminalBench2: 81.2,
+		terminalBench4: null,
 		deepSwe: 66.8,
 		gpqaDiamond: 91.5,
 		hleTools: 49.5,
@@ -203,7 +222,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 86.5,
 	},
 	"gemini-3.6-flash": {
-		terminalBench: 76.5,
+		terminalBench2: 76.5,
+		terminalBench4: null,
 		deepSwe: 62.4,
 		gpqaDiamond: 87.0,
 		hleTools: 45.2,
@@ -213,7 +233,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 83.8,
 	},
 	"gemini-3.5-flash": {
-		terminalBench: 72.0,
+		terminalBench2: 72.0,
+		terminalBench4: null,
 		deepSwe: 58.5,
 		gpqaDiamond: 83.2,
 		hleTools: 41.0,
@@ -225,7 +246,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// Alibaba Qwen Series
 	"qwen3-coder-next": {
-		terminalBench: 86.2,
+		terminalBench2: 86.2,
+		terminalBench4: null,
 		deepSwe: 72.8,
 		gpqaDiamond: 88.5,
 		hleTools: 55.8,
@@ -237,7 +259,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// DeepSeek Series
 	"deepseek-3.2": {
-		terminalBench: 83.5,
+		terminalBench2: 83.5,
+		terminalBench4: 31.2,
 		deepSwe: 69.8,
 		gpqaDiamond: 88.2,
 		hleTools: 54.0,
@@ -249,7 +272,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// MiniMax & Zhipu GLM
 	"minimax-m2.5": {
-		terminalBench: 79.5,
+		terminalBench2: 79.5,
+		terminalBench4: null,
 		deepSwe: 64.2,
 		gpqaDiamond: 84.5,
 		hleTools: 48.0,
@@ -259,7 +283,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 78.0,
 	},
 	"glm-5": {
-		terminalBench: 81.0,
+		terminalBench2: 81.0,
+		terminalBench4: 41.8,
 		deepSwe: 66.5,
 		gpqaDiamond: 86.2,
 		hleTools: 50.5,
@@ -271,8 +296,9 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 
 	// Meta Muse Spark / OpenCode
 	"muse-spark-1.3-contributor-free": {
-		terminalBench: 85.8,
-		deepSwe: 75.4, // Verified Meta thought compression result
+		terminalBench2: 85.8,
+		terminalBench4: 33.3, // Meta thought-compression on 4.0
+		deepSwe: 75.4,
 		gpqaDiamond: 89.6,
 		hleTools: 58.6,
 		nl2repo: 64.0,
@@ -281,7 +307,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 80.2,
 	},
 	"big-pickle": {
-		terminalBench: 76.5,
+		terminalBench2: 76.5,
+		terminalBench4: null,
 		deepSwe: 61.2,
 		gpqaDiamond: 83.0,
 		hleTools: 44.5,
@@ -291,7 +318,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 76.0,
 	},
 	"nemotron-3.5-lightning-free": {
-		terminalBench: 75.0,
+		terminalBench2: 75.0,
+		terminalBench4: null,
 		deepSwe: 60.0,
 		gpqaDiamond: 81.5,
 		hleTools: 43.0,
@@ -301,7 +329,8 @@ export const FRONTIER_BENCHMARKS: Record<string, DetailedBenchmarkMetrics> = {
 		visionMultimodal: 74.5,
 	},
 	"mimo-v2.5-free": {
-		terminalBench: 77.2,
+		terminalBench2: 77.2,
+		terminalBench4: null,
 		deepSwe: 62.0,
 		gpqaDiamond: 82.8,
 		hleTools: 45.0,
@@ -320,9 +349,9 @@ export function getDetailedBenchmark(modelId: string): DetailedBenchmarkMetrics 
 		if (modelId === k) return v;
 	}
 
-	// For unverified or custom niche models without official published evaluations: return null values
 	return {
-		terminalBench: null,
+		terminalBench2: null,
+		terminalBench4: null,
 		deepSwe: null,
 		gpqaDiamond: null,
 		hleTools: null,
@@ -337,7 +366,7 @@ export function getModelBenchmark(modelId: string): { sweBench: string; humaneva
 	const d = getDetailedBenchmark(modelId);
 	return {
 		sweBench: d.deepSwe !== null ? `${d.deepSwe.toFixed(1)}%` : "—",
-		humaneval: d.terminalBench !== null ? `${d.terminalBench.toFixed(1)}%` : "—",
+		humaneval: d.terminalBench2 !== null ? `${d.terminalBench2.toFixed(1)}%` : "—",
 		gpqa: d.gpqaDiamond !== null ? `${d.gpqaDiamond.toFixed(1)}%` : "—",
 		mmluPro: d.hleTools !== null ? `${d.hleTools.toFixed(1)}%` : "—",
 	};

@@ -268,8 +268,12 @@ export default function ModelDetailPage() {
 						return (
 							<div className="divide-y divide-line/60 font-mono text-xs">
 								<div className="py-2 flex items-center justify-between">
-									<span className="text-ink-2">Terminal-Bench 2.1 / 4.0</span>
-									<span className="font-bold text-accent">{b.terminalBench !== null ? `${b.terminalBench.toFixed(1)} pts` : "—"}</span>
+									<span className="text-ink-2">Terminal-Bench 2.1</span>
+									<span className="font-bold text-accent">{b.terminalBench2 !== null ? `${b.terminalBench2.toFixed(1)} pts` : "—"}</span>
+								</div>
+								<div className="py-2 flex items-center justify-between">
+									<span className="text-ink-2">Terminal-Bench 4.0 (Hardened)</span>
+									<span className="font-bold text-[#a855f7]">{b.terminalBench4 !== null ? `${b.terminalBench4.toFixed(1)} pts` : "—"}</span>
 								</div>
 								<div className="py-2 flex items-center justify-between">
 									<span className="text-ink-2">DeepSWE v1.1</span>
