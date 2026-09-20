@@ -108,7 +108,7 @@ export class GatewayService {
 			recordUsage({ userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: null, model: resolved.id, endpoint: kind, status: "error", httpStatus: status, errorCode: code, latencyMs: Date.now() - startedAt, meta: { message: (err as Error).message.slice(0, 300) } });
 			return errorResponse(kind, status, (err as Error).message, code);
 		}
-
+		budgetService.acquireCreditHold(auth.user.id);
 		if (canonical.stream) return this.handleStream(upstream, formatter, auth, resolved, kind, startedAt, canonical);
 		return this.handleNonStream(upstream, formatter, auth, resolved, kind, startedAt, canonical);
 	}
@@ -157,6 +157,7 @@ export class GatewayService {
 					}
 				} finally {
 					releaseConcurrency(upstream.connectionId);
+					budgetService.releaseCreditHold(auth.user.id);
 				}
 				const finalUsage = estimated ? estimateUsage(canonical, completionChars) : usageBox.usage;
 				recordUsage({
@@ -225,6 +226,7 @@ export class GatewayService {
 				if (ev.type === "text_delta") completionChars += ev.delta.length;
 			}
 			releaseConcurrency(upstream.connectionId);
+			budgetService.releaseCreditHold(auth.user.id);
 			const { result, error } = aggregateEvents(events);
 			if (!result) throw new UpstreamError(error?.message ?? "upstream error", 502, error?.code ?? "upstream_error", false);
 
@@ -288,6 +290,7 @@ export class GatewayService {
 			return new Response(JSON.stringify(formatter.formatNonStream(result, resolved.id)), { status: 200, headers: nonStreamHeaders });
 		} catch (err) {
 			releaseConcurrency(upstream.connectionId);
+			budgetService.releaseCreditHold(auth.user.id);
 			const status = err instanceof UpstreamError ? err.httpStatus : 502;
 			recordUsage({
 				userId: auth.user.id, apiKeyId: auth.apiKey.id, provider: resolved.provider, connectionId: upstream.connectionId, model: resolved.id,

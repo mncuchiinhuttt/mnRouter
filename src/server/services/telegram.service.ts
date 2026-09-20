@@ -215,8 +215,19 @@ export class TelegramService {
 		const message = body?.message || body?.channel_post;
 		if (!message || !message.text) return;
 
-		const chatId = String(message.chat?.id);
+		const chatId = String(message.chat?.id || "");
 		const text = message.text.trim();
+		const cfg = await this.getConfig();
+
+		// Security Check: If a chatId is configured, only respond to authorized admin/chat
+		if (cfg.chatId && chatId !== String(cfg.chatId)) {
+			console.warn(`[telegram] unauthorized access attempt from chat ID: ${chatId}`);
+			// Only allow /chatid so unknown users can identify their chat ID to provide to admin
+			if (text.startsWith("/chatid")) {
+				await this.sendMessage(`🆔 Your Telegram Chat ID is: <code>${chatId}</code>\n\n<i>Unauthorized to execute mnRouter commands.</i>`, undefined, chatId);
+			}
+			return;
+		}
 
 		const reply = await handleTelegramCommand(text, chatId);
 		await this.sendMessage(reply, undefined, chatId);
