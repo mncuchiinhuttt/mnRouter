@@ -34,6 +34,47 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "kiro-reliability-and-dark-mode",
+		commit: "b74c63c",
+		time: "23:45",
+		date: "2026-09-20",
+		fullDateTime: "20/09/2026 23:45 (GMT+7)",
+		type: "added",
+		scope: "core",
+		title: "feat: add 6 Kiro accounts, hourly Telegram DB backups, Concurrency queue, Doctor CLI & Dark Mode",
+		summary: "Expanded gateway provider network with 6 AWS Kiro accounts and 8 free coding models, added hourly point-in-time SQLite backups via Telegram, real-time socket telemetry, background health prober, prompt cache session affinity, one-click Harness Doctor diagnostics, and native system-wide dark mode.",
+		highlights: [
+			"Imported 6 AWS Kiro OAuth accounts from 9Router and configured 8 free text coding models: Qwen3 Coder Next, DeepSeek 3.2, MiniMax M2.5, GLM 5, Claude Sonnet 4.5 (Thinking), Sonnet 4.5, Sonnet 4, and Haiku 4.5",
+			"Real-time Kiro credit quota monitoring: integrates directly with AWS CodeWhisperer getUsageLimits to track remaining free credits, monthly usage, and renewal countdown",
+			"Hourly automated SQLite online backup: uses SQLite VACUUM INTO and gzip compression to deliver safe point-in-time snapshots directly to Telegram chat with on-demand /backup bot command",
+			"In-Flight Concurrency Limiting: protects Kiro and Antigravity accounts from burst concurrency spikes (HTTP 429), automatically load-balancing to idle connections",
+			"In-Flight Credit Hold: eliminates race-condition budget overruns by temporarily reserving credits during active streaming turns",
+			"Session Affinity & Prompt Cache Reuse: routes subsequent chat turns with matching session IDs to the identical upstream account, achieving 90%+ prompt cache hits on Claude and Gemini",
+			"Automated Upstream Health Probing: background prober checks idle and cooldown connections every 15 minutes, automatically recovering healthy accounts",
+			"One-Click Harness Doctor & CLI Diagnostics: introduced /doctor.sh and /doctor.ps1 plus interactive in-browser diagnostics on /config",
+			"Live Stream Telemetry Matrix: visual server blade matrix with pulsing LED status indicators tracking active socket streams",
+			"Context Window Mini-Radar: pre-dispatch segmented token radar in /chat visualizing system prompt, history, attachments, and headroom",
+			"Complete Dark Mode system: theme switcher component with localStorage persistence and refined dark tech surfaces across all views",
+			"Preserved client tool calling: merged user tools with coding agent tools to prevent 'Model generated invalid tool call' errors in Hermes and autonomous agents"
+		],
+		files: [
+			"src/server/services/telegram-backup.service.ts",
+			"src/server/gateway/prober.ts",
+			"src/server/gateway/router.ts",
+			"src/server/services/gateway.service.ts",
+			"src/server/services/budget.service.ts",
+			"src/server/services/telegram.service.ts",
+			"src/server/services/telegram-commands.ts",
+			"src/server/routes/setup-scripts.ts",
+			"web/src/components/admin/harness-doctor-panel.tsx",
+			"web/src/components/admin/live-telemetry-matrix.tsx",
+			"web/src/components/chat/context-radar.tsx",
+			"web/src/components/theme-toggle.tsx",
+			"web/src/pages/IssuePage.tsx",
+			"web/src/index.css"
+		],
+	},
+	{
 		id: "issues-portal-and-cli-tools-expansion",
 		commit: "6733b0a",
 		time: "01:25",

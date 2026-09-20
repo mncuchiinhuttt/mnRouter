@@ -77,10 +77,17 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 				const randBytes = crypto.getRandomValues(new Uint8Array(14));
 				const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 				const dynamicSessionId = "ses_" + hexPart + Array.from(randBytes, (p) => chars[p % 62]).join("");
+				const clientTools = Array.isArray(baseBody.tools) ? (baseBody.tools as any[]) : [];
+				const clientToolNames = new Set(clientTools.map((t) => t?.name || t?.function?.name).filter(Boolean));
+				// Include all client tools first (like skill, search, execute) + backfill OpenCode coding agent tools
+				const mergedTools = [
+					...clientTools,
+					...OPENCODE_AGENT_TOOLS.filter((t) => !clientToolNames.has(t.name)),
+				];
 
 				const fullBody = {
 					...baseBody,
-					tools: OPENCODE_AGENT_TOOLS,
+					tools: mergedTools,
 					prompt_cache_key: dynamicSessionId,
 				};
 

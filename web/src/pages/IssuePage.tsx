@@ -47,25 +47,25 @@ interface IssueItem {
 	images: IssueImage[];
 }
 
-const PLATFORM_OPTIONS = [
-	{ id: "claude_code", name: "Claude Code", category: "CLI Harness", icon: "/harnesses/claude.png", desc: "Anthropic Claude Code CLI workspace" },
-	{ id: "claude_cowork", name: "Claude Cowork", category: "Desktop & Agent", icon: "/harnesses/claude.png", desc: "Claude Desktop and Cowork agent" },
+const getPlatformOptions = (isVi: boolean) => [
+	{ id: "claude_code", name: "Claude Code", category: "CLI Harness", icon: "/harnesses/claude.png", desc: isVi ? "Không gian làm việc CLI Anthropic Claude Code" : "Anthropic Claude Code CLI workspace" },
+	{ id: "claude_cowork", name: "Claude Cowork", category: "Desktop & Agent", icon: "/harnesses/claude.png", desc: isVi ? "Ứng dụng Claude Desktop và agent Cowork" : "Claude Desktop and Cowork agent" },
 	{ id: "codex", name: "OpenAI Codex", category: "CLI Harness", icon: "/harnesses/codex.png", desc: "OpenAI Codex CLI & /v1/responses" },
-	{ id: "openclaw", name: "OpenClaw", category: "Autonomous Agent", icon: "/harnesses/openclaw.png", desc: "OpenClaw autonomous coding agent" },
-	{ id: "opencode", name: "OpenCode", category: "CLI Harness", icon: "/harnesses/opencode.png", desc: "OpenCode CLI / Zen coding runner" },
-	{ id: "hermes", name: "Hermes Agent", category: "Autonomous Agent", icon: "/harnesses/hermes.png", desc: "Hermes Multi-Agent Framework" },
-	{ id: "cursor", name: "Cursor / Windsurf", category: "Editor & IDE", icon: "/harnesses/cursor.png", desc: "Cursor IDE OpenAI Base URL override" },
-	{ id: "grok_build", name: "Grok Build", category: "xAI Terminal Agent", icon: "/harnesses/grok.png", desc: "xAI Grok Build CLI coding agent" },
-	{ id: "dsh", name: "DSH", category: "Official Web & Headless", icon: "/harnesses/deepseek-tui.png", desc: "DeepSeek Harness official CLI & Web UI" },
-	{ id: "pi", name: "Pi", category: "CLI Harness", icon: "/harnesses/pi.svg", desc: "Pi CLI coding agent harness" },
-	{ id: "omp", name: "Oh My Pi (OMP)", category: "Multi-Agent Harness", icon: "/harnesses/omp.svg", desc: "OMP multi-agent runtime & extensions" },
-	{ id: "zcode", name: "ZCode", category: "Editor & IDE", icon: "/harnesses/zcode.webp", desc: "Custom model provider in ZCode" },
-	{ id: "github_copilot", name: "GitHub Copilot (VS Code)", category: "VS Code Extension", icon: "/harnesses/copilot.png", desc: "Native Copilot Chat via 9Router extension" },
-	{ id: "antigravity", name: "Antigravity (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/antigravity.png", desc: "Google Cloud Code interception proxy" },
-	{ id: "kiro", name: "Kiro (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/kiro.png", desc: "AWS CodeWhisperer interception proxy" },
-	{ id: "chat", name: "Chat & Agent Web", category: "Web Interface", icon: "/harnesses/chat-isometric.svg", desc: "mnRouter internal web chat interface" },
+	{ id: "openclaw", name: "OpenClaw", category: "Autonomous Agent", icon: "/harnesses/openclaw.png", desc: isVi ? "Agent lập trình tự động OpenClaw" : "OpenClaw autonomous coding agent" },
+	{ id: "opencode", name: "OpenCode", category: "CLI Harness", icon: "/harnesses/opencode.png", desc: isVi ? "Bộ công cụ OpenCode CLI / Zen coding runner" : "OpenCode CLI / Zen coding runner" },
+	{ id: "hermes", name: "Hermes Agent", category: "Autonomous Agent", icon: "/harnesses/hermes.png", desc: isVi ? "Khung điều phối đa agent Hermes" : "Hermes Multi-Agent Framework" },
+	{ id: "cursor", name: "Cursor / Windsurf", category: "Editor & IDE", icon: "/harnesses/cursor.png", desc: isVi ? "Ghi đè URL OpenAI trong Cursor IDE" : "Cursor IDE OpenAI Base URL override" },
+	{ id: "grok_build", name: "Grok Build", category: "xAI Terminal Agent", icon: "/harnesses/grok.png", desc: isVi ? "Công cụ dòng lệnh Grok Build (xAI)" : "xAI Grok Build CLI coding agent" },
+	{ id: "dsh", name: "DSH", category: "Official Web & Headless", icon: "/harnesses/deepseek-tui.png", desc: isVi ? "Môi trường chính thức DeepSeek Harness" : "DeepSeek Harness official CLI & Web UI" },
+	{ id: "pi", name: "Pi", category: "CLI Harness", icon: "/harnesses/pi.svg", desc: isVi ? "Công cụ dòng lệnh lập trình Pi CLI" : "Pi CLI coding agent harness" },
+	{ id: "omp", name: "Oh My Pi (OMP)", category: "Multi-Agent Harness", icon: "/harnesses/omp.svg", desc: isVi ? "Bộ điều phối đa agent và tiện ích mở rộng OMP" : "OMP multi-agent runtime & extensions" },
+	{ id: "zcode", name: "ZCode", category: "Editor & IDE", icon: "/harnesses/zcode.webp", desc: isVi ? "Nhà cung cấp model tùy chỉnh trong ZCode" : "Custom model provider in ZCode" },
+	{ id: "github_copilot", name: "GitHub Copilot (VS Code)", category: "VS Code Extension", icon: "/harnesses/copilot.png", desc: isVi ? "Extension 9Router cho GitHub Copilot Chat" : "Native Copilot Chat via 9Router extension" },
+	{ id: "antigravity", name: "Antigravity (MITM Proxy)", category: "MITM Proxy", icon: "/harnesses/antigravity.png", desc: isVi ? "Proxy chặn bắt Google Cloud Code" : "Google Cloud Code interception proxy" },
+	{ id: "kiro", name: "Kiro (AWS CodeWhisperer)", category: "AWS / Kiro", icon: "/harnesses/kiro.png", desc: isVi ? "Gateway kết nối AWS Kiro & CodeWhisperer" : "AWS Kiro & CodeWhisperer gateway" },
+	{ id: "chat", name: "Chat & Agent Web", category: "Web Interface", icon: "/harnesses/chat-isometric.svg", desc: isVi ? "Giao diện web chat nội bộ mnRouter" : "mnRouter internal web chat interface" },
 	{ id: "api", name: "Direct API", category: "Direct API", icon: "/harnesses/api-isometric.svg", desc: "cURL, Python SDK, OpenAI/Anthropic SDK" },
-	{ id: "other", name: "Khác / Custom Tool", category: "Khác", icon: "", desc: "Công cụ, script hoặc môi trường client khác" },
+	{ id: "other", name: isVi ? "Khác / Custom Tool" : "Other / Custom Tool", category: isVi ? "Khác" : "Other", icon: "", desc: isVi ? "Công cụ, script hoặc môi trường client khác" : "Other tool, script or custom client environment" },
 ];
 
 export default function IssuePage() {
@@ -238,7 +238,8 @@ export default function IssuePage() {
 								<SelectTrigger className="h-12 text-xs font-mono bg-paper hover:bg-paper-2/70 border-line">
 									<SelectValue placeholder={isVi ? "Chọn công cụ / platform..." : "Select tool / platform..."}>
 										{(() => {
-											const current = PLATFORM_OPTIONS.find((p) => p.id === tool);
+											const platformOptions = getPlatformOptions(isVi);
+											const current = platformOptions.find((p) => p.id === tool);
 											if (!current) return tool;
 											return (
 												<div className="flex items-center gap-2.5 min-w-0">
@@ -260,7 +261,7 @@ export default function IssuePage() {
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent className="max-h-80">
-									{PLATFORM_OPTIONS.map((p) => (
+									{getPlatformOptions(isVi).map((p) => (
 										<SelectItem key={p.id} value={p.id} className="py-2">
 											<div className="flex items-center gap-2.5 min-w-0">
 												{p.icon ? (
@@ -450,16 +451,27 @@ export default function IssuePage() {
 					<div className="rounded-xl border border-line bg-white p-5 shadow-xs space-y-4">
 						<h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-ink flex items-center gap-1.5">
 							<ShieldCheck className="size-4 text-[#1d7a33]" />
-							<span>Chính sách bảo mật hình ảnh</span>
+							<span>{isVi ? "Chính sách bảo mật hình ảnh" : "Screenshot Privacy Policy"}</span>
 						</h3>
 						<p className="text-xs leading-relaxed text-ink-2">
-							mnRouter cam kết bảo vệ dữ liệu cá nhân. Toàn bộ hình ảnh đính kèm minh chứng lỗi sẽ được{" "}
-							<span className="font-bold text-ink">xoá hoàn toàn khỏi ổ đĩa server</span> ngay khi quản trị viên chuyển trạng thái sang <span className="font-mono text-[#1d7a33] font-semibold">Resolved</span>.
+							{isVi ? (
+								<>
+									mnRouter cam kết bảo vệ dữ liệu cá nhân. Toàn bộ hình ảnh đính kèm minh chứng lỗi sẽ được{" "}
+									<span className="font-bold text-ink">xoá hoàn toàn khỏi ổ đĩa server</span> ngay khi quản trị viên chuyển trạng thái sang{" "}
+									<span className="font-mono text-[#1d7a33] font-semibold">Resolved</span>.
+								</>
+							) : (
+								<>
+									mnRouter is committed to data privacy. All uploaded incident screenshot files are{" "}
+									<span className="font-bold text-ink">permanently purged from server disk</span> immediately when an administrator marks the ticket as{" "}
+									<span className="font-mono text-[#1d7a33] font-semibold">Resolved</span>.
+								</>
+							)}
 						</p>
 						<div className="rounded-lg bg-paper p-3 text-[11.5px] font-mono text-ink-2 space-y-1.5">
-							<div>• Hỗ trợ tải ảnh lên tới 10MB mỗi file</div>
-							<div>• Đính kèm tối đa 8 ảnh chụp màn hình</div>
-							<div>• Che bớt token hoặc thông tin nhạy cảm</div>
+							<div>• {isVi ? "Hỗ trợ tải ảnh lên tới 10MB mỗi file" : "Supports up to 10MB per image file"}</div>
+							<div>• {isVi ? "Đính kèm tối đa 8 ảnh chụp màn hình" : "Attach up to 8 screenshots per report"}</div>
+							<div>• {isVi ? "Che bớt token hoặc thông tin nhạy cảm" : "Redact API keys or sensitive credentials"}</div>
 						</div>
 					</div>
 
@@ -469,12 +481,12 @@ export default function IssuePage() {
 							<div className="flex items-center justify-between">
 								<h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-ink flex items-center gap-1.5">
 									<Clock className="size-4 text-accent" />
-									<span>Sự cố bạn đã gửi ({myIssuesData?.issues?.length || 0})</span>
+									<span>{isVi ? `Sự cố bạn đã gửi (${myIssuesData?.issues?.length || 0})` : `Your Reported Issues (${myIssuesData?.issues?.length || 0})`}</span>
 								</h3>
 							</div>
 
 							{(!myIssuesData?.issues || myIssuesData.issues.length === 0) ? (
-								<p className="text-xs text-ink-2 italic">Bạn chưa gửi báo cáo sự cố nào.</p>
+								<p className="text-xs text-ink-2 italic">{isVi ? "Bạn chưa gửi báo cáo sự cố nào." : "You have not submitted any issue reports yet."}</p>
 							) : (
 								<div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 [scrollbar-width:thin]">
 									{myIssuesData.issues.map((it) => (
@@ -498,7 +510,7 @@ export default function IssuePage() {
 											<p className="text-[11px] text-ink-2 line-clamp-2">{it.description}</p>
 											{it.adminNote && (
 												<div className="rounded bg-white p-2 text-[10.5px] border border-line text-ink">
-													<span className="font-semibold text-accent">Admin phản hồi: </span>
+													<span className="font-semibold text-accent">{isVi ? "Admin phản hồi: " : "Admin response: "}</span>
 													{it.adminNote}
 												</div>
 											)}
