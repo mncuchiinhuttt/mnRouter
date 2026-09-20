@@ -123,12 +123,10 @@ export default function AdminIssues() {
 			<header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<h1 className="text-4xl font-semibold leading-none tracking-tight sm:text-[44px]">
-						{isVi ? "Quản lý Sự cố & Báo cáo Lỗi" : "Issue Reports Management"}
+						{t("adminIssuesPage.title")}
 					</h1>
 					<p className="mt-2.5 max-w-2xl text-sm leading-relaxed text-ink-2 sm:text-[15px]">
-						{isVi
-							? "Xem danh sách lỗi từ các công cụ (Claude Code, Codex, OMP, Direct API...). Khi đánh dấu Resolved, hệ thống tự động xoá sạch toàn bộ ảnh chụp màn hình khỏi ổ đĩa."
-							: "Inspect and triage reports across client environments. Marking an issue Resolved triggers automatic disk purge of attached screenshots."}
+						{t("adminIssuesPage.desc")}
 					</p>
 				</div>
 				<Button size="sm" variant="outline" onClick={() => void refetch()} disabled={isFetching} className="h-9 gap-1.5 font-mono text-xs shrink-0">
@@ -142,38 +140,38 @@ export default function AdminIssues() {
 				<div className="grid gap-3 sm:grid-cols-4">
 					<div className="rounded-lg border border-line bg-white p-4 shadow-xs">
 						<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase">
-							<span>Chưa xử lý (Open)</span>
+							<span>{t("adminIssuesPage.openCount")}</span>
 							<AlertCircle className="size-4 text-[#b45309]" />
 						</div>
 						<div className="mt-2 text-2xl font-semibold font-mono text-[#b45309]">{data.summary.openCount}</div>
-						<p className="mt-1 text-[10.5px] font-mono text-ink-2">Cần phản hồi</p>
+						<p className="mt-1 text-[10.5px] font-mono text-ink-2">{t("adminIssuesPage.openHint")}</p>
 					</div>
 
 					<div className="rounded-lg border border-line bg-white p-4 shadow-xs">
 						<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase">
-							<span>Đang kiểm tra</span>
+							<span>{t("adminIssuesPage.investigatingCount")}</span>
 							<Clock className="size-4 text-accent" />
 						</div>
 						<div className="mt-2 text-2xl font-semibold font-mono text-accent">{data.summary.investigatingCount}</div>
-						<p className="mt-1 text-[10.5px] font-mono text-ink-2">Investigating</p>
+						<p className="mt-1 text-[10.5px] font-mono text-ink-2">{t("adminIssuesPage.investigatingHint")}</p>
 					</div>
 
 					<div className="rounded-lg border border-line bg-white p-4 shadow-xs">
 						<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase">
-							<span>Đã giải quyết</span>
+							<span>{t("adminIssuesPage.resolvedCount")}</span>
 							<CheckCircle2 className="size-4 text-[#1d7a33]" />
 						</div>
 						<div className="mt-2 text-2xl font-semibold font-mono text-[#1d7a33]">{data.summary.resolvedCount}</div>
-						<p className="mt-1 text-[10.5px] font-mono text-ink-2">Ảnh đã tự xoá</p>
+						<p className="mt-1 text-[10.5px] font-mono text-ink-2">{t("adminIssuesPage.resolvedHint")}</p>
 					</div>
 
 					<div className="rounded-lg border border-line bg-white p-4 shadow-xs">
 						<div className="flex items-center justify-between text-ink-2 font-mono text-[11px] uppercase">
-							<span>Tổng sự cố</span>
+							<span>{t("adminIssuesPage.totalCount")}</span>
 							<ShieldAlert className="size-4 text-ink-2" />
 						</div>
 						<div className="mt-2 text-2xl font-semibold font-mono text-ink">{data.summary.total}</div>
-						<p className="mt-1 text-[10.5px] font-mono text-ink-2">Tất cả thời gian</p>
+						<p className="mt-1 text-[10.5px] font-mono text-ink-2">{t("adminIssuesPage.totalHint")}</p>
 					</div>
 				</div>
 			)}
@@ -186,8 +184,7 @@ export default function AdminIssues() {
 						<Input
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
-							placeholder={isVi ? "Tìm theo email, tiêu đề, công cụ, model..." : "Search issues..."}
-							className="pl-8 pr-7 text-xs font-mono h-8"
+							placeholder={t("adminIssuesPage.searchPlaceholder")}
 						/>
 						{search && (
 							<button type="button" onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-2 hover:text-ink cursor-pointer">
@@ -200,17 +197,17 @@ export default function AdminIssues() {
 						<Select value={statusFilter} onValueChange={setStatusFilter}>
 							<SelectTrigger className="h-8 text-xs font-mono"><SelectValue /></SelectTrigger>
 							<SelectContent>
-								<SelectItem value="all">Tất cả trạng thái</SelectItem>
-								<SelectItem value="open">Open (Chưa xử lý)</SelectItem>
-								<SelectItem value="investigating">Investigating</SelectItem>
-								<SelectItem value="resolved">Resolved (Đã xong)</SelectItem>
+								<SelectItem value="all">{t("adminIssuesPage.filterAll")}</SelectItem>
+								<SelectItem value="open">{t("adminIssuesPage.filterOpen")}</SelectItem>
+								<SelectItem value="investigating">{t("adminIssuesPage.filterInvestigating")}</SelectItem>
+								<SelectItem value="resolved">{t("adminIssuesPage.filterResolved")}</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>
 				</div>
 
 				<div className="text-xs font-mono text-ink-2 shrink-0">
-					Hiển thị {filtered.length} / {issues.length} sự cố
+					{t("adminIssuesPage.showingCount", { filtered: filtered.length, total: issues.length })}
 				</div>
 			</div>
 
@@ -219,13 +216,13 @@ export default function AdminIssues() {
 				<Table>
 					<THead>
 						<TR>
-							<TH className="w-24">Status</TH>
-							<TH className="w-32">Tool / App</TH>
-							<TH>Tiêu đề & Nội dung</TH>
-							<TH className="w-36">Người báo cáo</TH>
-							<TH className="w-20 text-center">Ảnh</TH>
-							<TH className="w-28">Thời gian</TH>
-							<TH className="w-24 text-right">Thao tác</TH>
+							<TH className="w-24">{t("adminIssuesPage.thStatus")}</TH>
+							<TH className="w-32">{t("adminIssuesPage.thTool")}</TH>
+							<TH>{t("adminIssuesPage.thTitle")}</TH>
+							<TH className="w-36">{t("adminIssuesPage.thReporter")}</TH>
+							<TH className="w-20 text-center">{t("adminIssuesPage.thImages")}</TH>
+							<TH className="w-28">{t("adminIssuesPage.thTime")}</TH>
+							<TH className="w-24 text-right">{t("adminIssuesPage.thActions")}</TH>
 						</TR>
 					</THead>
 					<TBody>
@@ -265,7 +262,7 @@ export default function AdminIssues() {
 								</TD>
 								<TD>
 									<span className="font-mono text-xs text-ink-2 truncate block max-w-[140px]">
-										{it.userEmail || "Khách (Ẩn danh)"}
+										{it.userEmail || t("adminIssuesPage.guestUser")}
 									</span>
 								</TD>
 								<TD className="text-center">
@@ -293,7 +290,7 @@ export default function AdminIssues() {
 										onClick={() => openDetail(it)}
 										className="h-7 px-2 text-xs font-mono text-accent hover:text-accent"
 									>
-										Xem & Sửa
+										{t("adminIssuesPage.viewAndEdit")}
 									</Button>
 								</TD>
 							</TR>
@@ -302,7 +299,7 @@ export default function AdminIssues() {
 						{filtered.length === 0 && (
 							<TR>
 								<TD colSpan={7} className="py-12 text-center text-xs font-mono text-ink-2">
-									{isLoading ? t("common.loading") : isVi ? "Không có sự cố nào cần xử lý" : "No issue reports found"}
+									{isLoading ? t("common.loading") : t("adminIssuesPage.noIssues")}
 								</TD>
 							</TR>
 						)}
@@ -326,7 +323,7 @@ export default function AdminIssues() {
 							{selectedIssue?.title}
 						</DialogTitle>
 						<DialogDescription className="text-xs font-mono text-ink-2">
-							Từ: {selectedIssue?.userEmail || "Ẩn danh"} · ID: {selectedIssue?.id}
+							{t("adminIssuesPage.reportedBy")}: {selectedIssue?.userEmail || t("adminIssuesPage.guestUser")} · {t("adminIssuesPage.ticketId")}: {selectedIssue?.id}
 						</DialogDescription>
 					</DialogHeader>
 
@@ -334,7 +331,7 @@ export default function AdminIssues() {
 						<div className="space-y-5 py-2">
 							{/* Description box */}
 							<div className="space-y-1.5">
-								<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">Chi tiết mô tả lỗi:</label>
+								<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">{t("adminIssuesPage.descLabel")}</label>
 								<div className="rounded-lg border border-line bg-paper p-3.5 font-mono text-xs text-ink leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto">
 									{selectedIssue.description}
 								</div>
@@ -345,11 +342,11 @@ export default function AdminIssues() {
 								<div className="flex items-center justify-between">
 									<label className="text-[11px] font-mono uppercase font-semibold text-ink-2 flex items-center gap-1.5">
 										<ImageIcon className="size-3.5 text-accent" />
-										<span>Hình ảnh đính kèm ({selectedIssue.images.length})</span>
+										<span>{t("adminIssuesPage.imagesLabel")} ({selectedIssue.images.length})</span>
 									</label>
 									{selectedIssue.status === "resolved" && (
 										<span className="text-[10.5px] font-mono text-[#1d7a33]">
-											✓ Đã xoá hình ảnh khỏi đĩa vì ticket đã Resolved
+											✓ {t("adminIssuesPage.imagesPurgedNotice")}
 										</span>
 									)}
 								</div>
@@ -375,7 +372,7 @@ export default function AdminIssues() {
 									</div>
 								) : (
 									<div className="rounded-lg border border-dashed border-line p-4 text-center text-xs text-ink-2 italic">
-										Không có hình ảnh đính kèm (hoặc đã được xoá an toàn sau khi giải quyết).
+										{t("adminIssuesPage.noImages")}
 									</div>
 								)}
 							</div>
@@ -383,13 +380,13 @@ export default function AdminIssues() {
 							{/* Admin note input - Rich Markdown & Multi-line Textarea */}
 							<div className="space-y-1.5">
 								<div className="flex items-center justify-between">
-									<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">Phản hồi / Ghi chú của Admin (Hỗ trợ Markdown):</label>
-									<span className="text-[10px] font-mono text-ink-2/60">Xuống dòng, gạch đầu dòng, format thoải mái</span>
+									<label className="text-[11px] font-mono uppercase font-semibold text-ink-2">{t("adminIssuesPage.adminNoteLabel")}</label>
+									<span className="text-[10px] font-mono text-ink-2/60">{t("adminIssuesPage.adminNoteHint")}</span>
 								</div>
 								<textarea
 									value={adminNoteInput}
 									onChange={(e) => setAdminNoteInput(e.target.value)}
-									placeholder="Nhập nội dung phản hồi, nguyên nhân và hướng xử lý (hỗ trợ xuống dòng, gạch đầu dòng, markdown)..."
+									placeholder={t("adminIssuesPage.adminNotePlaceholder")}
 									rows={5}
 									className="w-full rounded-md border border-line bg-surface p-2.5 text-xs text-ink font-mono placeholder:text-ink-2/50 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent resize-y leading-relaxed"
 								/>
@@ -406,7 +403,7 @@ export default function AdminIssues() {
 							className="text-[#c6293b] hover:text-[#c6293b] hover:bg-[#c6293b]/10 text-xs font-mono"
 						>
 							<Trash2 className="size-3.5 mr-1" />
-							Xoá ticket
+							{t("adminIssuesPage.deleteTicket")}
 						</Button>
 
 						<div className="flex items-center gap-2">
@@ -416,7 +413,7 @@ export default function AdminIssues() {
 								onClick={() => setSelectedIssue(null)}
 								className="text-xs font-mono"
 							>
-								Đóng
+								{t("adminIssuesPage.close")}
 							</Button>
 
 							<Button
@@ -433,7 +430,7 @@ export default function AdminIssues() {
 								disabled={patchStatus.isPending || selectedIssue?.status === "investigating"}
 								className="text-xs font-mono text-[#b45309] border-[#fde68a] bg-[#fef9ee]"
 							>
-								Investigating
+								{t("adminIssuesPage.markInvestigating")}
 							</Button>
 
 							<Button
@@ -450,7 +447,7 @@ export default function AdminIssues() {
 								className="text-xs font-mono bg-[#1d7a33] hover:bg-[#166526] text-white gap-1.5"
 							>
 								<CheckCircle2 className="size-3.5" />
-								<span>Mark Resolved & Purge Images</span>
+								<span>{t("adminIssuesPage.markResolved")}</span>
 							</Button>
 						</div>
 					</DialogFooter>
