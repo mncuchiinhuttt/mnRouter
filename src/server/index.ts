@@ -48,6 +48,7 @@ import { copilotRoutes } from "./routes/copilot.js";
 import { issueRoutes } from "./routes/issue.js";
 import { sessionMiddleware } from "./auth/guards.js";
 import { startRefresher, stopRefresher } from "./gateway/refresher.js";
+import { startProber, stopProber } from "./gateway/prober.js";
 import { startChatSweeper, stopChatSweeper } from "./chat/sweeper.js";
 import { userRepo } from "./repositories/user.repository.js";
 import { telegramBackupService } from "./services/telegram-backup.service.js";
@@ -117,6 +118,7 @@ void (async () => {
 		}
 	}
 	startRefresher();
+	startProber();
 	startChatSweeper();
 	telegramBackupService.startSchedule();
 })();
@@ -125,6 +127,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
 	process.on(sig, () => {
 		console.log(`[mnrouter] ${sig} — shutting down`);
 		stopRefresher();
+		stopProber();
 		stopChatSweeper();
 		telegramBackupService.stopSchedule();
 		process.exit(0);

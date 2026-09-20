@@ -5,7 +5,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "highlight.js/styles/github-dark.css";
-@theme {
+:root {
 	--font-display: "Space Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
 	--font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
@@ -14,8 +14,11 @@
 	--color-navy-3: #1a1a3a;
 	--color-accent: #2323e6;
 	--color-accent-bright: #5858ff;
+
+	/* Light Mode Surfaces */
 	--color-paper: #f4f4f1;
 	--color-paper-2: #ebebe7;
+	--color-surface: #ffffff;
 	--color-line: #d9d9d3;
 	--color-ink: #16162b;
 	--color-ink-2: #55556b;
@@ -24,6 +27,38 @@
 	--radius-sm: 5px;
 	--radius-md: 7px;
 	--radius-lg: 10px;
+}
+
+html.dark {
+	/* Dark Mode Surfaces */
+	--color-paper: #0b0b14;
+	--color-paper-2: #131324;
+	--color-surface: #16162a;
+	--color-line: #2a2a44;
+	--color-ink: #f2f2fa;
+	--color-ink-2: #9292ab;
+}
+
+@theme {
+	--font-display: var(--font-display);
+	--font-mono: var(--font-mono);
+
+	--color-navy: var(--color-navy);
+	--color-navy-2: var(--color-navy-2);
+	--color-navy-3: var(--color-navy-3);
+	--color-accent: var(--color-accent);
+	--color-accent-bright: var(--color-accent-bright);
+	--color-paper: var(--color-paper);
+	--color-paper-2: var(--color-paper-2);
+	--color-surface: var(--color-surface);
+	--color-line: var(--color-line);
+	--color-ink: var(--color-ink);
+	--color-ink-2: var(--color-ink-2);
+
+	--radius-xs: var(--radius-xs);
+	--radius-sm: var(--radius-sm);
+	--radius-md: var(--radius-md);
+	--radius-lg: var(--radius-lg);
 }
 
 html,

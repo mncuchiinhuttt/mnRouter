@@ -7,7 +7,7 @@ import { Button } from "@web/components/ui/button";
 import { fmtCompact } from "@web/lib/utils";
 import { AnalyticsSummary } from "@web/components/admin/analytics-summary";
 import { AnalyticsBreakdown } from "@web/components/admin/analytics-breakdown";
-
+import { LiveTelemetryMatrix } from "@web/components/admin/live-telemetry-matrix";
 interface AnalyticsResp {
 	range: string;
 	totals: {
@@ -122,6 +122,8 @@ export default function AdminAnalytics() {
 
 			{/* 2. Provider Distribution & Top Models */}
 			{data && <AnalyticsBreakdown byProvider={data.byProvider} byModel={data.byModel} />}
+			{/* 2b. Live Stream Telemetry Matrix */}
+			<LiveTelemetryMatrix />
 			{/* 3. Daily Traffic Timeline */}
 			{data?.timeline && data.timeline.length > 0 && (
 				<div className="rounded-lg border border-line bg-white p-4 shadow-xs space-y-3 font-mono text-xs">

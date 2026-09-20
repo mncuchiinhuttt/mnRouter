@@ -5,6 +5,7 @@ import { KeyRound, Globe } from "lucide-react";
 import { api } from "@web/lib/api";
 import { Badge, Input } from "@web/components/ui/primitives";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@web/components/ui/select";
+import { HarnessDoctorPanel } from "@web/components/admin/harness-doctor-panel";
 import { SnippetCard } from "@web/components/snippet-card";
 import { ZCodeCopyCard } from "@web/components/zcode-copy-card";
 import { CopilotExtensionCard } from "@web/components/copilot-extension-card";
@@ -89,6 +90,8 @@ export default function AiConfig() {
 					<code className="rounded-xs bg-paper-2 px-1.5 py-0.5 font-mono text-[11px] text-ink">{baseUrl}</code>
 				</div>
 			</div>
+			{/* Harness Doctor & Diagnostics Panel */}
+			<HarnessDoctorPanel baseUrl={baseUrl} apiKey={effectiveKey} />
 			{/* Main Tabs Navigation */}
 			<div className="flex items-center gap-1 border-b border-line">
 				<button

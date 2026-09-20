@@ -159,6 +159,40 @@ export function adminAnalyticsRoutes() {
 			leaderboard,
 		});
 	});
+	// Live Socket & Stream Telemetry Matrix
+	app.get("/api/admin/telemetry/live", async (c) => {
+		const { getInFlightStats } = await import("../gateway/router.js");
+		const { connectionRepo } = await import("../repositories/model.repository.js");
+		const stats = getInFlightStats();
+		const conns = await connectionRepo.listAll();
+
+		const nodes = conns.map((c) => {
+			const activeStreams = stats.byConnection[c.label] || 0;
+			const data = (c.data as Record<string, any>) || {};
+			const now = Date.now();
+			const inCooldown = c.status === "cooldown" || (typeof data.cooldownUntil === "number" && data.cooldownUntil > now);
+
+			return {
+				id: c.id,
+				label: c.label,
+				provider: c.provider,
+				priority: c.priority,
+				isActive: c.isActive,
+				status: inCooldown ? "cooldown" : c.status,
+				activeStreams,
+				lastUsedAt: data.lastUsedAt || null,
+				lastProbeAt: data.lastProbeAt || null,
+				lastProbeLatencyMs: data.lastProbeLatencyMs || null,
+			};
+		});
+
+		return c.json({
+			timestamp: Date.now(),
+			totalActiveStreams: stats.totalActive,
+			queuedRequests: stats.queuedRequests,
+			nodes,
+		});
+	});
 
 	return app;
 }

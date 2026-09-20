@@ -11,6 +11,7 @@ import { MessageList, type MessageItem, type ArtifactItem } from "@web/component
 import { ArtifactViewer } from "@web/components/chat/artifact-viewer";
 import { ChatToolbar } from "@web/components/chat/chat-toolbar";
 import { ShareDialog } from "@web/components/chat/share-dialog";
+import { ContextRadar } from "@web/components/chat/context-radar";
 import { ChatInputBar, type AttachedFile } from "@web/components/chat/chat-input-bar";
 import { ClarificationBox, extractClarification } from "@web/components/chat/clarification-box";
 import { ContextCompactDialog } from "@web/components/chat/context-compact-dialog";
@@ -153,6 +154,14 @@ export default function ChatPage() {
 							</div>
 						)}
 						<ChatToolbar selectedModel={selectedModel} onSelectModel={handleSelectModel} models={models} thinkingLevel={thinkingLevel} onSelectThinking={setThinkingLevel} selectedSkills={selectedSkills} onToggleSkill={(id) => setSelectedSkills((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id])} tokensInfo={tokensInfo} onOpenCompact={() => setCompactOpen(true)} />
+						{(attachedFiles.length > 0 || input.length > 40 || tokensInfo.percent > 20) && (
+							<ContextRadar
+								tokensInfo={tokensInfo}
+								attachedFiles={attachedFiles}
+								inputPrompt={input}
+								modelName={curModel?.displayName || selectedModel}
+							/>
+						)}
 						<ChatInputBar input={input} onInputChange={setInput} onSend={() => void sendPrompt(input)} isStreaming={isStreaming} uploading={uploading} onUpload={(e) => { const f = e.target.files?.[0]; if (f) void uploadSingleFile(f); }} onPaste={(e) => { const files = e.clipboardData?.files; if (files) for (let i = 0; i < files.length; i++) { const f = files[i]; if (f) void uploadSingleFile(f); } }} attachedFiles={attachedFiles} onRemoveFile={(id) => setAttachedFiles((p) => p.filter((x) => x.id !== id))} />
 					</div>
 				</Panel>

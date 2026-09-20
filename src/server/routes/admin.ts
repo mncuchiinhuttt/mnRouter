@@ -185,6 +185,18 @@ export function adminRoutes() {
 
 	app.post("/api/admin/connections/:id/test", async (c) => c.json(await connectionService.testConnection(c.req.param("id"))));
 
+	app.post("/api/admin/connections/:id/probe", async (c) => {
+		const { connectionRepo } = await import("../repositories/model.repository.js");
+		const conn = await connectionRepo.findById(c.req.param("id"));
+		if (!conn) return c.json({ error: "not_found" }, 404);
+		const { probeConnection } = await import("../gateway/prober.js");
+		return c.json(await probeConnection(conn as any));
+	});
+
+	app.post("/api/admin/connections/probe-all", async (c) => {
+		const { probeAllConnections } = await import("../gateway/prober.js");
+		return c.json({ results: await probeAllConnections(false) });
+	});
 	app.get("/api/admin/oauth/:provider/start", async (c) => {
 		try {
 			return c.json(await connectionService.startOauth(c.req.param("provider") as ProviderId));

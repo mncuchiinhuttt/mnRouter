@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, BarChart3, Boxes, Database, History, KeyRound,
 import type { ReactNode } from "react";
 import { cn } from "@web/lib/utils";
 import { setLang } from "@web/i18n";
+import { ThemeToggle } from "./theme-toggle";
 import { WeeklyCreditsCard } from "./weekly-credits-card";
 import { UserMenu } from "./user-menu";
 import { OnboardingDialog } from "./onboarding/onboarding-dialog";
@@ -165,6 +166,7 @@ export function Shell({ me }: { me: Me }) {
 					<span className="font-mono text-[13px] font-semibold tracking-[0.08em] text-white">ROUTER</span>
 				</div>
 				<div className="flex items-center gap-2">
+					<ThemeToggle />
 					<LangToggle />
 					<button onClick={() => setMenuOpen(true)} className="rounded-xs p-2 text-white cursor-pointer" aria-label={t("common.menu")}>
 						<Menu className="h-5 w-5" />
@@ -196,7 +198,10 @@ export function Shell({ me }: { me: Me }) {
 					<div className="label-mono text-ink-2">
 						<span className="text-accent">//</span>&nbsp; {section}
 					</div>
-					<LangToggle />
+					<div className="flex items-center gap-2.5">
+						<ThemeToggle />
+						<LangToggle />
+					</div>
 				</div>
 				<div className={cn("flex-1", isChat ? "h-full w-full overflow-hidden p-0" : "w-full overflow-auto px-4 py-6 sm:px-8 lg:px-10 lg:py-10")}>
 					<Outlet context={me} />
