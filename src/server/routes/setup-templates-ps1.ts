@@ -68,6 +68,59 @@ function Save-ConfigWithBackup($path, $content) {
         } catch {}
     }
 
+    if ($resolved -like "*config.toml*" -and (Test-Path "$resolved.mnrouter.bak")) {
+        try {
+            $bakContent = Get-Content "$resolved.mnrouter.bak" -Raw
+            $newContent = Get-Content $resolved -Raw
+            $bakLines = $bakContent -split "[\\r\\n]+" | Where-Object {
+                $_ -notmatch '^\\s*model_provider\\s*=' -and
+                $_ -notmatch '^\\s*model\\s*=' -and
+                $_ -notmatch '^\\s*chatgpt_base_url\\s*='
+            }
+            $cleaned = @()
+            $inMn = $false
+            foreach ($line in $bakLines) {
+                if ($line.Trim() -eq '[model_providers.mnrouter]') { $inMn = $true; continue }
+                if ($inMn -and $line.Trim().StartsWith('[')) { $inMn = $false }
+                if (-not $inMn) { $cleaned += $line }
+            }
+            $finalContent = ($newContent.Trim() + [Environment]::NewLine + [Environment]::NewLine + ($cleaned -join [Environment]::NewLine)).Trim() + [Environment]::NewLine
+            Set-Content -Path $resolved -Value $finalContent -Encoding UTF8 -Force
+        } catch {}
+    }
+
+    if (($resolved -like "*models.yml*" -or $resolved -like "*models.yaml*") -and (Test-Path "$resolved.mnrouter.bak")) {
+        try {
+            $bakContent = Get-Content "$resolved.mnrouter.bak" -Raw
+            $newContent = Get-Content $resolved -Raw
+            $bakLines = $bakContent -split "[\\r\\n]+"
+            $out = @()
+            $inMn = $false
+            foreach ($line in $bakLines) {
+                if ($line.Trim() -eq 'mnrouter:' -or $line.StartsWith('  mnrouter:')) { $inMn = $true; continue }
+                if ($inMn) {
+                    if (($line.StartsWith('  ') -and -not $line.StartsWith('    ') -and $line.Trim().EndsWith(':')) -or ($line.Length -gt 0 -and -not $line.StartsWith(' '))) {
+                        $inMn = $false
+                    }
+                }
+                if (-not $inMn) { $out += $line }
+            }
+            $newLines = $newContent -split "[\\r\\n]+"
+            $mnBlock = $newLines | Where-Object { $_.Trim() -ne 'providers:' }
+            $finalLines = @()
+            $inserted = $false
+            foreach ($line in $out) {
+                $finalLines += $line
+                if ($line.Trim() -eq 'providers:' -and -not $inserted) {
+                    $finalLines += $mnBlock
+                    $inserted = $true
+                }
+            }
+            if (-not $inserted) { $finalLines = $newLines }
+            Set-Content -Path $resolved -Value (($finalLines -join [Environment]::NewLine).Trim() + [Environment]::NewLine) -Encoding UTF8 -Force
+        } catch {}
+    }
+
     Write-Host "  ✓ Configured $resolved" -ForegroundColor Green
 }
 ${fileWrites}
