@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import { desc, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { db } from "@db";
-import { usageRequests } from "@db/schema";
+import { usageDaily, usageRequests } from "@db/schema";
 import { requireAuth } from "../auth/guards.js";
 import { userService } from "../services/user.service.js";
 import { userRepo } from "../repositories/user.repository.js";
@@ -148,24 +148,23 @@ export function userRoutes() {
 	app.get("/api/models/market-data", async (c) => {
 		const user = c.get("user");
 		const userModels = await modelService.listModelsForUser(user);
-		const allowedIds = new Set(userModels.map((m) => m.id));
 
 		const usageRows = await db
 			.select({
-				model: usageRequests.model,
-				provider: usageRequests.provider,
-				requests: sql<number>`COUNT(*)`,
-				promptTokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens}), 0)`,
-				completionTokens: sql<number>`COALESCE(SUM(${usageRequests.completionTokens}), 0)`,
-				cacheReadTokens: sql<number>`COALESCE(SUM(${usageRequests.cacheReadTokens}), 0)`,
-				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
-				usersCount: sql<number>`COUNT(DISTINCT ${usageRequests.userId})`,
-				lastUsedAt: sql<Date | null>`MAX(${usageRequests.ts})`,
+				model: usageDaily.model,
+				provider: usageDaily.provider,
+				requests: sql<number>`COALESCE(SUM(${usageDaily.requests}), 0)`,
+				promptTokens: sql<number>`COALESCE(SUM(${usageDaily.promptTokens}), 0)`,
+				completionTokens: sql<number>`COALESCE(SUM(${usageDaily.completionTokens}), 0)`,
+				cacheReadTokens: sql<number>`COALESCE(SUM(${usageDaily.cacheReadTokens}), 0)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageDaily.credits} AS REAL)), 0)`,
+				usersCount: sql<number>`COUNT(DISTINCT ${usageDaily.userId})`,
+				lastUsedAt: sql<string | null>`MAX(${usageDaily.date})`,
 			})
-			.from(usageRequests)
-			.groupBy(usageRequests.model, usageRequests.provider);
+			.from(usageDaily)
+			.groupBy(usageDaily.model, usageDaily.provider);
 
-		const usageMap = new Map(usageRows.map((r) => [r.model, r]));
+		const usageMap = new Map(usageRows.map((r) => [`${r.provider}:${r.model}`, r]));
 
 		// Calculate total platform metrics
 		let totalVolumeTokens = 0;
@@ -190,7 +189,7 @@ export function userRoutes() {
 			: 88;
 
 		const enrichedModels = userModels.map((m) => {
-			const u = usageMap.get(m.id);
+			const u = usageMap.get(`${m.provider}:${m.id}`);
 			const prompt = Number(u?.promptTokens || 0);
 			const comp = Number(u?.completionTokens || 0);
 			const totalTokens = prompt + comp;
@@ -226,21 +225,19 @@ export function userRoutes() {
 		const top1 = enrichedModels[0];
 		const top2 = enrichedModels[1];
 		const top3 = enrichedModels[2];
-		const top3Ids = new Set([top1?.id, top2?.id, top3?.id].filter(Boolean) as string[]);
 
-		// 60-day continuous timeline with individual model breakdowns (like opencode.ai/data)
-		const sixtyDaysAgoMs = Date.now() - 60 * 24 * 3600 * 1000;
+		// 60-day timeline from daily aggregates instead of raw request rows.
+		const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 		const dailyModelRows = await db
 			.select({
-				date: sql<string>`DATE(${usageRequests.ts} / 1000, 'unixepoch')`,
-				model: usageRequests.model,
-				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+				date: usageDaily.date,
+				model: usageDaily.model,
+				tokens: sql<number>`COALESCE(SUM(${usageDaily.promptTokens} + ${usageDaily.completionTokens}), 0)`,
 			})
-			.from(usageRequests)
-			.where(sql`${usageRequests.ts} >= ${sixtyDaysAgoMs}`)
-			.groupBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`, usageRequests.model)
-			.orderBy(sql`DATE(${usageRequests.ts} / 1000, 'unixepoch')`);
-
+			.from(usageDaily)
+			.where(gte(usageDaily.date, sixtyDaysAgo))
+			.groupBy(usageDaily.date, usageDaily.model)
+			.orderBy(usageDaily.date);
 		// Build per-day lookup map of model -> tokens
 		const dailyLookup = new Map<string, Record<string, number>>();
 		for (const r of dailyModelRows) {
@@ -343,43 +340,43 @@ export function userRoutes() {
 			return c.json({ error: "model_not_found" }, 404);
 		}
 
-		// Calculate 30-day daily usage trend for this model
-		const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+		// Model detail metrics use the daily rollup to avoid scanning usageRequests.
+		const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10);
 		const dailyRows = await db
 			.select({
-				date: sql<string>`DATE(${usageRequests.ts})`,
-				tokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
-				requests: sql<number>`COUNT(*)`,
-				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
-				users: sql<number>`COUNT(DISTINCT ${usageRequests.userId})`,
+				date: usageDaily.date,
+				tokens: sql<number>`COALESCE(SUM(${usageDaily.promptTokens} + ${usageDaily.completionTokens}), 0)`,
+				requests: sql<number>`COALESCE(SUM(${usageDaily.requests}), 0)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageDaily.credits} AS REAL)), 0)`,
+				users: sql<number>`COUNT(DISTINCT ${usageDaily.userId})`,
 			})
-			.from(usageRequests)
-			.where(sql`${usageRequests.model} = ${targetModel.id} AND ${usageRequests.ts} >= ${thirtyDaysAgo}`)
-			.groupBy(sql`DATE(${usageRequests.ts})`)
-			.orderBy(sql`DATE(${usageRequests.ts})`);
+			.from(usageDaily)
+			.where(and(eq(usageDaily.model, targetModel.id), gte(usageDaily.date, thirtyDaysAgo)))
+			.groupBy(usageDaily.date)
+			.orderBy(usageDaily.date);
 
 		// Lifetime stats for this model
 		const [lifetime] = await db
 			.select({
-				promptTokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens}), 0)`,
-				completionTokens: sql<number>`COALESCE(SUM(${usageRequests.completionTokens}), 0)`,
-				cacheReadTokens: sql<number>`COALESCE(SUM(${usageRequests.cacheReadTokens}), 0)`,
-				requests: sql<number>`COUNT(*)`,
-				credits: sql<number>`COALESCE(SUM(CAST(${usageRequests.credits} AS REAL)), 0)`,
-				usersCount: sql<number>`COUNT(DISTINCT ${usageRequests.userId})`,
+				promptTokens: sql<number>`COALESCE(SUM(${usageDaily.promptTokens}), 0)`,
+				completionTokens: sql<number>`COALESCE(SUM(${usageDaily.completionTokens}), 0)`,
+				cacheReadTokens: sql<number>`COALESCE(SUM(${usageDaily.cacheReadTokens}), 0)`,
+				requests: sql<number>`COALESCE(SUM(${usageDaily.requests}), 0)`,
+				credits: sql<number>`COALESCE(SUM(CAST(${usageDaily.credits} AS REAL)), 0)`,
+				usersCount: sql<number>`COUNT(DISTINCT ${usageDaily.userId})`,
 			})
-			.from(usageRequests)
-			.where(sql`${usageRequests.model} = ${targetModel.id}`);
+			.from(usageDaily)
+			.where(eq(usageDaily.model, targetModel.id));
 
 		// Overall total tokens across all models for ranking
 		const allUsage = await db
 			.select({
-				model: usageRequests.model,
-				totalTokens: sql<number>`COALESCE(SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens}), 0)`,
+				model: usageDaily.model,
+				totalTokens: sql<number>`COALESCE(SUM(${usageDaily.promptTokens} + ${usageDaily.completionTokens}), 0)`,
 			})
-			.from(usageRequests)
-			.groupBy(usageRequests.model)
-			.orderBy(desc(sql`SUM(${usageRequests.promptTokens} + ${usageRequests.completionTokens})`));
+			.from(usageDaily)
+			.groupBy(usageDaily.model)
+			.orderBy(desc(sql`SUM(${usageDaily.promptTokens} + ${usageDaily.completionTokens})`));
 
 		let rank = 1;
 		let totalPlatformTokens = 0;
