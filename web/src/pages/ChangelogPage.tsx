@@ -44,8 +44,7 @@ const CHANGELOG_DATA: ChangelogEntry[] = [
 		title: "perf: accelerate User Usage Leaderboard with daily usage rollups",
 		summary: "Reworked the leaderboard to aggregate bounded ranges from the compact usage_daily rollup instead of scanning and casting every raw request row on each page load.",
 		highlights: [
-			"24h, 7d, and 30d leaderboard ranges now query the compact daily aggregate table",
-			"All Time keeps the raw request query so older records remain complete",
+			"7d and 30d leaderboard ranges now query the compact daily aggregate table; 24h and All Time keep exact raw request semantics",
 			"Last-active timestamps are fetched in a lightweight parallel aggregate query",
 			"Production data check confirmed daily and raw totals match for current usage"
 		],

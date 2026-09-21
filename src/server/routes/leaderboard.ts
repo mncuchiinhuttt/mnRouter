@@ -17,13 +17,13 @@ export function leaderboardRoutes() {
 		else if (range === "7d") since = new Date(now - 7 * 24 * 3600 * 1000);
 		else if (range === "30d") since = new Date(now - 30 * 24 * 3600 * 1000);
 
-		// Bounded ranges use the compact daily rollup. Keep all-time on raw requests so
-		// older rows remain visible even if they predate daily aggregation.
+		// Use raw requests for exact 24-hour and all-time semantics. The daily rollup
+		// accelerates the wider bounded windows without changing their ranking totals.
 		const sinceDate = since?.toISOString().slice(0, 10);
 		const dailyWhere = sinceDate ? gte(usageDaily.date, sinceDate) : undefined;
 		const requestWhere = since ? gte(usageRequests.ts, since) : undefined;
 		const aggregateQuery =
-			range === "all"
+			range === "all" || range === "24h"
 				? db
 						.select({
 							userId: usageRequests.userId,
