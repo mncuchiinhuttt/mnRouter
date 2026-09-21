@@ -34,6 +34,31 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "production-secret-and-opencode-token-hardening",
+		commit: "41635ed",
+		time: "02:45",
+		date: "2026-09-21",
+		fullDateTime: "21/09/2026 02:45 (GMT+7)",
+		type: "fixed",
+		scope: "security",
+		title: "fix: fail closed on production session secrets and remove hardcoded OpenCode credentials",
+		summary: "Hardened runtime configuration so production refuses missing or weak session secrets, removed the embedded OpenCode token fallback, added regression coverage, and sanitized the reachable main git history.",
+		highlights: [
+			"Production now requires SESSION_SECRET with at least 32 characters. The development fallback remains available only outside production.",
+			"OpenCode requests now require a connection token or OPENCODE_ZEN_TOKEN. No credential is embedded in the application binary or source.",
+			"Opaque database-backed sessions remain valid across this configuration change because SESSION_SECRET was not used to sign existing session cookies.",
+			"Added environment regression tests covering missing, weak, valid production secrets and development fallback behavior.",
+			"Rewrote reachable main history to remove the exposed credential and force-pushed the sanitized branch."
+		],
+		files: [
+			"src/server/env.ts",
+			"src/server/gateway/router.ts",
+			"src/server/gateway/egress/index.ts",
+			"src/server/gateway/egress/openai-chat.ts",
+			"test/unit/security-config.test.ts"
+		],
+	},
+	{
 		id: "codex-quota-and-catalog-streamline",
 		commit: "8bb3094",
 		time: "02:25",
