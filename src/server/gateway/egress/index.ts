@@ -62,7 +62,8 @@ export function buildEgressRequest(conn: EgressConnectionInfo, req: CanonicalReq
 		case "grok":
 		case "opencode": {
 			if (conn.provider === "opencode" && req.upstreamModel.includes("muse-spark")) {
-				const token = conn.accessToken || process.env.OPENCODE_ZEN_TOKEN || "REDACTED_OPEN_CODE_TOKEN";
+				const token = conn.accessToken || process.env.OPENCODE_ZEN_TOKEN;
+				if (!token) throw new Error("OpenCode token is not configured");
 				const { body: baseBodyStr } = buildCodexRequest({ ...cfg, baseUrls: [base] }, req, token);
 				const parser = new CodexStreamParser();
 				const baseBody = JSON.parse(baseBodyStr) as Record<string, unknown>;

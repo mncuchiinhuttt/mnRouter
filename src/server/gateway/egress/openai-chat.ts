@@ -61,7 +61,8 @@ function endpointPath(provider: ProviderId): string {
 
 function authHeaders(provider: ProviderId, token: string): Record<string, string> {
 	if (provider === "opencode") {
-		const authToken = token || process.env.OPENCODE_ZEN_TOKEN || "REDACTED_OPEN_CODE_TOKEN";
+		const authToken = token || process.env.OPENCODE_ZEN_TOKEN;
+		if (!authToken) throw new Error("OpenCode token is not configured");
 		return {
 			authorization: authToken.startsWith("Bearer ") ? authToken : `Bearer ${authToken}`,
 			"user-agent": "opencode/latest/2.0.3/cli",

@@ -211,7 +211,10 @@ export async function ensureFreshToken(conn: ConnRow): Promise<string> {
 	const d = dataOf(conn);
 	const provider = conn.provider as ProviderId;
 	if (provider === "opencode") {
-		const token = d.accessToken || process.env.OPENCODE_ZEN_TOKEN || "REDACTED_OPEN_CODE_TOKEN";
+		const token = d.accessToken || process.env.OPENCODE_ZEN_TOKEN;
+		if (typeof token !== "string" || !token.trim()) {
+			throw new UpstreamError("OpenCode token is not configured", 503, "provider_not_configured", false);
+		}
 		return token;
 	}
 	if (PROVIDERS[provider].noAuth) return "";
