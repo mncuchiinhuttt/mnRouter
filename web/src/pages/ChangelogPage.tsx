@@ -47,6 +47,7 @@ const CHANGELOG_DATA: ChangelogEntry[] = [
 			"Model totals, credits, request counts, cache ratios, provider share, and distinct users now aggregate from usage_daily",
 			"60-day model timeline now reads daily rollups, reducing the chart query from raw request rows",
 			"Model detail lifetime, 30-day trend, and ranking calculations use the same compact aggregate source",
+			"Frontend memoizes timeline scale calculations and avoids redundant refetches during navigation",
 			"Production totals match raw usage_requests exactly: tokens, requests, and credits"
 		],
 		files: ["src/server/routes/user.ts"],

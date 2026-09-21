@@ -95,6 +95,7 @@ export default function ModelsDataPage() {
 	const { data, isLoading, refetch, isFetching } = useQuery({
 		queryKey: ["models-market-data"],
 		queryFn: () => api<MarketDataResp>("/api/models/market-data"),
+		staleTime: 15_000,
 		refetchInterval: 30_000,
 	});
 
@@ -123,6 +124,10 @@ export default function ModelsDataPage() {
 	}, [models, search, selectedProvider]);
 
 	const topThree = models.slice(0, 3);
+	const maxTimelineTotal = useMemo(
+		() => Math.max(1, ...(data?.dailyTimeline ?? []).map((day) => day.total)),
+		[data?.dailyTimeline],
+	);
 	const compareModels = useMemo(() => {
 		if (!comparePair) return null;
 		const m1 = models.find((m) => m.id === comparePair[0]);
@@ -302,9 +307,8 @@ export default function ModelsDataPage() {
 					{data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
 						<div className="relative">
 							<div className="h-64 sm:h-72 w-full flex items-end gap-[2px] pt-6 pb-2 border-b border-line">
-								{data.dailyTimeline.map((day, dayIndex, allDays) => {
-									const maxVal = Math.max(1, ...allDays.map((d) => d.total));
-									const heightPct = Math.min(100, Math.max(3, (day.total / maxVal) * 100));
+								{data.dailyTimeline.map((day, dayIndex) => {
+									const heightPct = Math.min(100, Math.max(3, (day.total / maxTimelineTotal) * 100));
 									const t1Id = data.topThreeMeta?.[0]?.id;
 									const t2Id = data.topThreeMeta?.[1]?.id;
 									const t3Id = data.topThreeMeta?.[2]?.id;
@@ -352,7 +356,7 @@ export default function ModelsDataPage() {
 											{/* Interactive Tooltip Card on Hover (Clamped to avoid overflow) */}
 											<div
 												className={`absolute bottom-full mb-3 hidden group-hover:block z-50 pointer-events-none w-56 p-3 bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-line text-xs font-mono ${
-													dayIndex >= allDays.length - 8
+													dayIndex >= (data.dailyTimeline?.length ?? 0) - 8
 														? "right-0"
 														: dayIndex <= 7
 														? "left-0"
