@@ -34,6 +34,24 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "leaderboard-daily-rollup-optimization",
+		commit: "81c004b",
+		time: "23:58",
+		date: "2026-09-21",
+		fullDateTime: "21/09/2026 23:58 (GMT+7)",
+		type: "changed",
+		scope: "performance",
+		title: "perf: accelerate User Usage Leaderboard with daily usage rollups",
+		summary: "Reworked the leaderboard to aggregate bounded ranges from the compact usage_daily rollup instead of scanning and casting every raw request row on each page load.",
+		highlights: [
+			"24h, 7d, and 30d leaderboard ranges now query the compact daily aggregate table",
+			"All Time keeps the raw request query so older records remain complete",
+			"Last-active timestamps are fetched in a lightweight parallel aggregate query",
+			"Production data check confirmed daily and raw totals match for current usage"
+		],
+		files: ["src/server/routes/leaderboard.ts"],
+	},
+	{
 		id: "production-secret-and-opencode-token-hardening",
 		commit: "41635ed",
 		time: "02:45",
