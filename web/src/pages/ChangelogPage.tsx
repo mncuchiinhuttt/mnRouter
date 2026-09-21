@@ -34,6 +34,24 @@ interface ChangelogEntry {
 
 const CHANGELOG_DATA: ChangelogEntry[] = [
 	{
+		id: "data-daily-rollup-optimization",
+		commit: "04d9e1c",
+		time: "00:12",
+		date: "2026-09-22",
+		fullDateTime: "22/09/2026 00:12 (GMT+7)",
+		type: "changed",
+		scope: "performance",
+		title: "perf: accelerate Data & Models analytics with daily usage rollups",
+		summary: "Reworked /data market analytics and model detail calculations to read the compact usage_daily aggregates instead of repeatedly scanning the raw request log.",
+		highlights: [
+			"Model totals, credits, request counts, cache ratios, provider share, and distinct users now aggregate from usage_daily",
+			"60-day model timeline now reads daily rollups, reducing the chart query from raw request rows",
+			"Model detail lifetime, 30-day trend, and ranking calculations use the same compact aggregate source",
+			"Production totals match raw usage_requests exactly: tokens, requests, and credits"
+		],
+		files: ["src/server/routes/user.ts"],
+	},
+	{
 		id: "leaderboard-daily-rollup-optimization",
 		commit: "81c004b",
 		time: "23:58",
